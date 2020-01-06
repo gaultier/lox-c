@@ -32,7 +32,6 @@ void read_file(const char path[], char** content, size_t* content_len) {
     }
 
     const size_t bytes_read = fread(*content, 1, file_size, file);
-    (*content)[bytes_read] = '\0';
     *content_len = bytes_read;
 
     fclose(file);
