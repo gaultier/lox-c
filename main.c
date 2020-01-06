@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "buf.h"
+/* #include "buf.h" */
 
 typedef double Value;
 
