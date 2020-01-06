@@ -1,9 +1,17 @@
 #include <errno.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "buf.h"
+
+typedef double Value;
+
+typedef enum {
+    OP_RETURN = 0,
+    OP_CONSTANT = 1,
+} OpCode;
 
 void read_file(const char path[], char** content, size_t* content_len) {
     FILE* file = NULL;
@@ -39,10 +47,48 @@ void read_file(const char path[], char** content, size_t* content_len) {
     fclose(file);
 }
 
+void interpret(const uint8_t* opcodes, size_t opcodes_len,
+               const uint8_t* values, size_t values_len) {
+    size_t i = 0;
+    while (i < opcodes_len) {
+        switch (opcodes[i]) {
+            case OP_RETURN:
+                break;
+            case OP_CONSTANT:
+                i += 1;
+                if (!(i < opcodes_len)) {
+                    fprintf(
+                        stderr,
+                        "Malformed opcode: missing operand for OP_CONSTANT\n");
+                    exit(EINVAL);
+                }
+                const uint8_t value_index = opcodes[i];
+                if (!(value_index < values_len)) {
+                    fprintf(stderr,
+                            "Malformed opcode: OP_CONSTANT operand referring "
+                            "to out-of-bounds value index: %d\n",
+                            value_index);
+                    exit(EINVAL);
+                }
+                const Value value = values[value_index];
+                printf("OP_CONSTANT: %f\n", value);
+                break;
+            default:
+                fprintf(stderr, "Unknown opcode %d\n", opcodes[i]);
+                exit(EINVAL);
+        }
+        i += 1;
+    }
+}
+
 int main(int argc, char* argv[]) {
     char* content = NULL;
     size_t content_len = 0;
     read_file(argv[1], &content, &content_len);
 
     printf("%s", content);
+
+    const uint8_t opcodes[] = {OP_CONSTANT, 0, OP_RETURN};
+    const uint8_t values[] = {42};
+    interpret(opcodes, 3, values, 1);
 }
