@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "buf.h"
+
 void read_file(const char path[], char** content, size_t* content_len) {
     FILE* file = NULL;
 
