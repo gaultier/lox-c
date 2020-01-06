@@ -13,6 +13,12 @@ typedef enum {
     OP_CONSTANT = 1,
 } OpCode;
 
+typedef struct {
+    const uint8_t* opcodes;
+    size_t opcodes_len;
+    size_t lines;
+} Chunk;
+
 void read_file(const char path[], char** content, size_t* content_len) {
     FILE* file = NULL;
 
@@ -47,22 +53,21 @@ void read_file(const char path[], char** content, size_t* content_len) {
     fclose(file);
 }
 
-void interpret(const uint8_t* opcodes, size_t opcodes_len,
-               const uint8_t* values, size_t values_len) {
+void interpret(const Chunk* chunk, const uint8_t* values, size_t values_len) {
     size_t i = 0;
-    while (i < opcodes_len) {
-        switch (opcodes[i]) {
+    while (i < chunk->opcodes_len) {
+        switch (chunk->opcodes[i]) {
             case OP_RETURN:
                 break;
             case OP_CONSTANT:
                 i += 1;
-                if (!(i < opcodes_len)) {
+                if (!(i < chunk->opcodes_len)) {
                     fprintf(
                         stderr,
                         "Malformed opcode: missing operand for OP_CONSTANT\n");
                     exit(EINVAL);
                 }
-                const uint8_t value_index = opcodes[i];
+                const uint8_t value_index = chunk->opcodes[i];
                 if (!(value_index < values_len)) {
                     fprintf(stderr,
                             "Malformed opcode: OP_CONSTANT operand referring "
@@ -74,7 +79,7 @@ void interpret(const uint8_t* opcodes, size_t opcodes_len,
                 printf("OP_CONSTANT: %f\n", value);
                 break;
             default:
-                fprintf(stderr, "Unknown opcode %d\n", opcodes[i]);
+                fprintf(stderr, "Unknown opcode %d\n", chunk->opcodes[i]);
                 exit(EINVAL);
         }
         i += 1;
@@ -87,8 +92,8 @@ int main(int argc, char* argv[]) {
     read_file(argv[1], &content, &content_len);
 
     printf("%s", content);
-
     const uint8_t opcodes[] = {OP_CONSTANT, 0, OP_RETURN};
+    const Chunk chunk = {.opcodes = opcodes, .opcodes_len = 3};
     const uint8_t values[] = {42};
-    interpret(opcodes, 3, values, 1);
+    interpret(&chunk, values, 1);
 }
