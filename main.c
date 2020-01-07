@@ -15,6 +15,7 @@ typedef double Value;
 typedef enum {
     OP_RETURN = 0,
     OP_CONSTANT = 1,
+    OP_NEGATE = 2,
 } OpCode;
 
 typedef struct {
@@ -26,12 +27,6 @@ typedef struct {
     Value stack[STACK_MAX];
     size_t stack_len;
 } Chunk;
-
-typedef enum {
-    INTERPRET_OK,
-    INTERPRET_COMPILE_ERROR,
-    INTERPRET_RUNTIME_ERROR
-} InterpretResult;
 
 static void stack_push(Chunk* chunk, Value v) {
     chunk->stack_len += 1;
@@ -100,6 +95,9 @@ static void dump(Chunk* chunk, const uint8_t values[256]) {
             case OP_RETURN:
                 printf("%zu:OP_RETURN\n", line);
                 break;
+            case OP_NEGATE:
+                printf("%zu:OP_NEGATE\n", line);
+                break;
             case OP_CONSTANT:
                 chunk->ip += 1;
                 if (!(chunk->ip < chunk->opcodes_len)) {
@@ -129,8 +127,13 @@ static void interpret(Chunk* chunk, const uint8_t values[256]) {
         switch (opcode) {
             case OP_RETURN: {
                 const Value value = stack_pop(chunk);
-                printf("Stack value: %f\n", value);
+                printf("Stack top value: %f\n", value);
                 return;
+            }
+            case OP_NEGATE: {
+                const Value value = stack_pop(chunk);
+                stack_push(chunk, -value);
+                break;
             }
             case OP_CONSTANT:
                 chunk->ip += 1;
@@ -162,12 +165,14 @@ int main(int argc, char* argv[]) {
     size_t content_len = 0;
     read_file(argv[2], &content, &content_len);
 
-    const uint8_t opcodes[] = {OP_CONSTANT, 0, OP_RETURN};
-    const size_t lines[] = {0, 1, 2};
+    const uint8_t opcodes[] = {OP_CONSTANT, 0, OP_NEGATE, OP_RETURN};
+    const size_t lines[] = {0, 1, 2, 3};
 
-    Chunk chunk = {
-        .opcodes = opcodes, .opcodes_len = 3, .lines = lines, .lines_len = 3};
-    uint8_t values[VALUES_MAX] = {0};
+    Chunk chunk = {.opcodes = opcodes,
+                   .opcodes_len = sizeof(opcodes) / sizeof(opcodes[0]),
+                   .lines = lines,
+                   .lines_len = sizeof(lines) / sizeof(lines[0])};
+    uint8_t values[VALUES_MAX] = {0xaa};
     values[0] = 42;
 
     if (strcmp(argv[1], "dump") == 0)
