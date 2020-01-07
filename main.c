@@ -316,6 +316,11 @@ static void lex_skip_whitespace(Lex* lex) {
             case '\r':
                 lex_advance(lex);
                 break;
+            case '\n':
+                lex->pos += 1;
+                lex->column = 0;
+                lex->line += 1;
+                break;
             default:
                 return;
         }
