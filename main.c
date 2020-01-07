@@ -117,11 +117,14 @@ static void interpret(const Chunk* chunk, const uint8_t values[256]) {
 }
 
 int main(int argc, char* argv[]) {
+    if (argc != 3) {
+        printf("Usage: %s dump|run filename\n", argv[0]);
+        return 0;
+    }
     char* content = NULL;
     size_t content_len = 0;
-    read_file(argv[1], &content, &content_len);
+    read_file(argv[2], &content, &content_len);
 
-    printf("%s", content);
     const uint8_t opcodes[] = {OP_CONSTANT, 0, OP_RETURN};
     const size_t lines[] = {0, 1, 2};
 
@@ -129,5 +132,11 @@ int main(int argc, char* argv[]) {
         .opcodes = opcodes, .opcodes_len = 3, .lines = lines, .lines_len = 3};
     uint8_t values[VALUES_MAX] = {0};
     values[0] = 42;
-    interpret(&chunk, values);
+
+    if (strcmp(argv[1], "dump") == 0)
+        dump(&chunk, values);
+    else if (strcmp(argv[1], "run") == 0)
+        interpret(&chunk, values);
+    else
+        printf("Usage: %s dump|run filename\n", argv[0]);
 }
