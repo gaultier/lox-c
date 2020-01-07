@@ -307,7 +307,23 @@ static bool lex_match(Lex* lex, char c) {
     return true;
 }
 
+static void lex_skip_whitespace(Lex* lex) {
+    while (!lex_is_at_end(lex)) {
+        const char c = lex_current(lex);
+        switch (c) {
+            case ' ':
+            case '\t':
+            case '\r':
+                lex_advance(lex);
+                break;
+            default:
+                return;
+        }
+    }
+}
+
 static void lex_scan_token(Lex* lex, Token* token) {
+    lex_skip_whitespace(lex);
     const size_t start_pos = lex->pos;
 
     if (lex_is_at_end(lex)) {
