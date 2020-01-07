@@ -1,3 +1,4 @@
+#include <ctype.h>
 #include <errno.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -361,6 +362,12 @@ static void lex_string(Lex* lex, Token* token) {
     lex_advance(lex);
 }
 
+static void lex_number(Lex* lex, Token* token, const Lex* start_lex) {
+    while (!lex_is_at_end(lex) && isdigit(lex_peek(lex))) lex_advance(lex);
+
+    lex_init_token(lex, token, TOKEN_NUMBER, start_lex);
+}
+
 static void lex_scan_token(Lex* lex, Token* token) {
     lex_skip_whitespace(lex);
     const Lex start_lex = *lex;
@@ -371,6 +378,12 @@ static void lex_scan_token(Lex* lex, Token* token) {
     }
 
     const char c = lex_advance(lex);
+
+    if (isdigit(c)) {
+        lex_number(lex, token, &start_lex);
+        return;
+    }
+
     switch (c) {
         case '{':
             lex_init_token(lex, token, TOKEN_LEFT_BRACE, &start_lex);
