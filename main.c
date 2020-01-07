@@ -18,52 +18,52 @@ typedef struct {
 typedef enum {
     // Single-character tokens.
     TOKEN_LEFT_PAREN = 1,
-    TOKEN_RIGHT_PAREN,
-    TOKEN_LEFT_BRACE,
-    TOKEN_RIGHT_BRACE,
-    TOKEN_COMMA,
-    TOKEN_DOT,
-    TOKEN_MINUS,
-    TOKEN_PLUS,
-    TOKEN_SEMICOLON,
-    TOKEN_SLASH,
-    TOKEN_STAR,
+    TOKEN_RIGHT_PAREN = 2,
+    TOKEN_LEFT_BRACE = 3,
+    TOKEN_RIGHT_BRACE = 4,
+    TOKEN_COMMA = 5,
+    TOKEN_DOT = 6,
+    TOKEN_MINUS = 7,
+    TOKEN_PLUS = 8,
+    TOKEN_SEMICOLON = 9,
+    TOKEN_SLASH = 10,
+    TOKEN_STAR = 11,
 
     // One or two character tokens.
-    TOKEN_BANG,
-    TOKEN_BANG_EQUAL,
-    TOKEN_EQUAL,
-    TOKEN_EQUAL_EQUAL,
-    TOKEN_GREATER,
-    TOKEN_GREATER_EQUAL,
-    TOKEN_LESS,
-    TOKEN_LESS_EQUAL,
+    TOKEN_BANG = 12,
+    TOKEN_BANG_EQUAL = 13,
+    TOKEN_EQUAL = 14,
+    TOKEN_EQUAL_EQUAL = 15,
+    TOKEN_GREATER = 16,
+    TOKEN_GREATER_EQUAL = 17,
+    TOKEN_LESS = 18,
+    TOKEN_LESS_EQUAL = 19,
 
     // Literals.
-    TOKEN_IDENTIFIER,
-    TOKEN_STRING,
-    TOKEN_NUMBER,
+    TOKEN_IDENTIFIER = 20,
+    TOKEN_STRING = 21,
+    TOKEN_NUMBER = 22,
 
     // Keywords.
-    TOKEN_AND,
-    TOKEN_CLASS,
-    TOKEN_ELSE,
-    TOKEN_FALSE,
-    TOKEN_FOR,
-    TOKEN_FUN,
-    TOKEN_IF,
-    TOKEN_NIL,
-    TOKEN_OR,
-    TOKEN_PRINT,
-    TOKEN_RETURN,
-    TOKEN_SUPER,
-    TOKEN_THIS,
-    TOKEN_TRUE,
-    TOKEN_VAR,
-    TOKEN_WHILE,
+    TOKEN_AND = 23,
+    TOKEN_CLASS = 24,
+    TOKEN_ELSE = 25,
+    TOKEN_FALSE = 26,
+    TOKEN_FOR = 27,
+    TOKEN_FUN = 28,
+    TOKEN_IF = 29,
+    TOKEN_NIL = 30,
+    TOKEN_OR = 31,
+    TOKEN_PRINT = 32,
+    TOKEN_RETURN = 33,
+    TOKEN_SUPER = 34,
+    TOKEN_THIS = 35,
+    TOKEN_TRUE = 36,
+    TOKEN_VAR = 37,
+    TOKEN_WHILE = 38,
 
-    TOKEN_ERROR,
-    TOKEN_EOF
+    TOKEN_ERROR = 39,
+    TOKEN_EOF = 40,
 } TokenType;
 
 typedef struct {
@@ -269,12 +269,20 @@ static void interpret_dummy(Chunk* chunk, const uint8_t values[256]) {
     }
 }
 
-static void lex_make_token(Lex* lex, Token* token, TokenType type) {
+static void lex_init_token(const Lex* lex, Token* token, TokenType type) {
     token->line = lex->line;
     token->column = lex->column;
     token->type = type;
     token->source = &lex->source[lex->pos];
     token->source_len = 1;
+}
+
+static void lex_init_token_err(const Lex* lex, Token* token, const char err[]) {
+    token->line = lex->line;
+    token->column = lex->column;
+    token->type = TOKEN_ERROR;
+    token->source = err;
+    token->source_len = strlen(err);
 }
 
 static void lex_advance(Lex* lex) {
@@ -288,56 +296,58 @@ static bool lex_is_at_end(Lex* lex) { return lex->pos >= lex->source_len; }
 
 static void lex_scan_token(Lex* lex, Token* token) {
     if (lex_is_at_end(lex)) {
-        lex_make_token(lex, token, TOKEN_EOF);
+        lex_init_token(lex, token, TOKEN_EOF);
         return;
     }
 
     const char c = lex_current(lex);
     switch (c) {
         case '{':
-            lex_make_token(lex, token, TOKEN_LEFT_BRACE);
+            lex_init_token(lex, token, TOKEN_LEFT_BRACE);
             lex_advance(lex);
             return;
         case '}':
-            lex_make_token(lex, token, TOKEN_RIGHT_BRACE);
+            lex_init_token(lex, token, TOKEN_RIGHT_BRACE);
             lex_advance(lex);
             return;
         case '(':
-            lex_make_token(lex, token, TOKEN_LEFT_PAREN);
+            lex_init_token(lex, token, TOKEN_LEFT_PAREN);
             lex_advance(lex);
             return;
         case ';':
-            lex_make_token(lex, token, TOKEN_SEMICOLON);
+            lex_init_token(lex, token, TOKEN_SEMICOLON);
             lex_advance(lex);
             return;
         case ',':
-            lex_make_token(lex, token, TOKEN_COMMA);
+            lex_init_token(lex, token, TOKEN_COMMA);
             lex_advance(lex);
             return;
         case '.':
-            lex_make_token(lex, token, TOKEN_DOT);
+            lex_init_token(lex, token, TOKEN_DOT);
             lex_advance(lex);
             return;
         case '-':
-            lex_make_token(lex, token, TOKEN_MINUS);
+            lex_init_token(lex, token, TOKEN_MINUS);
             lex_advance(lex);
             return;
         case '+':
-            lex_make_token(lex, token, TOKEN_PLUS);
+            lex_init_token(lex, token, TOKEN_PLUS);
             lex_advance(lex);
             return;
         case '*':
-            lex_make_token(lex, token, TOKEN_STAR);
+            lex_init_token(lex, token, TOKEN_STAR);
             lex_advance(lex);
             return;
         case '/':
-            lex_make_token(lex, token, TOKEN_SLASH);
+            lex_init_token(lex, token, TOKEN_SLASH);
             lex_advance(lex);
             return;
-        default:
-            fprintf(stderr, "%zu:%zu:Unknown token `%c`\n", lex->line,
-                    lex->column, c);
-            exit(1);
+        default: {
+            char* err = NULL;
+            asprintf(&err, "Unknown token `%c`", c);
+            lex_init_token_err(lex, token, err);
+            lex_advance(lex);
+        }
     }
 }
 
