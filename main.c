@@ -102,12 +102,18 @@ static void dump(Chunk* chunk, const uint8_t values[256]) {
             case OP_NEGATE:
                 printf("%zu:OP_NEGATE\n", line);
                 break;
-            case OP_ADD: {
-                const Value rhs = stack_pop(chunk);
-                const Value lhs = stack_pop(chunk);
-                // TODO: Check for overflow
-                stack_push(chunk, rhs + lhs);
-            }
+            case OP_ADD:
+                printf("%zu:OP_ADD\n", line);
+                break;
+            case OP_SUBTRACT:
+                printf("%zu:OP_SUBTRACT\n", line);
+                break;
+            case OP_MULTIPLY:
+                printf("%zu:OP_MULTIPLY\n", line);
+                break;
+            case OP_DIVIDE:
+                printf("%zu:OP_DIVIDE\n", line);
+                break;
             case OP_CONSTANT:
                 chunk->ip += 1;
                 if (!(chunk->ip < chunk->opcodes_len)) {
@@ -143,6 +149,13 @@ static void interpret(Chunk* chunk, const uint8_t values[256]) {
             case OP_NEGATE: {
                 const Value value = stack_pop(chunk);
                 stack_push(chunk, -value);
+                break;
+            }
+            case OP_ADD: {
+                const Value rhs = stack_pop(chunk);
+                const Value lhs = stack_pop(chunk);
+                // TODO: Check for overflow
+                stack_push(chunk, rhs + lhs);
                 break;
             }
             case OP_CONSTANT:
