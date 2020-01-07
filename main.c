@@ -352,6 +352,23 @@ static void lex_scan_token(Lex* lex, Token* token) {
                            lex_match(lex, '=') ? TOKEN_BANG_EQUAL : TOKEN_BANG,
                            start_pos);
             return;
+        case '=':
+            lex_init_token(
+                lex, token,
+                lex_match(lex, '=') ? TOKEN_EQUAL_EQUAL : TOKEN_EQUAL,
+                start_pos);
+            return;
+        case '<':
+            lex_init_token(lex, token,
+                           lex_match(lex, '=') ? TOKEN_LESS_EQUAL : TOKEN_LESS,
+                           start_pos);
+            return;
+        case '>':
+            lex_init_token(
+                lex, token,
+                lex_match(lex, '=') ? TOKEN_GREATER_EQUAL : TOKEN_GREATER,
+                start_pos);
+            return;
         default: {
             char* err = NULL;
             asprintf(&err, "Unknown token `%c`", c);
