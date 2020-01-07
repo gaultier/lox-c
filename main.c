@@ -292,7 +292,7 @@ static char lex_advance(Lex* lex) {
     return lex->source[lex->pos - 1];
 }
 
-static char lex_current(const Lex* lex) { return lex->source[lex->pos]; }
+static char lex_peek(const Lex* lex) { return lex->source[lex->pos]; }
 
 static bool lex_is_at_end(const Lex* lex) {
     return lex->pos == lex->source_len - 1;
@@ -303,7 +303,7 @@ static char lex_peek_next(const Lex* lex) {
 }
 
 static void lex_skip_until_newline(Lex* lex) {
-    while (!lex_is_at_end(lex) && lex_current(lex) != '\n') lex_advance(lex);
+    while (!lex_is_at_end(lex) && lex_peek(lex) != '\n') lex_advance(lex);
 }
 
 static bool lex_match(Lex* lex, char c) {
@@ -317,7 +317,7 @@ static bool lex_match(Lex* lex, char c) {
 
 static void lex_skip_whitespace(Lex* lex) {
     while (!lex_is_at_end(lex)) {
-        const char c = lex_current(lex);
+        const char c = lex_peek(lex);
         switch (c) {
             case ' ':
             case '\t':
