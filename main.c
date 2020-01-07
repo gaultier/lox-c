@@ -269,12 +269,13 @@ static void interpret_dummy(Chunk* chunk, const uint8_t values[256]) {
     }
 }
 
-static void lex_init_token(const Lex* lex, Token* token, TokenType type) {
+static void lex_init_token(const Lex* lex, Token* token, TokenType type,
+                           size_t start_pos) {
     token->line = lex->line;
     token->column = lex->column;
     token->type = type;
     token->source = &lex->source[lex->pos];
-    token->source_len = 1;
+    token->source_len = lex->pos - start_pos;
 }
 
 static void lex_init_token_err(const Lex* lex, Token* token, const char err[]) {
@@ -285,68 +286,76 @@ static void lex_init_token_err(const Lex* lex, Token* token, const char err[]) {
     token->source_len = strlen(err);
 }
 
-static void lex_advance(Lex* lex) {
+static char lex_advance(Lex* lex) {
     lex->pos += 1;
     lex->column += 1;
+    return lex->source[lex->pos - 1];
 }
 
 static char lex_current(const Lex* lex) { return lex->source[lex->pos]; }
 
-static bool lex_is_at_end(Lex* lex) { return lex->pos >= lex->source_len; }
+static bool lex_is_at_end(const Lex* lex) {
+    return lex->pos == lex->source_len - 1;
+}
+
+static bool lex_match(Lex* lex, char c) {
+    if (lex_is_at_end(lex)) return false;
+
+    if (lex->source[lex->pos + 1] != c) return false;
+
+    lex_advance(lex);
+    return true;
+}
 
 static void lex_scan_token(Lex* lex, Token* token) {
+    const size_t start_pos = lex->pos;
+
     if (lex_is_at_end(lex)) {
-        lex_init_token(lex, token, TOKEN_EOF);
+        lex_init_token(lex, token, TOKEN_EOF, start_pos);
         return;
     }
 
-    const char c = lex_current(lex);
+    const char c = lex_advance(lex);
     switch (c) {
         case '{':
-            lex_init_token(lex, token, TOKEN_LEFT_BRACE);
-            lex_advance(lex);
+            lex_init_token(lex, token, TOKEN_LEFT_BRACE, start_pos);
             return;
         case '}':
-            lex_init_token(lex, token, TOKEN_RIGHT_BRACE);
-            lex_advance(lex);
+            lex_init_token(lex, token, TOKEN_RIGHT_BRACE, start_pos);
             return;
         case '(':
-            lex_init_token(lex, token, TOKEN_LEFT_PAREN);
-            lex_advance(lex);
+            lex_init_token(lex, token, TOKEN_LEFT_PAREN, start_pos);
             return;
         case ';':
-            lex_init_token(lex, token, TOKEN_SEMICOLON);
-            lex_advance(lex);
+            lex_init_token(lex, token, TOKEN_SEMICOLON, start_pos);
             return;
         case ',':
-            lex_init_token(lex, token, TOKEN_COMMA);
-            lex_advance(lex);
+            lex_init_token(lex, token, TOKEN_COMMA, start_pos);
             return;
         case '.':
-            lex_init_token(lex, token, TOKEN_DOT);
-            lex_advance(lex);
+            lex_init_token(lex, token, TOKEN_DOT, start_pos);
             return;
         case '-':
-            lex_init_token(lex, token, TOKEN_MINUS);
-            lex_advance(lex);
+            lex_init_token(lex, token, TOKEN_MINUS, start_pos);
             return;
         case '+':
-            lex_init_token(lex, token, TOKEN_PLUS);
-            lex_advance(lex);
+            lex_init_token(lex, token, TOKEN_PLUS, start_pos);
             return;
         case '*':
-            lex_init_token(lex, token, TOKEN_STAR);
-            lex_advance(lex);
+            lex_init_token(lex, token, TOKEN_STAR, start_pos);
             return;
         case '/':
-            lex_init_token(lex, token, TOKEN_SLASH);
-            lex_advance(lex);
+            lex_init_token(lex, token, TOKEN_SLASH, start_pos);
+            return;
+        case '!':
+            lex_init_token(lex, token,
+                           lex_match(lex, '=') ? TOKEN_BANG_EQUAL : TOKEN_BANG,
+                           start_pos);
             return;
         default: {
             char* err = NULL;
             asprintf(&err, "Unknown token `%c`", c);
             lex_init_token_err(lex, token, err);
-            lex_advance(lex);
         }
     }
 }
