@@ -365,6 +365,14 @@ static void lex_string(Lex* lex, Token* token) {
 static void lex_number(Lex* lex, Token* token, const Lex* start_lex) {
     while (!lex_is_at_end(lex) && isdigit(lex_peek(lex))) lex_advance(lex);
 
+    if (!lex_is_at_end(lex) && lex_peek(lex) == '.' &&
+        isdigit(lex_peek_next(lex))) {
+        // Consume the dot
+        lex_advance(lex);
+
+        while (!lex_is_at_end(lex) && isdigit(lex_peek(lex))) lex_advance(lex);
+    }
+
     lex_init_token(lex, token, TOKEN_NUMBER, start_lex);
 }
 
