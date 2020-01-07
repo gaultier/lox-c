@@ -17,7 +17,7 @@ typedef struct {
 
 typedef enum {
     // Single-character tokens.
-    TOKEN_LEFT_PAREN,
+    TOKEN_LEFT_PAREN = 1,
     TOKEN_RIGHT_PAREN,
     TOKEN_LEFT_BRACE,
     TOKEN_RIGHT_BRACE,
@@ -277,53 +277,67 @@ static void lex_make_token(Lex* lex, Token* token, TokenType type) {
     token->source_len = 1;
 }
 
-static char lex_advance(Lex* lex) {
+static void lex_advance(Lex* lex) {
     lex->pos += 1;
     lex->column += 1;
-    return lex->source[lex->pos];
 }
 
-static bool lex_is_at_end(Lex* lex) { return !(lex->pos < lex->source_len); }
+static char lex_current(const Lex* lex) { return lex->source[lex->pos]; }
+
+static bool lex_is_at_end(Lex* lex) { return lex->pos >= lex->source_len; }
 
 static void lex_scan_token(Lex* lex, Token* token) {
-    while (!lex_is_at_end(lex)) {
-        const char c = lex_advance(lex);
-        switch (c) {
-            case '{':
-                lex_make_token(lex, token, TOKEN_LEFT_BRACE);
-                return;
-            case '}':
-                lex_make_token(lex, token, TOKEN_RIGHT_BRACE);
-                return;
-            case '(':
-                lex_make_token(lex, token, TOKEN_LEFT_PAREN);
-                return;
-            case ';':
-                lex_make_token(lex, token, TOKEN_SEMICOLON);
-                return;
-            case ',':
-                lex_make_token(lex, token, TOKEN_COMMA);
-                return;
-            case '.':
-                lex_make_token(lex, token, TOKEN_DOT);
-                return;
-            case '-':
-                lex_make_token(lex, token, TOKEN_MINUS);
-                return;
-            case '+':
-                lex_make_token(lex, token, TOKEN_PLUS);
-                return;
-            case '*':
-                lex_make_token(lex, token, TOKEN_STAR);
-                return;
-            case '/':
-                lex_make_token(lex, token, TOKEN_SLASH);
-                return;
-            default:
-                fprintf(stderr, "%zu:%zu:Unknown token `%c`\n", lex->line,
-                        lex->column, c);
-                exit(1);
-        }
+    if (lex_is_at_end(lex)) {
+        lex_make_token(lex, token, TOKEN_EOF);
+        return;
+    }
+
+    const char c = lex_current(lex);
+    switch (c) {
+        case '{':
+            lex_make_token(lex, token, TOKEN_LEFT_BRACE);
+            lex_advance(lex);
+            return;
+        case '}':
+            lex_make_token(lex, token, TOKEN_RIGHT_BRACE);
+            lex_advance(lex);
+            return;
+        case '(':
+            lex_make_token(lex, token, TOKEN_LEFT_PAREN);
+            lex_advance(lex);
+            return;
+        case ';':
+            lex_make_token(lex, token, TOKEN_SEMICOLON);
+            lex_advance(lex);
+            return;
+        case ',':
+            lex_make_token(lex, token, TOKEN_COMMA);
+            lex_advance(lex);
+            return;
+        case '.':
+            lex_make_token(lex, token, TOKEN_DOT);
+            lex_advance(lex);
+            return;
+        case '-':
+            lex_make_token(lex, token, TOKEN_MINUS);
+            lex_advance(lex);
+            return;
+        case '+':
+            lex_make_token(lex, token, TOKEN_PLUS);
+            lex_advance(lex);
+            return;
+        case '*':
+            lex_make_token(lex, token, TOKEN_STAR);
+            lex_advance(lex);
+            return;
+        case '/':
+            lex_make_token(lex, token, TOKEN_SLASH);
+            lex_advance(lex);
+            return;
+        default:
+            fprintf(stderr, "%zu:%zu:Unknown token `%c`\n", lex->line,
+                    lex->column, c);
+            exit(1);
     }
 }
 
@@ -332,16 +346,20 @@ static void compile(const char* source, size_t source_len) {
         .source = source,
         .source_len = source_len,
         .line = 1,
-        .column = 0,
-        .pos = SIZE_MAX,
+        .column = 1,
+        .pos = 0,
     };
 
-    Token token = {0};
-    lex_scan_token(&lex, &token);
+    while (true) {
+        Token token = {0};
+        lex_scan_token(&lex, &token);
 
-    printf("%zu:%zu:type=%d source=`", token.line, token.column, token.type);
-    fwrite(token.source, 1, token.source_len, stdout);
-    printf("`\n");
+        printf("%zu:%zu:type=%d source=`", token.line, token.column,
+               token.type);
+        fwrite(token.source, 1, token.source_len, stdout);
+        printf("`\n");
+        if (token.type == TOKEN_EOF) return;
+    }
 }
 
 static void interpret(const char* source, size_t source_len) {
