@@ -6,6 +6,14 @@
 
 /* #include "buf.h" */
 
+typedef struct {
+    const char* source;
+    size_t source_len;
+    size_t line;
+    size_t column;
+    size_t pos;
+} Lex;
+
 typedef double Value;
 
 #define VALUES_MAX 256
@@ -135,7 +143,7 @@ static void dump(Chunk* chunk, const uint8_t values[256]) {
     }
 }
 
-static void interpret(Chunk* chunk, const uint8_t values[256]) {
+static void interpret_dummy(Chunk* chunk, const uint8_t values[256]) {
     while (chunk->ip < chunk->opcodes_len) {
         const uint8_t opcode = chunk->opcodes[chunk->ip];
         const size_t line = chunk->lines[chunk->ip];
@@ -201,31 +209,37 @@ static void interpret(Chunk* chunk, const uint8_t values[256]) {
     }
 }
 
+static void scan(Lex* lex) {}
+
+static void compile(const char* source, size_t source_len) {
+    Lex lex = {
+        .source = source,
+        .source_len = source_len,
+        .line = 1,
+        .column = 1,
+        .pos = 0,
+    };
+    scan(&lex);
+}
+
+static void interpret(const char* source, size_t source_len) {
+    compile(source, source_len);
+}
+
 int main(int argc, char* argv[]) {
     if (argc != 3) {
         printf("Usage: %s dump|run filename\n", argv[0]);
         return 0;
     }
-    char* content = NULL;
-    size_t content_len = 0;
-    read_file(argv[2], &content, &content_len);
+    char* source = NULL;
+    size_t source_len = 0;
+    read_file(argv[2], &source, &source_len);
 
-    const uint8_t opcodes[] = {OP_CONSTANT, 0,         OP_NEGATE, OP_CONSTANT,
-                               1,           OP_DIVIDE, OP_RETURN};
-    const size_t lines[] = {1, 2, 3, 4, 5, 6, 7};
-
-    Chunk chunk = {.opcodes = opcodes,
-                   .opcodes_len = sizeof(opcodes) / sizeof(opcodes[0]),
-                   .lines = lines,
-                   .lines_len = sizeof(lines) / sizeof(lines[0])};
-    uint8_t values[VALUES_MAX] = {0xaa};
-    values[0] = 42;
-    values[1] = 2;
-
-    if (strcmp(argv[1], "dump") == 0)
+    /*if (strcmp(argv[1], "dump") == 0)
         dump(&chunk, values);
-    else if (strcmp(argv[1], "run") == 0)
-        interpret(&chunk, values);
+    else */
+    if (strcmp(argv[1], "run") == 0)
+        interpret(source, source_len);
     else
         printf("Usage: %s dump|run filename\n", argv[0]);
 }
