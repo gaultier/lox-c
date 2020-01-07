@@ -270,12 +270,12 @@ static void interpret_dummy(Chunk* chunk, const uint8_t values[256]) {
 }
 
 static void lex_init_token(const Lex* lex, Token* token, TokenType type,
-                           size_t start_pos, size_t start_column) {
-    token->line = lex->line;
-    token->column = start_column;
+                           const Lex* start_lex) {
+    token->line = start_lex->line;
+    token->column = start_lex->column;
     token->type = type;
-    token->source = &lex->source[start_pos];
-    token->source_len = lex->pos - start_pos;
+    token->source = &lex->source[start_lex->pos];
+    token->source_len = lex->pos - start_lex->pos;
 }
 
 static void lex_init_token_err(const Lex* lex, Token* token, const char err[]) {
@@ -315,6 +315,12 @@ static bool lex_match(Lex* lex, char c) {
     return true;
 }
 
+static void lex_newline(Lex* lex) {
+    lex->pos += 1;
+    lex->column = 1;
+    lex->line += 1;
+}
+
 static void lex_skip_whitespace(Lex* lex) {
     while (!lex_is_at_end(lex)) {
         const char c = lex_peek(lex);
@@ -325,9 +331,7 @@ static void lex_skip_whitespace(Lex* lex) {
                 lex_advance(lex);
                 break;
             case '\n':
-                lex->pos += 1;
-                lex->column = 1;
-                lex->line += 1;
+                lex_newline(lex);
                 break;
             case '/':
                 if (lex_peek_next(lex) == '/') lex_skip_until_char(lex, '\n');
@@ -338,15 +342,20 @@ static void lex_skip_whitespace(Lex* lex) {
     }
 }
 
-static void lex_string(Lex* lex, Token* token, size_t start_pos,
-                       size_t start_column) {
-    while (!lex_is_at_end(lex) && lex_peek(lex) != '"') lex_advance(lex);
+static void lex_string(Lex* lex, Token* token) {
+    const Lex start_lex = *lex;
+    while (!lex_is_at_end(lex) && lex_peek(lex) != '"') {
+        if (lex_peek(lex) == '\n')
+            lex_newline(lex);
+        else
+            lex_advance(lex);
+    }
 
     if (lex_is_at_end(lex)) {
         lex_init_token_err(lex, token, "Unterminated string");
         return;
     }
-    lex_init_token(lex, token, TOKEN_STRING, start_pos, start_column);
+    lex_init_token(lex, token, TOKEN_STRING, &start_lex);
 
     // Consume closing quote
     lex_advance(lex);
@@ -354,74 +363,69 @@ static void lex_string(Lex* lex, Token* token, size_t start_pos,
 
 static void lex_scan_token(Lex* lex, Token* token) {
     lex_skip_whitespace(lex);
-    const size_t start_pos = lex->pos;
-    const size_t start_column = lex->column;
+    const Lex start_lex = *lex;
 
     if (lex_is_at_end(lex)) {
-        lex_init_token(lex, token, TOKEN_EOF, start_pos, start_column);
+        lex_init_token(lex, token, TOKEN_EOF, &start_lex);
         return;
     }
 
     const char c = lex_advance(lex);
     switch (c) {
         case '{':
-            lex_init_token(lex, token, TOKEN_LEFT_BRACE, start_pos,
-                           start_column);
+            lex_init_token(lex, token, TOKEN_LEFT_BRACE, &start_lex);
             return;
         case '}':
-            lex_init_token(lex, token, TOKEN_RIGHT_BRACE, start_pos,
-                           start_column);
+            lex_init_token(lex, token, TOKEN_RIGHT_BRACE, &start_lex);
             return;
         case '(':
-            lex_init_token(lex, token, TOKEN_LEFT_PAREN, start_pos,
-                           start_column);
+            lex_init_token(lex, token, TOKEN_LEFT_PAREN, &start_lex);
             return;
         case ';':
-            lex_init_token(lex, token, TOKEN_SEMICOLON, start_pos,
-                           start_column);
+            lex_init_token(lex, token, TOKEN_SEMICOLON, &start_lex);
             return;
         case ',':
-            lex_init_token(lex, token, TOKEN_COMMA, start_pos, start_column);
+            lex_init_token(lex, token, TOKEN_COMMA, &start_lex);
             return;
         case '.':
-            lex_init_token(lex, token, TOKEN_DOT, start_pos, start_column);
+            lex_init_token(lex, token, TOKEN_DOT, &start_lex);
             return;
         case '-':
-            lex_init_token(lex, token, TOKEN_MINUS, start_pos, start_column);
+            lex_init_token(lex, token, TOKEN_MINUS, &start_lex);
             return;
         case '+':
-            lex_init_token(lex, token, TOKEN_PLUS, start_pos, start_column);
+            lex_init_token(lex, token, TOKEN_PLUS, &start_lex);
             return;
         case '*':
-            lex_init_token(lex, token, TOKEN_STAR, start_pos, start_column);
+            lex_init_token(lex, token, TOKEN_STAR, &start_lex);
             return;
         case '/':
-            lex_init_token(lex, token, TOKEN_SLASH, start_pos, start_column);
+            lex_init_token(lex, token, TOKEN_SLASH, &start_lex);
             return;
         case '!':
             lex_init_token(lex, token,
                            lex_match(lex, '=') ? TOKEN_BANG_EQUAL : TOKEN_BANG,
-                           start_pos, start_column);
+                           &start_lex);
             return;
         case '=':
             lex_init_token(
                 lex, token,
                 lex_match(lex, '=') ? TOKEN_EQUAL_EQUAL : TOKEN_EQUAL,
-                start_pos, start_column);
+                &start_lex);
             return;
         case '<':
             lex_init_token(lex, token,
                            lex_match(lex, '=') ? TOKEN_LESS_EQUAL : TOKEN_LESS,
-                           start_pos, start_column);
+                           &start_lex);
             return;
         case '>':
             lex_init_token(
                 lex, token,
                 lex_match(lex, '=') ? TOKEN_GREATER_EQUAL : TOKEN_GREATER,
-                start_pos, start_column);
+                &start_lex);
             return;
         case '"':
-            lex_string(lex, token, start_pos + 1, start_column);
+            lex_string(lex, token);
             return;
         default: {
             char* err = NULL;
