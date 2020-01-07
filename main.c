@@ -210,8 +210,8 @@ int main(int argc, char* argv[]) {
     size_t content_len = 0;
     read_file(argv[2], &content, &content_len);
 
-    const uint8_t opcodes[] = {OP_CONSTANT, 0,      OP_NEGATE, OP_CONSTANT,
-                               1,           OP_ADD, OP_RETURN};
+    const uint8_t opcodes[] = {OP_CONSTANT, 0,         OP_NEGATE, OP_CONSTANT,
+                               1,           OP_DIVIDE, OP_RETURN};
     const size_t lines[] = {1, 2, 3, 4, 5, 6, 7};
 
     Chunk chunk = {.opcodes = opcodes,
