@@ -268,21 +268,24 @@ static void interpret_dummy(Chunk* chunk, const uint8_t values[256]) {
     }
 }
 
+static void lex_make_token(Lex* lex, Token* token, TokenType type) {
+    token->line = lex->line;
+    token->column = lex->column;
+    token->type = type;
+    token->source = &lex->source[lex->pos];
+    token->source_len = 1;
+
+    lex->pos += 1;
+    lex->column += 1;
+}
+
 static void lex_scan_token(Lex* lex, Token* token) {
     while (lex->pos < lex->source_len) {
         const char c = lex->source[lex->pos];
         switch (c) {
-            case '{': {
-                token->line = lex->line;
-                token->column = lex->column;
-                token->type = TOKEN_LEFT_BRACE;
-                token->source = &lex->source[lex->pos];
-                token->source_len = 1;
-
-                lex->pos += 1;
-                lex->column += 1;
+            case '{':
+                lex_make_token(lex, token, TOKEN_LEFT_BRACE);
                 break;
-            }
             default:
                 fprintf(stderr, "%zu:%zu:Unknown token `%c`\n", lex->line,
                         lex->column, c);
