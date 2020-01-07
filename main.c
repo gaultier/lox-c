@@ -16,6 +16,10 @@ typedef enum {
     OP_RETURN = 0,
     OP_CONSTANT = 1,
     OP_NEGATE = 2,
+    OP_ADD = 3,
+    OP_SUBTRACT = 4,
+    OP_MULTIPLY = 5,
+    OP_DIVIDE = 6,
 } OpCode;
 
 typedef struct {
@@ -98,6 +102,12 @@ static void dump(Chunk* chunk, const uint8_t values[256]) {
             case OP_NEGATE:
                 printf("%zu:OP_NEGATE\n", line);
                 break;
+            case OP_ADD: {
+                const Value rhs = stack_pop(chunk);
+                const Value lhs = stack_pop(chunk);
+                // TODO: Check for overflow
+                stack_push(chunk, rhs + lhs);
+            }
             case OP_CONSTANT:
                 chunk->ip += 1;
                 if (!(chunk->ip < chunk->opcodes_len)) {
@@ -165,8 +175,9 @@ int main(int argc, char* argv[]) {
     size_t content_len = 0;
     read_file(argv[2], &content, &content_len);
 
-    const uint8_t opcodes[] = {OP_CONSTANT, 0, OP_NEGATE, OP_RETURN};
-    const size_t lines[] = {0, 1, 2, 3};
+    const uint8_t opcodes[] = {OP_CONSTANT, 0,      OP_NEGATE, OP_CONSTANT,
+                               1,           OP_ADD, OP_RETURN};
+    const size_t lines[] = {0, 1, 2, 3, 4, 5, 6};
 
     Chunk chunk = {.opcodes = opcodes,
                    .opcodes_len = sizeof(opcodes) / sizeof(opcodes[0]),
@@ -174,6 +185,7 @@ int main(int argc, char* argv[]) {
                    .lines_len = sizeof(lines) / sizeof(lines[0])};
     uint8_t values[VALUES_MAX] = {0xaa};
     values[0] = 42;
+    values[1] = 2;
 
     if (strcmp(argv[1], "dump") == 0)
         dump(&chunk, values);
