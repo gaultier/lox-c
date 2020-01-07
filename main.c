@@ -14,6 +14,65 @@ typedef struct {
     size_t pos;
 } Lex;
 
+typedef enum {
+    // Single-character tokens.
+    TOKEN_LEFT_PAREN,
+    TOKEN_RIGHT_PAREN,
+    TOKEN_LEFT_BRACE,
+    TOKEN_RIGHT_BRACE,
+    TOKEN_COMMA,
+    TOKEN_DOT,
+    TOKEN_MINUS,
+    TOKEN_PLUS,
+    TOKEN_SEMICOLON,
+    TOKEN_SLASH,
+    TOKEN_STAR,
+
+    // One or two character tokens.
+    TOKEN_BANG,
+    TOKEN_BANG_EQUAL,
+    TOKEN_EQUAL,
+    TOKEN_EQUAL_EQUAL,
+    TOKEN_GREATER,
+    TOKEN_GREATER_EQUAL,
+    TOKEN_LESS,
+    TOKEN_LESS_EQUAL,
+
+    // Literals.
+    TOKEN_IDENTIFIER,
+    TOKEN_STRING,
+    TOKEN_NUMBER,
+
+    // Keywords.
+    TOKEN_AND,
+    TOKEN_CLASS,
+    TOKEN_ELSE,
+    TOKEN_FALSE,
+    TOKEN_FOR,
+    TOKEN_FUN,
+    TOKEN_IF,
+    TOKEN_NIL,
+    TOKEN_OR,
+    TOKEN_PRINT,
+    TOKEN_RETURN,
+    TOKEN_SUPER,
+    TOKEN_THIS,
+    TOKEN_TRUE,
+    TOKEN_VAR,
+    TOKEN_WHILE,
+
+    TOKEN_ERROR,
+    TOKEN_EOF
+} TokenType;
+
+typedef struct {
+    size_t line;
+    size_t column;
+    const char* source;
+    size_t source_len;
+    TokenType type;
+} Token;
+
 typedef double Value;
 
 #define VALUES_MAX 256
@@ -209,7 +268,28 @@ static void interpret_dummy(Chunk* chunk, const uint8_t values[256]) {
     }
 }
 
-static void scan(Lex* lex) {}
+static void lex_scan_token(Lex* lex, Token* token) {
+    while (lex->pos < lex->source_len) {
+        const char c = lex->source[lex->pos];
+        switch (c) {
+            case '{': {
+                token->line = lex->line;
+                token->column = lex->column;
+                token->type = TOKEN_LEFT_BRACE;
+                token->source = &lex->source[lex->pos];
+                token->source_len = 1;
+
+                lex->pos += 1;
+                lex->column += 1;
+                break;
+            }
+            default:
+                fprintf(stderr, "%zu:%zu:Unknown token `%c`\n", lex->line,
+                        lex->column, c);
+                exit(1);
+        }
+    }
+}
 
 static void compile(const char* source, size_t source_len) {
     Lex lex = {
@@ -219,7 +299,13 @@ static void compile(const char* source, size_t source_len) {
         .column = 1,
         .pos = 0,
     };
-    scan(&lex);
+
+    Token token = {0};
+    lex_scan_token(&lex, &token);
+
+    printf("%zu:%zu:type=%d source=`", token.line, token.column, token.type);
+    fwrite(token.source, 1, token.source_len, stdout);
+    printf("`\n");
 }
 
 static void interpret(const char* source, size_t source_len) {
