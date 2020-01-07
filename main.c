@@ -8,6 +8,8 @@
 
 typedef double Value;
 
+static const size_t VALUES_MAX = 256;
+
 typedef enum {
     OP_RETURN = 0,
     OP_CONSTANT = 1,
@@ -16,10 +18,11 @@ typedef enum {
 typedef struct {
     const uint8_t* opcodes;
     size_t opcodes_len;
-    size_t lines;
+    size_t* lines;
+    size_t lines_len;
 } Chunk;
 
-void read_file(const char path[], char** content, size_t* content_len) {
+static void read_file(const char path[], char** content, size_t* content_len) {
     FILE* file = NULL;
 
     if ((file = fopen(path, "r")) == NULL) {
@@ -53,7 +56,7 @@ void read_file(const char path[], char** content, size_t* content_len) {
     fclose(file);
 }
 
-void interpret(const Chunk* chunk, const uint8_t* values, size_t values_len) {
+static void interpret(const Chunk* chunk, const uint8_t values[256]) {
     size_t i = 0;
     while (i < chunk->opcodes_len) {
         switch (chunk->opcodes[i]) {
@@ -68,7 +71,7 @@ void interpret(const Chunk* chunk, const uint8_t* values, size_t values_len) {
                     exit(EINVAL);
                 }
                 const uint8_t value_index = chunk->opcodes[i];
-                if (!(value_index < values_len)) {
+                if (!(value_index < VALUES_MAX)) {
                     fprintf(stderr,
                             "Malformed opcode: OP_CONSTANT operand referring "
                             "to out-of-bounds value index: %d\n",
@@ -95,5 +98,5 @@ int main(int argc, char* argv[]) {
     const uint8_t opcodes[] = {OP_CONSTANT, 0, OP_RETURN};
     const Chunk chunk = {.opcodes = opcodes, .opcodes_len = 3};
     const uint8_t values[] = {42};
-    interpret(&chunk, values, 1);
+    interpret(&chunk, values);
 }
