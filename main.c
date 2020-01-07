@@ -275,18 +275,50 @@ static void lex_make_token(Lex* lex, Token* token, TokenType type) {
     token->type = type;
     token->source = &lex->source[lex->pos];
     token->source_len = 1;
-
-    lex->pos += 1;
-    lex->column += 1;
 }
 
+static char lex_advance(Lex* lex) {
+    lex->pos += 1;
+    lex->column += 1;
+    return lex->source[lex->pos];
+}
+
+static bool lex_is_at_end(Lex* lex) { return !(lex->pos < lex->source_len); }
+
 static void lex_scan_token(Lex* lex, Token* token) {
-    while (lex->pos < lex->source_len) {
-        const char c = lex->source[lex->pos];
+    while (!lex_is_at_end(lex)) {
+        const char c = lex_advance(lex);
         switch (c) {
             case '{':
                 lex_make_token(lex, token, TOKEN_LEFT_BRACE);
-                break;
+                return;
+            case '}':
+                lex_make_token(lex, token, TOKEN_RIGHT_BRACE);
+                return;
+            case '(':
+                lex_make_token(lex, token, TOKEN_LEFT_PAREN);
+                return;
+            case ';':
+                lex_make_token(lex, token, TOKEN_SEMICOLON);
+                return;
+            case ',':
+                lex_make_token(lex, token, TOKEN_COMMA);
+                return;
+            case '.':
+                lex_make_token(lex, token, TOKEN_DOT);
+                return;
+            case '-':
+                lex_make_token(lex, token, TOKEN_MINUS);
+                return;
+            case '+':
+                lex_make_token(lex, token, TOKEN_PLUS);
+                return;
+            case '*':
+                lex_make_token(lex, token, TOKEN_STAR);
+                return;
+            case '/':
+                lex_make_token(lex, token, TOKEN_SLASH);
+                return;
             default:
                 fprintf(stderr, "%zu:%zu:Unknown token `%c`\n", lex->line,
                         lex->column, c);
@@ -300,8 +332,8 @@ static void compile(const char* source, size_t source_len) {
         .source = source,
         .source_len = source_len,
         .line = 1,
-        .column = 1,
-        .pos = 0,
+        .column = 0,
+        .pos = SIZE_MAX,
     };
 
     Token token = {0};
