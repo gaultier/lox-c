@@ -1,5 +1,5 @@
 .POSIX:
-CFLAGS = -std=c99 -Wall -Wextra -O3 -g3 -Wpedantic -Wcovered-switch-default
+CFLAGS = -std=c99 -O3 -g3 -Weverything
 
 lox: main.c
 	$(CC) $(CFLAGS) -o $@ $^ 

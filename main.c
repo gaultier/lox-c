@@ -141,7 +141,7 @@ static void read_file(const char path[], char** content, size_t* content_len) {
                 path, errno, strerror(errno));
         exit(errno);
     }
-    const long file_size = ftell(file);
+    const size_t file_size = (size_t)ftell(file);
 
     rewind(file);
 
