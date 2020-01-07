@@ -10,6 +10,8 @@ typedef double Value;
 
 #define VALUES_MAX 256
 
+#define STACK_MAX 256
+
 typedef enum {
     OP_RETURN = 0,
     OP_CONSTANT = 1,
@@ -21,6 +23,8 @@ typedef struct {
     const size_t* lines;
     size_t lines_len;
     size_t ip;
+    Value stack[STACK_MAX];
+    size_t stack_len;
 } Chunk;
 
 typedef enum {
@@ -28,6 +32,30 @@ typedef enum {
     INTERPRET_COMPILE_ERROR,
     INTERPRET_RUNTIME_ERROR
 } InterpretResult;
+
+static void stack_push(Chunk* chunk, Value v) {
+    chunk->stack_len += 1;
+    if (!(chunk->stack_len < STACK_MAX)) {
+        fprintf(stderr, "%zu:Maximum stack size reached: %d\n",
+                chunk->lines[chunk->ip], STACK_MAX);
+        exit(ENOMEM);
+    }
+    chunk->stack[chunk->stack_len - 1] = v;
+}
+
+static Value stack_pop(Chunk* chunk) {
+    if (chunk->stack_len == 0) {
+        fprintf(stderr, "%zu:Cannot pop from an empty stack\n",
+                chunk->lines[chunk->ip]);
+        exit(EINVAL);
+    }
+
+    const Value value = chunk->stack[chunk->stack_len - 1];
+    chunk->stack[chunk->stack_len - 1] = 0xaa;
+    chunk->stack_len -= 1;
+
+    return value;
+}
 
 static void read_file(const char path[], char** content, size_t* content_len) {
     FILE* file = NULL;
@@ -99,8 +127,11 @@ static void interpret(Chunk* chunk, const uint8_t values[256]) {
         const size_t line = chunk->lines[chunk->ip];
 
         switch (opcode) {
-            case OP_RETURN:
-                break;
+            case OP_RETURN: {
+                const Value value = stack_pop(chunk);
+                printf("Stack value: %f\n", value);
+                return;
+            }
             case OP_CONSTANT:
                 chunk->ip += 1;
                 if (!(chunk->ip < chunk->opcodes_len)) {
@@ -112,7 +143,7 @@ static void interpret(Chunk* chunk, const uint8_t values[256]) {
                 }
                 const uint8_t value_index = chunk->opcodes[chunk->ip];
                 const Value value = values[value_index];
-                printf("OP_CONSTANT: %f\n", value);
+                stack_push(chunk, value);
                 break;
             default:
                 fprintf(stderr, "%zu:Unknown opcode %d\n", line, opcode);
