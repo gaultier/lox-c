@@ -270,9 +270,9 @@ static void interpret_dummy(Chunk* chunk, const uint8_t values[256]) {
 }
 
 static void lex_init_token(const Lex* lex, Token* token, TokenType type,
-                           size_t start_pos) {
+                           size_t start_pos, size_t start_column) {
     token->line = lex->line;
-    token->column = lex->column;
+    token->column = start_column;
     token->type = type;
     token->source = &lex->source[start_pos];
     token->source_len = lex->pos - start_pos;
@@ -318,7 +318,7 @@ static void lex_skip_whitespace(Lex* lex) {
                 break;
             case '\n':
                 lex->pos += 1;
-                lex->column = 0;
+                lex->column = 1;
                 lex->line += 1;
                 break;
             default:
@@ -330,65 +330,70 @@ static void lex_skip_whitespace(Lex* lex) {
 static void lex_scan_token(Lex* lex, Token* token) {
     lex_skip_whitespace(lex);
     const size_t start_pos = lex->pos;
+    const size_t start_column = lex->column;
 
     if (lex_is_at_end(lex)) {
-        lex_init_token(lex, token, TOKEN_EOF, start_pos);
+        lex_init_token(lex, token, TOKEN_EOF, start_pos, start_column);
         return;
     }
 
     const char c = lex_advance(lex);
     switch (c) {
         case '{':
-            lex_init_token(lex, token, TOKEN_LEFT_BRACE, start_pos);
+            lex_init_token(lex, token, TOKEN_LEFT_BRACE, start_pos,
+                           start_column);
             return;
         case '}':
-            lex_init_token(lex, token, TOKEN_RIGHT_BRACE, start_pos);
+            lex_init_token(lex, token, TOKEN_RIGHT_BRACE, start_pos,
+                           start_column);
             return;
         case '(':
-            lex_init_token(lex, token, TOKEN_LEFT_PAREN, start_pos);
+            lex_init_token(lex, token, TOKEN_LEFT_PAREN, start_pos,
+                           start_column);
             return;
         case ';':
-            lex_init_token(lex, token, TOKEN_SEMICOLON, start_pos);
+            lex_init_token(lex, token, TOKEN_SEMICOLON, start_pos,
+                           start_column);
             return;
         case ',':
-            lex_init_token(lex, token, TOKEN_COMMA, start_pos);
+            lex_init_token(lex, token, TOKEN_COMMA, start_pos, start_column);
             return;
         case '.':
-            lex_init_token(lex, token, TOKEN_DOT, start_pos);
+            lex_init_token(lex, token, TOKEN_DOT, start_pos, start_column);
             return;
         case '-':
-            lex_init_token(lex, token, TOKEN_MINUS, start_pos);
+            lex_init_token(lex, token, TOKEN_MINUS, start_pos, start_column);
             return;
         case '+':
-            lex_init_token(lex, token, TOKEN_PLUS, start_pos);
+            lex_init_token(lex, token, TOKEN_PLUS, start_pos, start_column);
             return;
         case '*':
-            lex_init_token(lex, token, TOKEN_STAR, start_pos);
+            lex_init_token(lex, token, TOKEN_STAR, start_pos, start_column);
             return;
         case '/':
-            lex_init_token(lex, token, TOKEN_SLASH, start_pos);
+            lex_init_token(lex, token, TOKEN_SLASH, start_pos, start_column);
             return;
         case '!':
             lex_init_token(lex, token,
                            lex_match(lex, '=') ? TOKEN_BANG_EQUAL : TOKEN_BANG,
-                           start_pos);
+                           start_pos, start_column);
             return;
         case '=':
             lex_init_token(
                 lex, token,
                 lex_match(lex, '=') ? TOKEN_EQUAL_EQUAL : TOKEN_EQUAL,
-                start_pos);
+                start_pos, start_column);
             return;
         case '<':
             lex_init_token(lex, token,
                            lex_match(lex, '=') ? TOKEN_LESS_EQUAL : TOKEN_LESS,
-                           start_pos);
+                           start_pos, start_column);
             return;
         case '>':
             lex_init_token(
                 lex, token,
                 lex_match(lex, '=') ? TOKEN_GREATER_EQUAL : TOKEN_GREATER,
-                start_pos);
+                start_pos, start_column);
             return;
         default: {
             char* err = NULL;
@@ -403,7 +408,7 @@ static void compile(const char* source, size_t source_len) {
         .source = source,
         .source_len = source_len,
         .line = 1,
-        .column = 0,
+        .column = 1,
         .pos = 0,
     };
 
