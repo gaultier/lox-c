@@ -274,7 +274,7 @@ static void lex_init_token(const Lex* lex, Token* token, TokenType type,
     token->line = lex->line;
     token->column = lex->column;
     token->type = type;
-    token->source = &lex->source[lex->pos];
+    token->source = &lex->source[start_pos];
     token->source_len = lex->pos - start_pos;
 }
 
@@ -301,7 +301,7 @@ static bool lex_is_at_end(const Lex* lex) {
 static bool lex_match(Lex* lex, char c) {
     if (lex_is_at_end(lex)) return false;
 
-    if (lex->source[lex->pos + 1] != c) return false;
+    if (lex->source[lex->pos] != c) return false;
 
     lex_advance(lex);
     return true;
@@ -365,7 +365,7 @@ static void compile(const char* source, size_t source_len) {
         .source = source,
         .source_len = source_len,
         .line = 1,
-        .column = 1,
+        .column = 0,
         .pos = 0,
     };
 
