@@ -29,16 +29,16 @@ typedef struct {
     size_t lines_len;
     size_t ip;
     Value stack[STACK_MAX];
-    size_t stack_len;
+    uint8_t stack_len;
 } Chunk;
 
 static void stack_push(Chunk* chunk, Value v) {
-    chunk->stack_len += 1;
-    if (!(chunk->stack_len < STACK_MAX)) {
+    if (chunk->stack_len == (STACK_MAX - 1)) {
         fprintf(stderr, "%zu:Maximum stack size reached: %d\n",
                 chunk->lines[chunk->ip], STACK_MAX);
         exit(ENOMEM);
     }
+    chunk->stack_len += 1;
     chunk->stack[chunk->stack_len - 1] = v;
 }
 
@@ -143,7 +143,8 @@ static void interpret(Chunk* chunk, const uint8_t values[256]) {
         switch (opcode) {
             case OP_RETURN: {
                 const Value value = stack_pop(chunk);
-                printf("Stack top value: %f\n", value);
+                printf("Stack size=%hhu top value=%f\n", chunk->stack_len,
+                       value);
                 return;
             }
             case OP_NEGATE: {
@@ -155,28 +156,28 @@ static void interpret(Chunk* chunk, const uint8_t values[256]) {
                 const Value rhs = stack_pop(chunk);
                 const Value lhs = stack_pop(chunk);
                 // TODO: Check for overflow
-                stack_push(chunk, rhs + lhs);
+                stack_push(chunk, lhs + rhs);
                 break;
             }
             case OP_SUBTRACT: {
                 const Value rhs = stack_pop(chunk);
                 const Value lhs = stack_pop(chunk);
                 // TODO: Check for underflow
-                stack_push(chunk, rhs - lhs);
+                stack_push(chunk, lhs - rhs);
                 break;
             }
             case OP_MULTIPLY: {
                 const Value rhs = stack_pop(chunk);
                 const Value lhs = stack_pop(chunk);
                 // TODO: Check for overflow
-                stack_push(chunk, rhs * lhs);
+                stack_push(chunk, lhs * rhs);
                 break;
             }
             case OP_DIVIDE: {
                 const Value rhs = stack_pop(chunk);
                 const Value lhs = stack_pop(chunk);
                 // TODO: Check for 0
-                stack_push(chunk, rhs / lhs);
+                stack_push(chunk, lhs / rhs);
                 break;
             }
             case OP_CONSTANT:
@@ -209,9 +210,9 @@ int main(int argc, char* argv[]) {
     size_t content_len = 0;
     read_file(argv[2], &content, &content_len);
 
-    const uint8_t opcodes[] = {OP_CONSTANT, 0,           OP_NEGATE, OP_CONSTANT,
-                               1,           OP_SUBTRACT, OP_RETURN};
-    const size_t lines[] = {0, 1, 2, 3, 4, 5, 6};
+    const uint8_t opcodes[] = {OP_CONSTANT, 0,      OP_NEGATE, OP_CONSTANT,
+                               1,           OP_ADD, OP_RETURN};
+    const size_t lines[] = {1, 2, 3, 4, 5, 6, 7};
 
     Chunk chunk = {.opcodes = opcodes,
                    .opcodes_len = sizeof(opcodes) / sizeof(opcodes[0]),
