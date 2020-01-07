@@ -338,6 +338,20 @@ static void lex_skip_whitespace(Lex* lex) {
     }
 }
 
+static void lex_string(Lex* lex, Token* token, size_t start_pos,
+                       size_t start_column) {
+    while (!lex_is_at_end(lex) && lex_peek(lex) != '"') lex_advance(lex);
+
+    if (lex_is_at_end(lex)) {
+        lex_init_token_err(lex, token, "Unterminated string");
+        return;
+    }
+    lex_init_token(lex, token, TOKEN_STRING, start_pos, start_column);
+
+    // Consume closing quote
+    lex_advance(lex);
+}
+
 static void lex_scan_token(Lex* lex, Token* token) {
     lex_skip_whitespace(lex);
     const size_t start_pos = lex->pos;
@@ -405,6 +419,9 @@ static void lex_scan_token(Lex* lex, Token* token) {
                 lex, token,
                 lex_match(lex, '=') ? TOKEN_GREATER_EQUAL : TOKEN_GREATER,
                 start_pos, start_column);
+            return;
+        case '"':
+            lex_string(lex, token, start_pos + 1, start_column);
             return;
         default: {
             char* err = NULL;
