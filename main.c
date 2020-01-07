@@ -158,6 +158,27 @@ static void interpret(Chunk* chunk, const uint8_t values[256]) {
                 stack_push(chunk, rhs + lhs);
                 break;
             }
+            case OP_SUBTRACT: {
+                const Value rhs = stack_pop(chunk);
+                const Value lhs = stack_pop(chunk);
+                // TODO: Check for underflow
+                stack_push(chunk, rhs - lhs);
+                break;
+            }
+            case OP_MULTIPLY: {
+                const Value rhs = stack_pop(chunk);
+                const Value lhs = stack_pop(chunk);
+                // TODO: Check for overflow
+                stack_push(chunk, rhs * lhs);
+                break;
+            }
+            case OP_DIVIDE: {
+                const Value rhs = stack_pop(chunk);
+                const Value lhs = stack_pop(chunk);
+                // TODO: Check for 0
+                stack_push(chunk, rhs / lhs);
+                break;
+            }
             case OP_CONSTANT:
                 chunk->ip += 1;
                 if (!(chunk->ip < chunk->opcodes_len)) {
@@ -188,8 +209,8 @@ int main(int argc, char* argv[]) {
     size_t content_len = 0;
     read_file(argv[2], &content, &content_len);
 
-    const uint8_t opcodes[] = {OP_CONSTANT, 0,      OP_NEGATE, OP_CONSTANT,
-                               1,           OP_ADD, OP_RETURN};
+    const uint8_t opcodes[] = {OP_CONSTANT, 0,           OP_NEGATE, OP_CONSTANT,
+                               1,           OP_SUBTRACT, OP_RETURN};
     const size_t lines[] = {0, 1, 2, 3, 4, 5, 6};
 
     Chunk chunk = {.opcodes = opcodes,
