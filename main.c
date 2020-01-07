@@ -302,8 +302,8 @@ static char lex_peek_next(const Lex* lex) {
     return lex_is_at_end(lex) ? '\0' : lex->source[lex->pos + 1];
 }
 
-static void lex_skip_until_newline(Lex* lex) {
-    while (!lex_is_at_end(lex) && lex_peek(lex) != '\n') lex_advance(lex);
+static void lex_skip_until_char(Lex* lex, char c) {
+    while (!lex_is_at_end(lex) && lex_peek(lex) != c) lex_advance(lex);
 }
 
 static bool lex_match(Lex* lex, char c) {
@@ -330,7 +330,7 @@ static void lex_skip_whitespace(Lex* lex) {
                 lex->line += 1;
                 break;
             case '/':
-                if (lex_peek_next(lex) == '/') lex_skip_until_newline(lex);
+                if (lex_peek_next(lex) == '/') lex_skip_until_char(lex, '\n');
                 break;
             default:
                 return;
