@@ -558,7 +558,7 @@ static void lex_scan_token(Lex* lex, Token* token) {
     }
 }
 
-static void compile(const char* source, size_t source_len) {
+static void compile(const char* source, size_t source_len, Chunk* chunk) {
     Lex lex = {
         .source = source,
         .source_len = source_len,
@@ -580,7 +580,8 @@ static void compile(const char* source, size_t source_len) {
 }
 
 static void vm_interpret(const char* source, size_t source_len) {
-    compile(source, source_len);
+    Chunk chunk = {0};
+    compile(source, source_len, &chunk);
 }
 
 int main(int argc, char* argv[]) {
