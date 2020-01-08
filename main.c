@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-/* #include "buf.h" */
+#include "buf.h"
 
 typedef struct {
     const char* source;
@@ -93,9 +93,9 @@ typedef enum {
 } OpCode;
 
 typedef struct {
-    const uint8_t* opcodes;
+    uint8_t* opcodes;
     size_t opcodes_len;
-    const size_t* lines;
+    size_t* lines;
     size_t lines_len;
     size_t ip;
     Value stack[STACK_MAX];
@@ -569,6 +569,7 @@ typedef struct {
     Lex lex;
     Token current;
     Token previous;
+    Chunk chunk;
 } Parser;
 
 static void parse_error(Parser* parser, const char* err, size_t err_len) {
@@ -581,6 +582,11 @@ static void parse_error(Parser* parser, const char* err, size_t err_len) {
 
     fprintf(stderr, "%zu:%zu:%.*s\n", parser->current.line,
             parser->current.column, (int)err_len, err);
+}
+
+static void parse_emit_byte(Parser* parser, uint8_t byte) {
+    buf_push(parser->chunk.lines, parser->current.line);
+    buf_push(parser->chunk.opcodes, byte);
 }
 
 static void parse_advance(Parser* parser) {
