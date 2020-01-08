@@ -661,6 +661,27 @@ static void parse_unary(Parser* parser) {
     parse_emit_byte(parser, OP_NEGATE);
 }
 
+static void parse_binary(Parser* parser) {
+    const TokenType previousType = parser->previous.type;
+
+    switch (previousType) {
+        case TOKEN_PLUS:
+            parse_emit_byte(parser, OP_ADD);
+            break;
+        case TOKEN_MINUS:
+            parse_emit_byte(parser, OP_SUBTRACT);
+            break;
+        case TOKEN_STAR:
+            parse_emit_byte(parser, OP_MULTIPLY);
+            break;
+        case TOKEN_SLASH:
+            parse_emit_byte(parser, OP_DIVIDE);
+            break;
+        default:
+            UNREACHABLE();
+    }
+}
+
 static void parse_expression(Parser* parser) {
     parse_precedence(PREC_ASSIGNMENT);
 }
