@@ -558,14 +558,27 @@ static void lex_scan_token(Lex* lex, Token* token) {
     }
 }
 
+typedef enum {
+    PARSER_STATE_OK,
+    PARSER_STATE_ERROR,
+    PARSER_STATE_PANIC_MODE,
+} ParserState;
+
 typedef struct {
+    ParserState state;
     Lex lex;
     Token current;
     Token previous;
-
 } Parser;
 
 static void parse_error(Parser* parser, const char* err, size_t err_len) {
+    if (parser->state == PARSER_STATE_OK) {
+        parser->state = PARSER_STATE_ERROR;
+    } else if (parser->state == PARSER_STATE_ERROR) {
+        parser->state = PARSER_STATE_PANIC_MODE;
+        return;
+    }
+
     fprintf(stderr, "%zu:%zu:%.*s\n", parser->current.line,
             parser->current.column, (int)err_len, err);
 }
