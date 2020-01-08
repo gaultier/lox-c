@@ -569,7 +569,7 @@ typedef struct {
     Lex lex;
     Token current;
     Token previous;
-    Chunk chunk;
+    Chunk* chunk;
 } Parser;
 
 static void parse_error(Parser* parser, const char* err, size_t err_len) {
@@ -585,8 +585,8 @@ static void parse_error(Parser* parser, const char* err, size_t err_len) {
 }
 
 static void parse_emit_byte(Parser* parser, uint8_t byte) {
-    buf_push(parser->chunk.lines, parser->current.line);
-    buf_push(parser->chunk.opcodes, byte);
+    buf_push(parser->chunk->lines, parser->current.line);
+    buf_push(parser->chunk->opcodes, byte);
 }
 
 static void parse_advance(Parser* parser) {
@@ -611,16 +611,20 @@ static void parse_expect(Parser* parser, TokenType type, const char* err,
 }
 
 static void parse_compile(const char* source, size_t source_len, Chunk* chunk) {
-    Parser parser = {.lex = {
-                         .source = source,
-                         .source_len = source_len,
-                         .line = 1,
-                         .column = 1,
-                         .pos = 0,
-                     }};
+    Parser parser = {.lex =
+                         {
+                             .source = source,
+                             .source_len = source_len,
+                             .line = 1,
+                             .column = 1,
+                             .pos = 0,
+                         },
+                     .chunk = chunk};
 
     parse_advance(&parser);
     parse_expect(&parser, TOKEN_EOF, "Expected EOF", 12);
+
+    parse_emit_byte(&parser, OP_RETURN);
 }
 
 static void vm_interpret(const char* source, size_t source_len) {
