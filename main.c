@@ -97,6 +97,7 @@ typedef struct {
     size_t opcodes_len;
     size_t* lines;
     size_t lines_len;
+    uint8_t* constants;
     size_t ip;
     Value stack[STACK_MAX];
     uint8_t stack_len;
@@ -610,6 +611,18 @@ static void parse_expect(Parser* parser, TokenType type, const char* err,
     parse_error(parser, err, err_len);
 }
 
+static void parse_number(Parser* parser) {
+    assert(parser->current.type = TOKEN_NUMBER);
+
+    const double v = strtod(parser->current.source, NULL);
+    printf("Number=%f\n", v);
+    parse_emit_byte(parser, OP_CONSTANT);
+    buf_push(parser->chunk->constants, v);
+    parse_emit_byte(parser, buf_size(parser->chunk->constants) - 1);
+}
+
+static void parse_expression(Parser* parser) {}
+
 static void parse_compile(const char* source, size_t source_len, Chunk* chunk) {
     Parser parser = {.lex =
                          {
@@ -622,6 +635,7 @@ static void parse_compile(const char* source, size_t source_len, Chunk* chunk) {
                      .chunk = chunk};
 
     parse_advance(&parser);
+    parse_number(&parser);
     parse_expect(&parser, TOKEN_EOF, "Expected EOF", 12);
 
     parse_emit_byte(&parser, OP_RETURN);
