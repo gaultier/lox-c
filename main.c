@@ -159,7 +159,7 @@ static void read_file(const char path[], char** content, size_t* content_len) {
     fclose(file);
 }
 
-static void vm_dump(Chunk* chunk, const uint8_t values[256]) {
+static void vm_dump(Chunk* chunk) {
     while (chunk->ip < buf_size(chunk->opcodes)) {
         const uint8_t opcode = chunk->opcodes[chunk->ip];
         const size_t line = chunk->lines[chunk->ip];
@@ -193,7 +193,7 @@ static void vm_dump(Chunk* chunk, const uint8_t values[256]) {
                     exit(EINVAL);
                 }
                 const uint8_t value_index = chunk->opcodes[chunk->ip];
-                const Value value = values[value_index];
+                const Value value = chunk->constants[value_index];
                 printf("%zu:OP_CONSTANT: %f\n", line, value);
                 break;
             default:
@@ -204,7 +204,7 @@ static void vm_dump(Chunk* chunk, const uint8_t values[256]) {
     }
 }
 
-static void vm_interpret_dummy(Chunk* chunk, const uint8_t values[256]) {
+static void vm_interpret_dummy(Chunk* chunk) {
     while (chunk->ip < buf_size(chunk->opcodes)) {
         const uint8_t opcode = chunk->opcodes[chunk->ip];
         const size_t line = chunk->lines[chunk->ip];
@@ -259,7 +259,7 @@ static void vm_interpret_dummy(Chunk* chunk, const uint8_t values[256]) {
                     exit(EINVAL);
                 }
                 const uint8_t value_index = chunk->opcodes[chunk->ip];
-                const Value value = values[value_index];
+                const Value value = chunk->constants[value_index];
                 vm_stack_push(chunk, value);
                 break;
             default:
@@ -643,6 +643,7 @@ static void parse_compile(const char* source, size_t source_len, Chunk* chunk) {
 
     parse_advance(&parser);
     parse_number(&parser);
+    parse_advance(&parser);
     parse_expect(&parser, TOKEN_EOF, "Expected EOF", 12);
 
     parse_emit_byte(&parser, OP_RETURN);
@@ -651,6 +652,7 @@ static void parse_compile(const char* source, size_t source_len, Chunk* chunk) {
 static void vm_interpret(const char* source, size_t source_len) {
     Chunk chunk = {0};
     parse_compile(source, source_len, &chunk);
+    vm_interpret_dummy(&chunk);
 }
 
 int main(int argc, char* argv[]) {
@@ -663,7 +665,7 @@ int main(int argc, char* argv[]) {
     read_file(argv[2], &source, &source_len);
 
     /*if (strcmp(argv[1], "vm_dump") == 0)
-        vm_dump(&chunk, values);
+        vm_dump(&chunk);
     else */
     if (strcmp(argv[1], "run") == 0)
         vm_interpret(source, source_len);
