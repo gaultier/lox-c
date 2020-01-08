@@ -566,9 +566,8 @@ typedef struct {
 } Parser;
 
 static void parse_error(Parser* parser, const char* err, size_t err_len) {
-    fprintf(stderr, "%zu:%zu:", parser->current.line, parser->current.column);
-    fwrite(err, 1, err_len, stderr);
-    fprintf(stderr, "\n");
+    fprintf(stderr, "%zu:%zu:%.*s\n", parser->current.line,
+            parser->current.column, (int)err_len, err);
 }
 
 static void parse_advance(Parser* parser) {
