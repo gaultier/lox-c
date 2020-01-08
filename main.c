@@ -689,6 +689,9 @@ static void parse_unary(Parser* parser) {
 static void parse_binary(Parser* parser) {
     const TokenType previousType = parser->previous.type;
 
+    const ParseRule* const rule = &rules[previousType];
+    parse_precedence(rule->precedence + 1);
+
     switch (previousType) {
         case TOKEN_PLUS:
             parse_emit_byte(parser, OP_ADD);
