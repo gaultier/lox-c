@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <ctype.h>
 #include <errno.h>
 #include <stdbool.h>
@@ -376,12 +377,35 @@ static void lex_number(Lex* lex, Token* token, const Lex* start_lex) {
     lex_init_token(lex, token, TOKEN_NUMBER, start_lex);
 }
 
-static TokenType lex_identifier_type() { return TOKEN_IDENTIFIER; }
+static bool str_eq(const char* a, size_t a_len, const char* b, size_t b_len) {
+    if (!a || !b) return false;
+    if (a_len != b_len) return false;
+    return memcmp(a, b, a_len) == 0;
+}
+
+static TokenType lex_identifier_type(const char* s, size_t s_len) {
+    assert(s_len >= 1);
+
+    switch (s[0]) {
+        case 'a':
+            if (str_eq("nd", 2, s + 1, s_len - 1))
+                return TOKEN_AND;
+            else
+                break;
+        default:
+            break;
+    }
+
+    return TOKEN_IDENTIFIER;
+}
 
 static void lex_identifier(Lex* lex, Token* token, const Lex* start_lex) {
     while (!lex_is_at_end(lex) && isalnum(lex_peek(lex))) lex_advance(lex);
 
-    lex_init_token(lex, token, lex_identifier_type(), start_lex);
+    const char* s = &start_lex->source[start_lex->pos];
+    const size_t s_len = lex->pos - start_lex->pos;
+
+    lex_init_token(lex, token, lex_identifier_type(s, s_len), start_lex);
 }
 
 static void lex_scan_token(Lex* lex, Token* token) {
