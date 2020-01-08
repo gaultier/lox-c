@@ -9,6 +9,15 @@
 
 #include "buf.h"
 
+#define UNREACHABLE()                                                       \
+    do {                                                                    \
+        fprintf(stderr,                                                     \
+                "%s:%d:Reached unreachable code in function %s. This is a " \
+                "bug in the compiler.\n",                                   \
+                __FILE__, __LINE__, __func__);                              \
+        abort();                                                            \
+    } while (0);
+
 typedef struct {
     const char* source;
     size_t source_len;
@@ -626,7 +635,13 @@ static void parse_grouping(Parser* parser) {
                  12);
 }
 
-static void parse_unary(Parser* parser);
+static void parse_unary(Parser* parser) {
+    const TokenType previousType = parser->previous.type;
+    if (previousType != OP_NEGATE) UNREACHABLE();
+
+    parse_expression(parser);
+    parse_emit_byte(parser, OP_NEGATE);
+}
 
 static void parse_expression(Parser* parser) {}
 
