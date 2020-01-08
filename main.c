@@ -636,10 +636,6 @@ static void parse_emit_byte(Parser* parser, uint8_t byte) {
     buf_push(parser->chunk->opcodes, byte);
 }
 
-static void parse_precedence(Precedence precedence) {
-    // What goes here?
-}
-
 static void parse_advance(Parser* parser) {
     parser->previous = parser->current;
 
@@ -648,6 +644,26 @@ static void parse_advance(Parser* parser) {
         if (parser->current.type != TOKEN_ERROR) return;
 
         parse_error(parser, parser->current.source, parser->current.source_len);
+    }
+}
+
+static void parse_precedence(Parser* parser, Precedence precedence) {
+    parse_advance(parser);
+
+    const ParseFn prefix_rule = rules[parser->previous.type].prefix;
+    if (!prefix_rule) {
+        parse_error(parser, "Expected expression", 19);
+        return;
+    }
+
+    prefix_rule(parser);
+
+    while (precedence <= rules[parser->current.type].precedence) {
+        parse_advance(parser);
+
+        const ParseFn infix_rule = rules[parser->previous.type].infix;
+
+        infix_rule(parser);
     }
 }
 
@@ -682,7 +698,7 @@ static void parse_unary(Parser* parser) {
     const TokenType previousType = parser->previous.type;
     if (previousType != OP_NEGATE) UNREACHABLE();
 
-    parse_precedence(PREC_UNARY);
+    parse_precedence(parser, PREC_UNARY);
     parse_emit_byte(parser, OP_NEGATE);
 }
 
@@ -690,7 +706,7 @@ static void parse_binary(Parser* parser) {
     const TokenType previousType = parser->previous.type;
 
     const ParseRule* const rule = &rules[previousType];
-    parse_precedence(rule->precedence + 1);
+    parse_precedence(parser, rule->precedence + 1);
 
     switch (previousType) {
         case TOKEN_PLUS:
@@ -711,7 +727,7 @@ static void parse_binary(Parser* parser) {
 }
 
 static void parse_expression(Parser* parser) {
-    parse_precedence(PREC_ASSIGNMENT);
+    parse_precedence(parser, PREC_ASSIGNMENT);
 }
 
 static void parse_compile(const char* source, size_t source_len, Chunk* chunk) {
@@ -726,8 +742,7 @@ static void parse_compile(const char* source, size_t source_len, Chunk* chunk) {
                      .chunk = chunk};
 
     parse_advance(&parser);
-    parse_number(&parser);
-    parse_advance(&parser);
+    parse_expression(&parser);
     parse_expect(&parser, TOKEN_EOF, "Expected EOF", 12);
 
     parse_emit_byte(&parser, OP_RETURN);
@@ -748,10 +763,9 @@ int main(int argc, char* argv[]) {
     size_t source_len = 0;
     read_file(argv[2], &source, &source_len);
 
-    /*if (strcmp(argv[1], "vm_dump") == 0)
-        vm_dump(&chunk);
-    else */
-    if (strcmp(argv[1], "run") == 0)
+    if (strcmp(argv[1], "vm_dump") == 0)
+        vm_dump(NULL);  // FIXME
+    else if (strcmp(argv[1], "run") == 0)
         vm_interpret(source, source_len);
     else
         printf("Usage: %s vm_dump|run filename\n", argv[0]);
