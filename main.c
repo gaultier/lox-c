@@ -376,6 +376,14 @@ static void lex_number(Lex* lex, Token* token, const Lex* start_lex) {
     lex_init_token(lex, token, TOKEN_NUMBER, start_lex);
 }
 
+static TokenType lex_identifier_type() { return TOKEN_IDENTIFIER; }
+
+static void lex_identifier(Lex* lex, Token* token, const Lex* start_lex) {
+    while (!lex_is_at_end(lex) && isalnum(lex_peek(lex))) lex_advance(lex);
+
+    lex_init_token(lex, token, lex_identifier_type(), start_lex);
+}
+
 static void lex_scan_token(Lex* lex, Token* token) {
     lex_skip_whitespace(lex);
     const Lex start_lex = *lex;
@@ -389,6 +397,9 @@ static void lex_scan_token(Lex* lex, Token* token) {
 
     if (isdigit(c)) {
         lex_number(lex, token, &start_lex);
+        return;
+    } else if (isalnum(c)) {
+        lex_identifier(lex, token, &start_lex);
         return;
     }
 
