@@ -608,48 +608,48 @@ static void parse_binary(Parser*);
 static void parse_number(Parser*);
 
 static const ParseRule rules[] = {
-    {.prefix = parse_grouping},  // TOKEN_LEFT_PAREN
-    {0},                         // TOKEN_RIGHT_PAREN
-    {0},                         // TOKEN_LEFT_BRACE
-    {0},                         // TOKEN_RIGHT_BRACE
-    {0},                         // TOKEN_COMMA
-    {0},                         // TOKEN_DOT
-    {.prefix = parse_unary,
-     .infix = parse_binary,
-     .precedence = PREC_TERM},                           // TOKEN_MINUS
-    {.infix = parse_binary, .precedence = PREC_TERM},    // TOKEN_PLUS
-    {0},                                                 // TOKEN_SEMICOLON
-    {.infix = parse_binary, .precedence = PREC_FACTOR},  // TOKEN_SLASH
-    {.infix = parse_binary, .precedence = PREC_FACTOR},  // TOKEN_STAR
-    {0},                                                 // TOKEN_BANG
-    {0},                                                 // TOKEN_BANG_EQUAL
-    {0},                                                 // TOKEN_EQUAL
-    {0},                                                 // TOKEN_EQUAL_EQUAL
-    {0},                                                 // TOKEN_GREATER
-    {0},                                                 // TOKEN_GREATER_EQUAL
-    {0},                                                 // TOKEN_LESS
-    {0},                                                 // TOKEN_LESS_EQUAL
-    {0},                                                 // TOKEN_IDENTIFIER
-    {0},                                                 // TOKEN_STRING
-    {.prefix = parse_number},                            // TOKEN_NUMBER
-    {0},                                                 // TOKEN_AND
-    {0},                                                 // TOKEN_CLASS
-    {0},                                                 // TOKEN_ELSE
-    {0},                                                 // TOKEN_FALSE
-    {0},                                                 // TOKEN_FOR
-    {0},                                                 // TOKEN_FUN
-    {0},                                                 // TOKEN_IF
-    {0},                                                 // TOKEN_NIL
-    {0},                                                 // TOKEN_OR
-    {0},                                                 // TOKEN_PRINT
-    {0},                                                 // TOKEN_RETURN
-    {0},                                                 // TOKEN_SUPER
-    {0},                                                 // TOKEN_THIS
-    {0},                                                 // TOKEN_TRUE
-    {0},                                                 // TOKEN_VAR
-    {0},                                                 // TOKEN_WHILE
-    {0},                                                 // TOKEN_ERROR
-    {0},                                                 // TOKEN_EOF
+    [TOKEN_LEFT_PAREN] = {.prefix = parse_grouping},
+    [TOKEN_RIGHT_PAREN] = {0},
+    [TOKEN_LEFT_BRACE] = {0},
+    [TOKEN_RIGHT_BRACE] = {0},
+    [TOKEN_COMMA] = {0},
+    [TOKEN_DOT] = {0},
+    [TOKEN_MINUS] = {.prefix = parse_unary,
+                     .infix = parse_binary,
+                     .precedence = PREC_TERM},
+    [TOKEN_PLUS] = {.infix = parse_binary, .precedence = PREC_TERM},
+    [TOKEN_SEMICOLON] = {0},
+    [TOKEN_SLASH] = {.infix = parse_binary, .precedence = PREC_FACTOR},
+    [TOKEN_STAR] = {.infix = parse_binary, .precedence = PREC_FACTOR},
+    [TOKEN_BANG] = {0},
+    [TOKEN_BANG_EQUAL] = {0},
+    [TOKEN_EQUAL] = {0},
+    [TOKEN_EQUAL_EQUAL] = {0},
+    [TOKEN_GREATER] = {0},
+    [TOKEN_GREATER_EQUAL] = {0},
+    [TOKEN_LESS] = {0},
+    [TOKEN_LESS_EQUAL] = {0},
+    [TOKEN_IDENTIFIER] = {0},
+    [TOKEN_STRING] = {0},
+    [TOKEN_NUMBER] = {.prefix = parse_number},
+    [TOKEN_AND] = {0},
+    [TOKEN_CLASS] = {0},
+    [TOKEN_ELSE] = {0},
+    [TOKEN_FALSE] = {0},
+    [TOKEN_FOR] = {0},
+    [TOKEN_FUN] = {0},
+    [TOKEN_IF] = {0},
+    [TOKEN_NIL] = {0},
+    [TOKEN_OR] = {0},
+    [TOKEN_PRINT] = {0},
+    [TOKEN_RETURN] = {0},
+    [TOKEN_SUPER] = {0},
+    [TOKEN_THIS] = {0},
+    [TOKEN_TRUE] = {0},
+    [TOKEN_VAR] = {0},
+    [TOKEN_WHILE] = {0},
+    [TOKEN_ERROR] = {0},
+    [TOKEN_EOF] = {0},
 };
 
 static void parse_error(Parser* parser, const char* err, size_t err_len) {
