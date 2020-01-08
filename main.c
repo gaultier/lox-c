@@ -613,7 +613,6 @@ static void parse_number(Parser* parser) {
     assert(parser->current.type = TOKEN_NUMBER);
 
     const double v = strtod(parser->current.source, NULL);
-    printf("Number=%f\n", v);
     parse_emit_byte(parser, OP_CONSTANT);
     buf_push(parser->chunk->constants, v);
     parse_emit_byte(parser, buf_size(parser->chunk->constants) - 1);
@@ -626,6 +625,8 @@ static void parse_grouping(Parser* parser) {
     parse_expect(parser, TOKEN_RIGHT_PAREN, "Expected `)` after expression",
                  12);
 }
+
+static void parse_unary(Parser* parser);
 
 static void parse_expression(Parser* parser) {}
 
