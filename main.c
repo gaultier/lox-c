@@ -95,7 +95,7 @@ typedef enum {
 typedef struct {
     uint8_t* opcodes;
     size_t* lines;
-    uint8_t* constants;
+    Value* constants;
     size_t ip;
     Value stack[STACK_MAX];
     uint8_t stack_len;
