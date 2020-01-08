@@ -380,6 +380,7 @@ static void lex_number(Lex* lex, Token* token, const Lex* start_lex) {
 static bool str_eq(const char* a, size_t a_len, const char* b, size_t b_len) {
     if (!a || !b) return false;
     if (a_len != b_len) return false;
+
     return memcmp(a, b, a_len) == 0;
 }
 
@@ -390,6 +391,11 @@ static TokenType lex_identifier_type(const char* s, size_t s_len) {
         case 'a':
             if (str_eq("nd", 2, s + 1, s_len - 1))
                 return TOKEN_AND;
+            else
+                break;
+        case 'c':
+            if (str_eq("lass", 4, s + 1, s_len - 1))
+                return TOKEN_CLASS;
             else
                 break;
         default:
