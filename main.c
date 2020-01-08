@@ -398,6 +398,67 @@ static TokenType lex_identifier_type(const char* s, size_t s_len) {
                 return TOKEN_CLASS;
             else
                 break;
+        case 'e':
+            if (str_eq("lse", 3, s + 1, s_len - 1))
+                return TOKEN_ELSE;
+            else
+                break;
+        case 'f':
+            if (str_eq("alse", 4, s + 1, s_len - 1))
+                return TOKEN_FALSE;
+            else if (str_eq("or", 2, s + 1, s_len - 1))
+                return TOKEN_FOR;
+            else if (str_eq("un", 2, s + 1, s_len - 1))
+                return TOKEN_FUN;
+            else
+                break;
+        case 'i':
+            if (str_eq("f", 1, s + 1, s_len - 1))
+                return TOKEN_IF;
+            else
+                break;
+        case 'n':
+            if (str_eq("il", 2, s + 1, s_len - 1))
+                return TOKEN_NIL;
+            else
+                break;
+        case 'o':
+            if (str_eq("r", 1, s + 1, s_len - 1))
+                return TOKEN_OR;
+            else
+                break;
+        case 'p':
+            if (str_eq("rint", 4, s + 1, s_len - 1))
+                return TOKEN_PRINT;
+            else
+                break;
+        case 'r':
+            if (str_eq("eturn", 5, s + 1, s_len - 1))
+                return TOKEN_RETURN;
+            else
+                break;
+        case 's':
+            if (str_eq("uper", 4, s + 1, s_len - 1))
+                return TOKEN_SUPER;
+            else
+                break;
+        case 't':
+            if (str_eq("his", 3, s + 1, s_len - 1))
+                return TOKEN_THIS;
+            else if (str_eq("rue", 3, s + 1, s_len - 1))
+                return TOKEN_TRUE;
+            else
+                break;
+        case 'v':
+            if (str_eq("ar", 2, s + 1, s_len - 1))
+                return TOKEN_VAR;
+            else
+                break;
+        case 'w':
+            if (str_eq("hile", 4, s + 1, s_len - 1))
+                return TOKEN_WHILE;
+            else
+                break;
         default:
             break;
     }
