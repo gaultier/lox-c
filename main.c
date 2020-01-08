@@ -558,30 +558,56 @@ static void lex_scan_token(Lex* lex, Token* token) {
     }
 }
 
-static void compile(const char* source, size_t source_len, Chunk* chunk) {
-    Lex lex = {
-        .source = source,
-        .source_len = source_len,
-        .line = 1,
-        .column = 1,
-        .pos = 0,
-    };
+typedef struct {
+    Lex lex;
+    Token current;
+    Token previous;
+
+} Parser;
+
+static void parse_error(Parser* parser, const char* err, size_t err_len) {
+    fprintf(stderr, "%zu:%zu:", parser->current.line, parser->current.column);
+    fwrite(err, 1, err_len, stderr);
+    fprintf(stderr, "\n");
+}
+
+static void parse_advance(Parser* parser) {
+    parser->previous = parser->current;
 
     while (true) {
-        Token token = {0};
-        lex_scan_token(&lex, &token);
+        lex_scan_token(&parser->lex, &parser->current);
+        if (parser->current.type != TOKEN_ERROR) return;
 
-        printf("%zu:%zu:type=%d source=`", token.line, token.column,
-               token.type);
-        fwrite(token.source, 1, token.source_len, stdout);
-        printf("`\n");
-        if (token.type == TOKEN_EOF) return;
+        parse_error(parser, parser->current.source, parser->current.source_len);
     }
+}
+
+static void parse_expect(Parser* parser, TokenType type, const char* err,
+                         size_t err_len) {
+    if (parser->current.type == type) {
+        parse_advance(parser);
+        return;
+    }
+
+    parse_error(parser, err, err_len);
+}
+
+static void parse_compile(const char* source, size_t source_len, Chunk* chunk) {
+    Parser parser = {.lex = {
+                         .source = source,
+                         .source_len = source_len,
+                         .line = 1,
+                         .column = 1,
+                         .pos = 0,
+                     }};
+
+    parse_advance(&parser);
+    parse_expect(&parser, TOKEN_EOF, "Expected EOF", 12);
 }
 
 static void vm_interpret(const char* source, size_t source_len) {
     Chunk chunk = {0};
-    compile(source, source_len, &chunk);
+    parse_compile(source, source_len, &chunk);
 }
 
 int main(int argc, char* argv[]) {
