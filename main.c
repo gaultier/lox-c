@@ -619,6 +619,14 @@ static void parse_number(Parser* parser) {
     parse_emit_byte(parser, buf_size(parser->chunk->constants) - 1);
 }
 
+static void parse_expression(Parser* parser);
+
+static void parse_grouping(Parser* parser) {
+    parse_expression(parser);
+    parse_expect(parser, TOKEN_RIGHT_PAREN, "Expected `)` after expression",
+                 12);
+}
+
 static void parse_expression(Parser* parser) {}
 
 static void parse_compile(const char* source, size_t source_len, Chunk* chunk) {
