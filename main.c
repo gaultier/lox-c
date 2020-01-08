@@ -94,9 +94,7 @@ typedef enum {
 
 typedef struct {
     uint8_t* opcodes;
-    size_t opcodes_len;
     size_t* lines;
-    size_t lines_len;
     uint8_t* constants;
     size_t ip;
     Value stack[STACK_MAX];
@@ -162,7 +160,7 @@ static void read_file(const char path[], char** content, size_t* content_len) {
 }
 
 static void vm_dump(Chunk* chunk, const uint8_t values[256]) {
-    while (chunk->ip < chunk->opcodes_len) {
+    while (chunk->ip < buf_size(chunk->opcodes)) {
         const uint8_t opcode = chunk->opcodes[chunk->ip];
         const size_t line = chunk->lines[chunk->ip];
 
@@ -187,7 +185,7 @@ static void vm_dump(Chunk* chunk, const uint8_t values[256]) {
                 break;
             case OP_CONSTANT:
                 chunk->ip += 1;
-                if (!(chunk->ip < chunk->opcodes_len)) {
+                if (!(chunk->ip < buf_size(chunk->opcodes))) {
                     fprintf(stderr,
                             "%zu:Malformed opcode: missing operand for "
                             "OP_CONSTANT\n",
@@ -207,7 +205,7 @@ static void vm_dump(Chunk* chunk, const uint8_t values[256]) {
 }
 
 static void vm_interpret_dummy(Chunk* chunk, const uint8_t values[256]) {
-    while (chunk->ip < chunk->opcodes_len) {
+    while (chunk->ip < buf_size(chunk->opcodes)) {
         const uint8_t opcode = chunk->opcodes[chunk->ip];
         const size_t line = chunk->lines[chunk->ip];
 
@@ -253,7 +251,7 @@ static void vm_interpret_dummy(Chunk* chunk, const uint8_t values[256]) {
             }
             case OP_CONSTANT:
                 chunk->ip += 1;
-                if (!(chunk->ip < chunk->opcodes_len)) {
+                if (!(chunk->ip < buf_size(chunk->opcodes))) {
                     fprintf(stderr,
                             "%zu:Malformed opcode: missing operand for "
                             "OP_CONSTANT\n",
