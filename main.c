@@ -611,6 +611,10 @@ static void parse_emit_byte(Parser* parser, uint8_t byte) {
     buf_push(parser->chunk->opcodes, byte);
 }
 
+static void parse_precedence(Precedence precedence) {
+    // What goes here?
+}
+
 static void parse_advance(Parser* parser) {
     parser->previous = parser->current;
 
@@ -653,11 +657,13 @@ static void parse_unary(Parser* parser) {
     const TokenType previousType = parser->previous.type;
     if (previousType != OP_NEGATE) UNREACHABLE();
 
-    parse_expression(parser);
+    parse_precedence(PREC_UNARY);
     parse_emit_byte(parser, OP_NEGATE);
 }
 
-static void parse_expression(Parser* parser) {}
+static void parse_expression(Parser* parser) {
+    parse_precedence(PREC_ASSIGNMENT);
+}
 
 static void parse_compile(const char* source, size_t source_len, Chunk* chunk) {
     Parser parser = {.lex =
