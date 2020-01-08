@@ -102,7 +102,7 @@ typedef struct {
     uint8_t stack_len;
 } Chunk;
 
-static void stack_push(Chunk* chunk, Value v) {
+static void vm_stack_push(Chunk* chunk, Value v) {
     if (chunk->stack_len == (STACK_MAX - 1)) {
         fprintf(stderr, "%zu:Maximum stack size reached: %d\n",
                 chunk->lines[chunk->ip], STACK_MAX);
@@ -112,7 +112,7 @@ static void stack_push(Chunk* chunk, Value v) {
     chunk->stack[chunk->stack_len - 1] = v;
 }
 
-static Value stack_pop(Chunk* chunk) {
+static Value vm_stack_pop(Chunk* chunk) {
     if (chunk->stack_len == 0) {
         fprintf(stderr, "%zu:Cannot pop from an empty stack\n",
                 chunk->lines[chunk->ip]);
@@ -160,7 +160,7 @@ static void read_file(const char path[], char** content, size_t* content_len) {
     fclose(file);
 }
 
-static void dump(Chunk* chunk, const uint8_t values[256]) {
+static void vm_dump(Chunk* chunk, const uint8_t values[256]) {
     while (chunk->ip < chunk->opcodes_len) {
         const uint8_t opcode = chunk->opcodes[chunk->ip];
         const size_t line = chunk->lines[chunk->ip];
@@ -205,49 +205,49 @@ static void dump(Chunk* chunk, const uint8_t values[256]) {
     }
 }
 
-static void interpret_dummy(Chunk* chunk, const uint8_t values[256]) {
+static void vm_interpret_dummy(Chunk* chunk, const uint8_t values[256]) {
     while (chunk->ip < chunk->opcodes_len) {
         const uint8_t opcode = chunk->opcodes[chunk->ip];
         const size_t line = chunk->lines[chunk->ip];
 
         switch (opcode) {
             case OP_RETURN: {
-                const Value value = stack_pop(chunk);
+                const Value value = vm_stack_pop(chunk);
                 printf("Stack size=%hhu top value=%f\n", chunk->stack_len,
                        value);
                 return;
             }
             case OP_NEGATE: {
-                const Value value = stack_pop(chunk);
-                stack_push(chunk, -value);
+                const Value value = vm_stack_pop(chunk);
+                vm_stack_push(chunk, -value);
                 break;
             }
             case OP_ADD: {
-                const Value rhs = stack_pop(chunk);
-                const Value lhs = stack_pop(chunk);
+                const Value rhs = vm_stack_pop(chunk);
+                const Value lhs = vm_stack_pop(chunk);
                 // TODO: Check for overflow
-                stack_push(chunk, lhs + rhs);
+                vm_stack_push(chunk, lhs + rhs);
                 break;
             }
             case OP_SUBTRACT: {
-                const Value rhs = stack_pop(chunk);
-                const Value lhs = stack_pop(chunk);
+                const Value rhs = vm_stack_pop(chunk);
+                const Value lhs = vm_stack_pop(chunk);
                 // TODO: Check for underflow
-                stack_push(chunk, lhs - rhs);
+                vm_stack_push(chunk, lhs - rhs);
                 break;
             }
             case OP_MULTIPLY: {
-                const Value rhs = stack_pop(chunk);
-                const Value lhs = stack_pop(chunk);
+                const Value rhs = vm_stack_pop(chunk);
+                const Value lhs = vm_stack_pop(chunk);
                 // TODO: Check for overflow
-                stack_push(chunk, lhs * rhs);
+                vm_stack_push(chunk, lhs * rhs);
                 break;
             }
             case OP_DIVIDE: {
-                const Value rhs = stack_pop(chunk);
-                const Value lhs = stack_pop(chunk);
+                const Value rhs = vm_stack_pop(chunk);
+                const Value lhs = vm_stack_pop(chunk);
                 // TODO: Check for 0
-                stack_push(chunk, lhs / rhs);
+                vm_stack_push(chunk, lhs / rhs);
                 break;
             }
             case OP_CONSTANT:
@@ -261,7 +261,7 @@ static void interpret_dummy(Chunk* chunk, const uint8_t values[256]) {
                 }
                 const uint8_t value_index = chunk->opcodes[chunk->ip];
                 const Value value = values[value_index];
-                stack_push(chunk, value);
+                vm_stack_push(chunk, value);
                 break;
             default:
                 fprintf(stderr, "%zu:Unknown opcode %d\n", line, opcode);
@@ -579,24 +579,24 @@ static void compile(const char* source, size_t source_len) {
     }
 }
 
-static void interpret(const char* source, size_t source_len) {
+static void vm_interpret(const char* source, size_t source_len) {
     compile(source, source_len);
 }
 
 int main(int argc, char* argv[]) {
     if (argc != 3) {
-        printf("Usage: %s dump|run filename\n", argv[0]);
+        printf("Usage: %s vm_dump|run filename\n", argv[0]);
         return 0;
     }
     char* source = NULL;
     size_t source_len = 0;
     read_file(argv[2], &source, &source_len);
 
-    /*if (strcmp(argv[1], "dump") == 0)
-        dump(&chunk, values);
+    /*if (strcmp(argv[1], "vm_dump") == 0)
+        vm_dump(&chunk, values);
     else */
     if (strcmp(argv[1], "run") == 0)
-        interpret(source, source_len);
+        vm_interpret(source, source_len);
     else
-        printf("Usage: %s dump|run filename\n", argv[0]);
+        printf("Usage: %s vm_dump|run filename\n", argv[0]);
 }
