@@ -167,6 +167,7 @@ typedef enum {
     OP_NIL = 7,
     OP_TRUE = 8,
     OP_FALSE = 9,
+    OP_NOT = 10,
 } OpCode;
 
 typedef struct {
@@ -315,6 +316,9 @@ static void vm_dump(Chunk* chunk) {
                 break;
             case OP_FALSE:
                 printf("OP_FALSE\n");
+                break;
+            case OP_NOT:
+                printf("OP_NOT\n");
                 break;
             default:
                 fprintf(stderr, "%zu:Unknown opcode %hhu\n", line, opcode);
