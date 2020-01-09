@@ -207,7 +207,7 @@ typedef struct {
 typedef struct {
     Obj obj;
     size_t len;
-    char* s;
+    char s[];
 } ObjString;
 
 #define BOOL_VAL(value) ((Value){VAL_BOOL, {.boolean = value}})
@@ -1004,14 +1004,13 @@ static void parse_number(Parser* parser) {
 
 static void parse_string(Parser* parser) {
     assert(parser->previous.type = TOKEN_STRING);
-    char* const s =
-        strndup(parser->previous.source, parser->previous.source_len);
-    if (!s) {
-        fprintf(stderr, "Could not allocate string\n");
-        exit(ENOMEM);
-    }
 
-    ObjString os = {.len = parser->previous.source_len, .s = s};
+    const size_t s_len = parser->previous.source_len;
+
+    ObjString* os = realloc(NULL, sizeof(ObjString) + s_len);
+    os->len = s_len;
+    os->obj.type = OBJ_STRING;
+    memcpy(os->s, parser->previous.source, s_len);
     /* OBJ_VAL(os); */
 }
 
