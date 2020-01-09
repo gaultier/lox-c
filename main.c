@@ -320,7 +320,7 @@ static char lex_advance(Lex* lex) {
 static char lex_peek(const Lex* lex) { return lex->source[lex->pos]; }
 
 static bool lex_is_at_end(const Lex* lex) {
-    return lex->pos == lex->source_len - 1;
+    return lex->pos == lex->source_len;
 }
 
 static char lex_peek_next(const Lex* lex) {
@@ -678,9 +678,10 @@ static void parse_expect(Parser* parser, TokenType type, const char* err,
 }
 
 static void parse_number(Parser* parser) {
-    assert(parser->current.type = TOKEN_NUMBER);
+    assert(parser->previous.type = TOKEN_NUMBER);
 
-    const double v = strtod(parser->current.source, NULL);
+    const double v = strtod(parser->previous.source, NULL);
+
     parse_emit_byte(parser, OP_CONSTANT);
     buf_push(parser->chunk->constants, v);
     parse_emit_byte(parser, buf_size(parser->chunk->constants) - 1);
@@ -696,9 +697,10 @@ static void parse_grouping(Parser* parser) {
 
 static void parse_unary(Parser* parser) {
     const TokenType previousType = parser->previous.type;
-    if (previousType != OP_NEGATE) UNREACHABLE();
 
     parse_precedence(parser, PREC_UNARY);
+
+    if (previousType != TOKEN_MINUS) UNREACHABLE();
     parse_emit_byte(parser, OP_NEGATE);
 }
 
