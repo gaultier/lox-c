@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "buf.h"
 
@@ -25,6 +26,8 @@
             puts("");                                              \
         }                                                          \
     } while (0)
+
+#define BUF_LEN 100
 
 typedef struct {
     const char* source;
@@ -155,6 +158,30 @@ static Value vm_stack_pop(Chunk* chunk) {
     chunk->stack_len -= 1;
 
     return value;
+}
+
+static void read_stdin(char** content, size_t* content_len) {
+    char buf[BUF_LEN] = "";
+
+    ssize_t effectivily_read = 0;
+    while ((effectivily_read = read(0, buf, BUF_LEN)) > 0) {
+        *content_len += effectivily_read;
+        *content = realloc(*content, *content_len);
+
+        if (*content == NULL) {
+            fprintf(stderr, "Could not allocate while reading from stdin\n");
+            exit(ENOMEM);
+        }
+
+        memcpy(*content + *content_len - effectivily_read, buf,
+               effectivily_read);
+    }
+    if (effectivily_read == -1) {
+        fprintf(stderr, "Error reading from stdin: errno=%s error=%d\n",
+                strerror(errno), errno);
+        exit(errno);
+    }
+    LOG("content_len=%zu", *content_len);
 }
 
 static void read_file(const char path[], char** content, size_t* content_len) {
@@ -778,7 +805,10 @@ int main(int argc, char* argv[]) {
     }
     char* source = NULL;
     size_t source_len = 0;
-    read_file(argv[2], &source, &source_len);
+    if (strcmp(argv[2], "-") == 0)
+        read_stdin(&source, &source_len);
+    else
+        read_file(argv[2], &source, &source_len);
 
     if (strcmp(argv[1], "vm_dump") == 0)
         vm_dump(NULL);  // FIXME
