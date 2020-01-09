@@ -152,6 +152,10 @@ static void value_print(FILE* out, Value v) {
     }
 }
 
+static bool value_is_falsy(Value v) {
+    return IS_NIL(v) || (IS_BOOL(v) && !AS_BOOL(v));
+}
+
 #define VALUES_MAX 256
 
 #define STACK_MAX 256
@@ -430,20 +434,7 @@ static void vm_run_bytecode(Chunk* chunk) {
                 break;
             case OP_NOT: {
                 const Value v = vm_stack_pop(chunk);
-                switch (v.type) {
-                    case VAL_NIL:
-                        vm_stack_push(chunk, BOOL_VAL(true));
-                        break;
-                    case VAL_BOOL:
-                        vm_stack_push(chunk, BOOL_VAL(!AS_BOOL(v)));
-                        break;
-                    case VAL_NUMBER:
-                        vm_stack_push(chunk, BOOL_VAL(!AS_NUMBER(v)));
-                        break;
-                    default:
-                        VM_ERROR(line,
-                                 "Expected a boolean-like operand, got:", v);
-                }
+                vm_stack_push(chunk, BOOL_VAL(value_is_falsy(v)));
                 break;
             }
             default:
@@ -787,6 +778,7 @@ static const ParseRule rules[TOKEN_COUNT] = {
     [TOKEN_NIL] = {.prefix = parse_literal},
     [TOKEN_TRUE] = {.prefix = parse_literal},
     [TOKEN_FALSE] = {.prefix = parse_literal},
+    [TOKEN_BANG] = {.prefix = parse_unary},
 };
 
 static void parse_error(Parser* parser, const char* err, size_t err_len) {
@@ -888,8 +880,16 @@ static void parse_unary(Parser* parser) {
 
     parse_precedence(parser, PREC_UNARY);
 
-    if (previousType != TOKEN_MINUS) UNREACHABLE();
-    parse_emit_byte(parser, OP_NEGATE);
+    switch (previousType) {
+        case TOKEN_MINUS:
+            parse_emit_byte(parser, OP_NEGATE);
+            break;
+        case TOKEN_BANG:
+            parse_emit_byte(parser, OP_NOT);
+            break;
+        default:
+            UNREACHABLE();
+    }
 }
 
 static void parse_binary(Parser* parser) {
