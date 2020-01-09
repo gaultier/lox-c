@@ -862,6 +862,13 @@ static const ParseRule rules[TOKEN_COUNT] = {
     [TOKEN_TRUE] = {.prefix = parse_literal},
     [TOKEN_FALSE] = {.prefix = parse_literal},
     [TOKEN_BANG] = {.prefix = parse_unary},
+    [TOKEN_BANG_EQUAL] = {.infix = parse_binary, .precedence = PREC_EQUALITY},
+    [TOKEN_EQUAL_EQUAL] = {.infix = parse_binary, .precedence = PREC_EQUALITY},
+    [TOKEN_GREATER] = {.infix = parse_binary, .precedence = PREC_COMPARISON},
+    [TOKEN_GREATER_EQUAL] = {.infix = parse_binary,
+                             .precedence = PREC_COMPARISON},
+    [TOKEN_LESS] = {.infix = parse_binary, .precedence = PREC_COMPARISON},
+    [TOKEN_LESS_EQUAL] = {.infix = parse_binary, .precedence = PREC_COMPARISON},
 };
 
 static void parse_error(Parser* parser, const char* err, size_t err_len) {
