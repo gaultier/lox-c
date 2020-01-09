@@ -95,7 +95,7 @@ typedef enum {
 } TokenType;
 
 #ifndef NDEBUG
-static const char token_type_str[TOKEN_COUNT][19] = {
+static const char token_type_str[TOKEN_COUNT][20] = {
     [TOKEN_LEFT_PAREN] = "TOKEN_LEFT_PAREN",
     [TOKEN_RIGHT_PAREN] = "TOKEN_RIGHT_PAREN",
     [TOKEN_LEFT_BRACE] = "TOKEN_LEFT_BRACE",
@@ -163,7 +163,7 @@ typedef enum {
 } Precedence;
 
 #ifndef NDEBUG
-static const char precedence_str[PREC_COUNT][15] = {
+static const char precedence_str[PREC_COUNT][16] = {
     [PREC_NONE] = "PREC_NONE",
     [PREC_ASSIGNMENT] = "PREC_ASSIGNMENT",
     [PREC_OR] = "PREC_OR",
@@ -261,7 +261,7 @@ typedef enum {
 } OpCode;
 
 #ifndef NDEBUG
-static const char opcode_str[OP_COUNT][11] = {
+static const char opcode_str[OP_COUNT][12] = {
     [OP_RETURN] = "OP_RETURN",     [OP_CONSTANT] = "OP_CONSTANT",
     [OP_NEGATE] = "OP_NEGATE",     [OP_ADD] = "OP_ADD",
     [OP_SUBTRACT] = "OP_SUBTRACT", [OP_MULTIPLY] = "OP_MULTIPLY",
