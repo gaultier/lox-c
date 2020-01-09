@@ -380,7 +380,13 @@ static void vm_run_bytecode(Chunk* chunk) {
             }
             case OP_MULTIPLY: {
                 const Value rhs = vm_stack_pop(chunk);
+                if (!IS_NUMBER(rhs))
+                    VM_ERROR(line, "Expected a number, got:", rhs);
+
                 const Value lhs = vm_stack_pop(chunk);
+                if (!IS_NUMBER(lhs))
+                    VM_ERROR(line, "Expected a number, got:", rhs);
+
                 // TODO: Check for overflow
                 vm_stack_push(chunk,
                               NUMBER_VAL(AS_NUMBER(lhs) * AS_NUMBER(rhs)));
@@ -388,7 +394,13 @@ static void vm_run_bytecode(Chunk* chunk) {
             }
             case OP_DIVIDE: {
                 const Value rhs = vm_stack_pop(chunk);
+                if (!IS_NUMBER(rhs))
+                    VM_ERROR(line, "Expected a number, got:", rhs);
+
                 const Value lhs = vm_stack_pop(chunk);
+                if (!IS_NUMBER(lhs))
+                    VM_ERROR(line, "Expected a number, got:", rhs);
+
                 // TODO: Check for 0
                 vm_stack_push(chunk,
                               NUMBER_VAL(AS_NUMBER(lhs) / AS_NUMBER(rhs)));
