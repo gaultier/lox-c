@@ -242,6 +242,16 @@ static void value_print(FILE* out, Value v) {
         case VAL_NUMBER:
             fprintf(out, "`%f`", v.as.number);
             break;
+        case VAL_OBJ:
+            switch (AS_OBJ(v)->type) {
+                case OBJ_STRING:
+                    fprintf(out, "`\"%s\"`", AS_CSTRING(v));
+                    break;
+                default:
+                    UNREACHABLE();
+            }
+
+            break;
         default:
             UNREACHABLE();
     }
@@ -1007,11 +1017,17 @@ static void parse_string(Parser* parser) {
 
     const size_t s_len = parser->previous.source_len;
 
-    ObjString* os = realloc(NULL, sizeof(ObjString) + s_len);
+    ObjString* os = realloc(NULL, sizeof(ObjString) + s_len + 1);
     os->len = s_len;
     os->obj.type = OBJ_STRING;
     memcpy(os->s, parser->previous.source, s_len);
-    /* OBJ_VAL(os); */
+    os->s[s_len] = '\0';
+
+    const Value v = OBJ_VAL(os);
+
+    parse_emit_byte(parser, OP_CONSTANT);
+    buf_push(parser->chunk->constants, v);
+    parse_emit_byte(parser, buf_size(parser->chunk->constants) - 1);
 }
 
 static void parse_literal(Parser* parser) {
