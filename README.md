@@ -11,7 +11,7 @@ Prerequisites:
 - POSIX Make
 
 ```sh
-$ make lox-release
+$ make release
 $ ./lox-release run hello.lox
 $ printf "(12 + 2) * 3" | ./lox-release run -
 $ ./lox-release dump hello.lox
