@@ -189,10 +189,12 @@ typedef enum {
     OBJ_STRING,
 } ObjType;
 
-typedef struct {
+struct Obj {
     ObjType type;
     struct Obj* next;
-} Obj;
+};
+
+typedef struct Obj Obj;
 
 #define OBJ_TYPE(value) (AS_OBJ(value)->type)
 
@@ -231,6 +233,49 @@ typedef struct {
 static bool value_obj_is_type(Value v, ObjType type) {
     return IS_OBJ(v) && AS_OBJ(v)->type == type;
 }
+
+#define VALUES_MAX 256
+
+#define STACK_MAX 256
+
+typedef enum {
+    OP_RETURN = 0,
+    OP_CONSTANT,
+    OP_NEGATE,
+    OP_ADD,
+    OP_SUBTRACT,
+    OP_MULTIPLY,
+    OP_DIVIDE,
+    OP_NIL,
+    OP_TRUE,
+    OP_FALSE,
+    OP_NOT,
+    OP_EQUAL,
+    OP_GREATER,
+    OP_LESS,
+    OP_COUNT,
+} OpCode;
+
+static const char opcode_str[OP_COUNT][12] = {
+    [OP_RETURN] = "OP_RETURN",     [OP_CONSTANT] = "OP_CONSTANT",
+    [OP_NEGATE] = "OP_NEGATE",     [OP_ADD] = "OP_ADD",
+    [OP_SUBTRACT] = "OP_SUBTRACT", [OP_MULTIPLY] = "OP_MULTIPLY",
+    [OP_DIVIDE] = "OP_DIVIDE",     [OP_NIL] = "OP_NIL",
+    [OP_TRUE] = "OP_TRUE",         [OP_FALSE] = "OP_FALSE",
+    [OP_NOT] = "OP_NOT",           [OP_EQUAL] = "OP_EQUAL",
+    [OP_GREATER] = "OP_GREATER",   [OP_LESS] = "OP_LESS",
+};
+
+typedef struct {
+    uint8_t* opcodes;
+    size_t* lines;
+    Value* constants;
+    size_t ip;
+    Value stack[STACK_MAX];
+    uint8_t stack_len;
+} Chunk;
+
+static Obj* objects;
 
 static void value_print(FILE* out, Value v) {
     switch (v.type) {
@@ -284,6 +329,10 @@ static bool value_eq(Value lhs, Value rhs) {
 
 static ObjString* value_obj_str_allocate(size_t size) {
     ObjString* obj = calloc(1, size);
+    obj->obj.next = objects;
+
+    objects = &obj->obj;
+
     return obj;
 }
 
@@ -306,55 +355,6 @@ static void value_str_cat(Value lhs, Value rhs, Value* res) {
 
     *res = OBJ_VAL(os);
 }
-
-#define VALUES_MAX 256
-
-#define STACK_MAX 256
-
-typedef enum {
-    OP_RETURN = 0,
-    OP_CONSTANT,
-    OP_NEGATE,
-    OP_ADD,
-    OP_SUBTRACT,
-    OP_MULTIPLY,
-    OP_DIVIDE,
-    OP_NIL,
-    OP_TRUE,
-    OP_FALSE,
-    OP_NOT,
-    OP_EQUAL,
-    OP_GREATER,
-    OP_LESS,
-    OP_COUNT,
-} OpCode;
-
-static const char opcode_str[OP_COUNT][12] = {
-    [OP_RETURN] = "OP_RETURN",     [OP_CONSTANT] = "OP_CONSTANT",
-    [OP_NEGATE] = "OP_NEGATE",     [OP_ADD] = "OP_ADD",
-    [OP_SUBTRACT] = "OP_SUBTRACT", [OP_MULTIPLY] = "OP_MULTIPLY",
-    [OP_DIVIDE] = "OP_DIVIDE",     [OP_NIL] = "OP_NIL",
-    [OP_TRUE] = "OP_TRUE",         [OP_FALSE] = "OP_FALSE",
-    [OP_NOT] = "OP_NOT",           [OP_EQUAL] = "OP_EQUAL",
-    [OP_GREATER] = "OP_GREATER",   [OP_LESS] = "OP_LESS",
-};
-
-typedef struct {
-    uint8_t* opcodes;
-    size_t* lines;
-    Value* constants;
-    size_t ip;
-    Value stack[STACK_MAX];
-    uint8_t stack_len;
-    Obj* objects;
-} Chunk;
-
-typedef struct {
-    size_t ip;
-    Value stack[STACK_MAX];
-    uint8_t stack_len;
-
-} Vm;
 
 #define VM_ERROR(line, fmt, value)         \
     do {                                   \
