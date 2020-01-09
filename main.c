@@ -473,7 +473,7 @@ static void vm_run_bytecode(Chunk* chunk) {
 
                 const Value lhs = vm_stack_pop(chunk);
                 if (!IS_NUMBER(lhs))
-                    VM_ERROR(line, "Expected a number, got:", rhs);
+                    VM_ERROR(line, "Expected a number, got:", lhs);
 
                 // TODO: Check for underflow
                 vm_stack_push(chunk,
@@ -487,7 +487,7 @@ static void vm_run_bytecode(Chunk* chunk) {
 
                 const Value lhs = vm_stack_pop(chunk);
                 if (!IS_NUMBER(lhs))
-                    VM_ERROR(line, "Expected a number, got:", rhs);
+                    VM_ERROR(line, "Expected a number, got:", lhs);
 
                 // TODO: Check for overflow
                 vm_stack_push(chunk,
@@ -501,7 +501,7 @@ static void vm_run_bytecode(Chunk* chunk) {
 
                 const Value lhs = vm_stack_pop(chunk);
                 if (!IS_NUMBER(lhs))
-                    VM_ERROR(line, "Expected a number, got:", rhs);
+                    VM_ERROR(line, "Expected a number, got:", lhs);
 
                 // TODO: Check for 0
                 vm_stack_push(chunk,
@@ -548,7 +548,7 @@ static void vm_run_bytecode(Chunk* chunk) {
 
                 const Value lhs = vm_stack_pop(chunk);
                 if (!IS_NUMBER(lhs))
-                    VM_ERROR(line, "Expected a number, got:", rhs);
+                    VM_ERROR(line, "Expected a number, got:", lhs);
 
                 // TODO: Check for 0
                 vm_stack_push(chunk, BOOL_VAL(AS_NUMBER(lhs) < AS_NUMBER(rhs)));
@@ -561,10 +561,10 @@ static void vm_run_bytecode(Chunk* chunk) {
 
                 const Value lhs = vm_stack_pop(chunk);
                 if (!IS_NUMBER(lhs))
-                    VM_ERROR(line, "Expected a number, got:", rhs);
+                    VM_ERROR(line, "Expected a number, got:", lhs);
 
                 // TODO: Check for 0
-                vm_stack_push(chunk, BOOL_VAL(AS_NUMBER(lhs) < AS_NUMBER(rhs)));
+                vm_stack_push(chunk, BOOL_VAL(AS_NUMBER(lhs) > AS_NUMBER(rhs)));
                 break;
             }
             default:
@@ -932,7 +932,7 @@ static void parse_error(Parser* parser, const char* err, size_t err_len) {
 }
 
 static void parse_emit_byte(Parser* parser, uint8_t byte) {
-    LOG("opcode=%s", opcode_str[byte]);
+    LOG("byte=%d opcode=%s", byte, opcode_str[byte]);
     buf_push(parser->chunk->lines, parser->current.line);
     buf_push(parser->chunk->opcodes, byte);
 }
