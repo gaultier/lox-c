@@ -539,6 +539,7 @@ static void vm_run_bytecode(Chunk* chunk) {
                 const Value rhs = vm_stack_pop(chunk);
                 const Value lhs = vm_stack_pop(chunk);
                 vm_stack_push(chunk, BOOL_VAL(value_eq(lhs, rhs)));
+                break;
             }
             default:
                 fprintf(stderr, "%zu:Unknown opcode %s\n", line,
