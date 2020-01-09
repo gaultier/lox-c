@@ -541,6 +541,32 @@ static void vm_run_bytecode(Chunk* chunk) {
                 vm_stack_push(chunk, BOOL_VAL(value_eq(lhs, rhs)));
                 break;
             }
+            case OP_LESS: {
+                const Value rhs = vm_stack_pop(chunk);
+                if (!IS_NUMBER(rhs))
+                    VM_ERROR(line, "Expected a number, got:", rhs);
+
+                const Value lhs = vm_stack_pop(chunk);
+                if (!IS_NUMBER(lhs))
+                    VM_ERROR(line, "Expected a number, got:", rhs);
+
+                // TODO: Check for 0
+                vm_stack_push(chunk, BOOL_VAL(AS_NUMBER(lhs) < AS_NUMBER(rhs)));
+                break;
+            }
+            case OP_GREATER: {
+                const Value rhs = vm_stack_pop(chunk);
+                if (!IS_NUMBER(rhs))
+                    VM_ERROR(line, "Expected a number, got:", rhs);
+
+                const Value lhs = vm_stack_pop(chunk);
+                if (!IS_NUMBER(lhs))
+                    VM_ERROR(line, "Expected a number, got:", rhs);
+
+                // TODO: Check for 0
+                vm_stack_push(chunk, BOOL_VAL(AS_NUMBER(lhs) < AS_NUMBER(rhs)));
+                break;
+            }
             default:
                 fprintf(stderr, "%zu:Unknown opcode %s\n", line,
                         opcode_str[opcode]);
