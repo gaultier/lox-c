@@ -151,8 +151,23 @@ typedef enum {
     PREC_FACTOR,      // * /
     PREC_UNARY,       // ! -
     PREC_CALL,        // . ()
-    PREC_PRIMARY
+    PREC_PRIMARY,
+    PREC_COUNT,
 } Precedence;
+
+static const char precedence_str[PREC_COUNT][15] = {
+    [PREC_NONE] = "PREC_NONE",
+    [PREC_ASSIGNMENT] = "PREC_ASSIGNMENT",
+    [PREC_OR] = "PREC_OR",
+    [PREC_AND] = "PREC_AND",
+    [PREC_EQUALITY] = "PREC_EQUALITY",
+    [PREC_COMPARISON] = "PREC_COMPARISON",
+    [PREC_TERM] = "PREC_TERM",
+    [PREC_FACTOR] = "PREC_FACTOR",
+    [PREC_UNARY] = "PREC_UNARY",
+    [PREC_CALL] = "PREC_CALL",
+    [PREC_PRIMARY] = "PREC_PRIMARY",
+};
 
 typedef enum {
     VAL_BOOL,
