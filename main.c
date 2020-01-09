@@ -111,7 +111,46 @@ typedef enum {
     PREC_PRIMARY
 } Precedence;
 
-typedef double Value;
+typedef enum {
+    VAL_BOOL,
+    VAL_NIL,
+    VAL_NUMBER,
+} ValueType;
+
+typedef struct {
+    ValueType type;
+    union {
+        bool boolean;
+        double number;
+    } as;
+} Value;
+
+#define BOOL_VAL(value) ((Value){VAL_BOOL, {.boolean = value}})
+#define NIL_VAL ((Value){VAL_NIL, {.number = 0}})
+#define NUMBER_VAL(value) ((Value){VAL_NUMBER, {.number = value}})
+
+#define AS_BOOL(value) ((value).as.boolean)
+#define AS_NUMBER(value) ((value).as.number)
+
+#define IS_BOOL(value) ((value).type == VAL_BOOL)
+#define IS_NIL(value) ((value).type == VAL_NIL)
+#define IS_NUMBER(value) ((value).type == VAL_NUMBER)
+
+static void value_print(FILE* out, Value v) {
+    switch (v.type) {
+        case VAL_BOOL:
+            fprintf(out, "%s", v.as.boolean ? "true" : "false");
+            break;
+        case VAL_NIL:
+            fprintf(out, "nil");
+            break;
+        case VAL_NUMBER:
+            fprintf(out, "%f", v.as.number);
+            break;
+        default:
+            UNREACHABLE();
+    }
+}
 
 #define VALUES_MAX 256
 
@@ -136,6 +175,13 @@ typedef struct {
     uint8_t stack_len;
 } Chunk;
 
+#define VM_ERROR(line, fmt, value)         \
+    do {                                   \
+        fprintf(stderr, "%zu:" fmt, line); \
+        value_print(stderr, value);        \
+        exit(EINVAL);                      \
+    } while (0)
+
 static void vm_stack_push(Chunk* chunk, Value v) {
     if (chunk->stack_len == (STACK_MAX - 1)) {
         fprintf(stderr, "%zu:Maximum stack size reached: %d\n",
@@ -154,7 +200,7 @@ static Value vm_stack_pop(Chunk* chunk) {
     }
 
     const Value value = chunk->stack[chunk->stack_len - 1];
-    chunk->stack[chunk->stack_len - 1] = 0xaa;
+    chunk->stack[chunk->stack_len - 1] = (Value){0};
     chunk->stack_len -= 1;
 
     return value;
@@ -253,7 +299,10 @@ static void vm_dump(Chunk* chunk) {
                 }
                 const uint8_t value_index = chunk->opcodes[chunk->ip];
                 const Value value = chunk->constants[value_index];
-                printf("%zu:OP_CONSTANT: %f\n", line, value);
+
+                printf("%zu:OP_CONSTANT:", line);
+                value_print(stdout, value);
+                puts("");
                 break;
             default:
                 fprintf(stderr, "%zu:Unknown opcode %hhu\n", line, opcode);
@@ -271,41 +320,62 @@ static void vm_interpret_dummy(Chunk* chunk) {
         switch (opcode) {
             case OP_RETURN: {
                 const Value value = vm_stack_pop(chunk);
-                printf("Stack size=%hhu top value=%f\n", chunk->stack_len,
-                       value);
+                printf("Stack size=%hhu top value=", chunk->stack_len);
+                value_print(stdout, value);
+                puts("");
                 return;
             }
             case OP_NEGATE: {
                 const Value value = vm_stack_pop(chunk);
-                vm_stack_push(chunk, -value);
+
+                if (!IS_NUMBER(value))
+                    VM_ERROR(line, "Expected a number, got:", value);
+
+                vm_stack_push(chunk, NUMBER_VAL(-AS_NUMBER(value)));
                 break;
             }
             case OP_ADD: {
                 const Value rhs = vm_stack_pop(chunk);
+                if (!IS_NUMBER(rhs))
+                    VM_ERROR(line, "Expected a number, got:", rhs);
+
                 const Value lhs = vm_stack_pop(chunk);
+                if (!IS_NUMBER(lhs))
+                    VM_ERROR(line, "Expected a number, got:", lhs);
+
                 // TODO: Check for overflow
-                vm_stack_push(chunk, lhs + rhs);
+                vm_stack_push(chunk,
+                              NUMBER_VAL(AS_NUMBER(lhs) + AS_NUMBER(rhs)));
                 break;
             }
             case OP_SUBTRACT: {
                 const Value rhs = vm_stack_pop(chunk);
+                if (!IS_NUMBER(rhs))
+                    VM_ERROR(line, "Expected a number, got:", rhs);
+
                 const Value lhs = vm_stack_pop(chunk);
+                if (!IS_NUMBER(lhs))
+                    VM_ERROR(line, "Expected a number, got:", rhs);
+
                 // TODO: Check for underflow
-                vm_stack_push(chunk, lhs - rhs);
+                vm_stack_push(chunk,
+                              NUMBER_VAL(AS_NUMBER(lhs) - AS_NUMBER(rhs)));
                 break;
             }
             case OP_MULTIPLY: {
                 const Value rhs = vm_stack_pop(chunk);
                 const Value lhs = vm_stack_pop(chunk);
                 // TODO: Check for overflow
-                vm_stack_push(chunk, lhs * rhs);
+                vm_stack_push(chunk,
+                              NUMBER_VAL(AS_NUMBER(lhs) * AS_NUMBER(rhs)));
                 break;
             }
             case OP_DIVIDE: {
                 const Value rhs = vm_stack_pop(chunk);
                 const Value lhs = vm_stack_pop(chunk);
                 // TODO: Check for 0
-                vm_stack_push(chunk, lhs / rhs);
+                vm_stack_push(chunk,
+                              NUMBER_VAL(AS_NUMBER(lhs) / AS_NUMBER(rhs)));
                 break;
             }
             case OP_CONSTANT:
@@ -722,7 +792,8 @@ static void parse_expect(Parser* parser, TokenType type, const char* err,
 static void parse_number(Parser* parser) {
     assert(parser->previous.type = TOKEN_NUMBER);
 
-    const double v = strtod(parser->previous.source, NULL);
+    const double number = strtod(parser->previous.source, NULL);
+    const Value v = NUMBER_VAL(number);
 
     parse_emit_byte(parser, OP_CONSTANT);
     buf_push(parser->chunk->constants, v);
