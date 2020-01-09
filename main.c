@@ -452,7 +452,7 @@ static void lex_init_token(const Lex* lex, Token* token, TokenType type,
     token->type = type;
     token->source = &lex->source[start_lex->pos];
     token->source_len = lex->pos - start_lex->pos;
-    LOG("type=%d line=%zu column=%zu source=%.*s source_len=%zu", type,
+    LOG("type=%d line=%zu column=%zu source=`%.*s` source_len=%zu", type,
         token->line, token->column, (int)token->source_len, token->source,
         token->source_len);
 }
