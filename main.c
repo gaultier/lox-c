@@ -215,7 +215,17 @@ typedef enum {
     OP_TRUE = 8,
     OP_FALSE = 9,
     OP_NOT = 10,
+    OP_COUNT,
 } OpCode;
+
+static const char opcode_str[OP_COUNT][11] = {
+    [OP_RETURN] = "OP_RETURN",     [OP_CONSTANT] = "OP_CONSTANT",
+    [OP_NEGATE] = "OP_NEGATE",     [OP_ADD] = "OP_ADD",
+    [OP_SUBTRACT] = "OP_SUBTRACT", [OP_MULTIPLY] = "OP_MULTIPLY",
+    [OP_DIVIDE] = "OP_DIVIDE",     [OP_NIL] = "OP_NIL",
+    [OP_TRUE] = "OP_TRUE",         [OP_FALSE] = "OP_FALSE",
+    [OP_NOT] = "OP_NOT",
+};
 
 typedef struct {
     uint8_t* opcodes;
@@ -837,7 +847,7 @@ static void parse_error(Parser* parser, const char* err, size_t err_len) {
 }
 
 static void parse_emit_byte(Parser* parser, uint8_t byte) {
-    LOG("byte=%d", byte);
+    LOG("opcode=%s", opcode_str[byte]);
     buf_push(parser->chunk->lines, parser->current.line);
     buf_push(parser->chunk->opcodes, byte);
 }
