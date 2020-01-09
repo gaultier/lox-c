@@ -89,6 +89,49 @@ typedef enum {
     TOKEN_COUNT,
 } TokenType;
 
+static const char token_type_str[TOKEN_COUNT][19] = {
+    [TOKEN_LEFT_PAREN] = "TOKEN_LEFT_PAREN",
+    [TOKEN_RIGHT_PAREN] = "TOKEN_RIGHT_PAREN",
+    [TOKEN_LEFT_BRACE] = "TOKEN_LEFT_BRACE",
+    [TOKEN_RIGHT_BRACE] = "TOKEN_RIGHT_BRACE",
+    [TOKEN_COMMA] = "TOKEN_COMMA",
+    [TOKEN_DOT] = "TOKEN_DOT",
+    [TOKEN_MINUS] = "TOKEN_MINUS",
+    [TOKEN_PLUS] = "TOKEN_PLUS",
+    [TOKEN_SEMICOLON] = "TOKEN_SEMICOLON",
+    [TOKEN_SLASH] = "TOKEN_SLASH",
+    [TOKEN_STAR] = "TOKEN_STAR",
+    [TOKEN_BANG] = "TOKEN_BANG",
+    [TOKEN_BANG_EQUAL] = "TOKEN_BANG_EQUAL",
+    [TOKEN_EQUAL] = "TOKEN_EQUAL",
+    [TOKEN_EQUAL_EQUAL] = "TOKEN_EQUAL_EQUAL",
+    [TOKEN_GREATER] = "TOKEN_GREATER",
+    [TOKEN_GREATER_EQUAL] = "TOKEN_GREATER_EQUAL",
+    [TOKEN_LESS] = "TOKEN_LESS",
+    [TOKEN_LESS_EQUAL] = "TOKEN_LESS_EQUAL",
+    [TOKEN_IDENTIFIER] = "TOKEN_IDENTIFIER",
+    [TOKEN_STRING] = "TOKEN_STRING",
+    [TOKEN_NUMBER] = "TOKEN_NUMBER",
+    [TOKEN_AND] = "TOKEN_AND",
+    [TOKEN_CLASS] = "TOKEN_CLASS",
+    [TOKEN_ELSE] = "TOKEN_ELSE",
+    [TOKEN_FALSE] = "TOKEN_FALSE",
+    [TOKEN_FOR] = "TOKEN_FOR",
+    [TOKEN_FUN] = "TOKEN_FUN",
+    [TOKEN_IF] = "TOKEN_IF",
+    [TOKEN_NIL] = "TOKEN_NIL",
+    [TOKEN_OR] = "TOKEN_OR",
+    [TOKEN_PRINT] = "TOKEN_PRINT",
+    [TOKEN_RETURN] = "TOKEN_RETURN",
+    [TOKEN_SUPER] = "TOKEN_SUPER",
+    [TOKEN_THIS] = "TOKEN_THIS",
+    [TOKEN_TRUE] = "TOKEN_TRUE",
+    [TOKEN_VAR] = "TOKEN_VAR",
+    [TOKEN_WHILE] = "TOKEN_WHILE",
+    [TOKEN_ERROR] = "TOKEN_ERROR",
+    [TOKEN_EOF] = "TOKEN_EOF",
+};
+
 typedef struct {
     size_t line;
     size_t column;
@@ -452,9 +495,9 @@ static void lex_init_token(const Lex* lex, Token* token, TokenType type,
     token->type = type;
     token->source = &lex->source[start_lex->pos];
     token->source_len = lex->pos - start_lex->pos;
-    LOG("type=%d line=%zu column=%zu source=`%.*s` source_len=%zu", type,
-        token->line, token->column, (int)token->source_len, token->source,
-        token->source_len);
+    LOG("type=%s line=%zu column=%zu source=`%.*s` source_len=%zu",
+        token_type_str[type], token->line, token->column,
+        (int)token->source_len, token->source, token->source_len);
 }
 
 static void lex_init_token_err(const Lex* lex, Token* token, const char err[]) {
