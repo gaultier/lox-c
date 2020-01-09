@@ -907,6 +907,7 @@ static void parse_unary(Parser*);
 static void parse_binary(Parser*);
 static void parse_number(Parser*);
 static void parse_literal(Parser*);
+static void parse_string(Parser*);
 
 static const ParseRule rules[TOKEN_COUNT] = {
     [TOKEN_LEFT_PAREN] = {.prefix = parse_grouping},
@@ -928,6 +929,7 @@ static const ParseRule rules[TOKEN_COUNT] = {
                              .precedence = PREC_COMPARISON},
     [TOKEN_LESS] = {.infix = parse_binary, .precedence = PREC_COMPARISON},
     [TOKEN_LESS_EQUAL] = {.infix = parse_binary, .precedence = PREC_COMPARISON},
+    [TOKEN_STRING] = {.prefix = parse_string},
 };
 
 static void parse_error(Parser* parser, const char* err, size_t err_len) {
@@ -998,6 +1000,19 @@ static void parse_number(Parser* parser) {
     parse_emit_byte(parser, OP_CONSTANT);
     buf_push(parser->chunk->constants, v);
     parse_emit_byte(parser, buf_size(parser->chunk->constants) - 1);
+}
+
+static void parse_string(Parser* parser) {
+    assert(parser->previous.type = TOKEN_STRING);
+    char* const s =
+        strndup(parser->previous.source, parser->previous.source_len);
+    if (!s) {
+        fprintf(stderr, "Could not allocate string\n");
+        exit(ENOMEM);
+    }
+
+    ObjString os = {.len = parser->previous.source_len, .s = s};
+    /* OBJ_VAL(os); */
 }
 
 static void parse_literal(Parser* parser) {
