@@ -307,6 +307,15 @@ static void vm_dump(Chunk* chunk) {
                 value_print(stdout, value);
                 puts("");
                 break;
+            case OP_NIL:
+                printf("OP_NIL\n");
+                break;
+            case OP_TRUE:
+                printf("OP_TRUE\n");
+                break;
+            case OP_FALSE:
+                printf("OP_FALSE\n");
+                break;
             default:
                 fprintf(stderr, "%zu:Unknown opcode %hhu\n", line, opcode);
                 exit(EINVAL);
