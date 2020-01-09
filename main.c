@@ -271,6 +271,11 @@ static bool value_eq(Value lhs, Value rhs) {
             return true;
         case VAL_NUMBER:
             return AS_NUMBER(lhs) == AS_NUMBER(rhs);
+        case VAL_OBJ:
+            if (AS_STRING(lhs)->len != AS_STRING(rhs)->len) return false;
+            return memcmp(AS_STRING(lhs)->s, AS_STRING(rhs)->s,
+                          AS_STRING(lhs)->len) == 0;
+
         default:
             UNREACHABLE();
     }
