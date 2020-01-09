@@ -223,6 +223,21 @@ static bool value_is_falsy(Value v) {
     return IS_NIL(v) || (IS_BOOL(v) && !AS_BOOL(v));
 }
 
+static bool value_eq(Value lhs, Value rhs) {
+    if (lhs.type != rhs.type) return false;
+
+    switch (lhs.type) {
+        case VAL_BOOL:
+            return AS_BOOL(lhs) == AS_BOOL(rhs);
+        case VAL_NIL:
+            return true;
+        case VAL_NUMBER:
+            return AS_NUMBER(lhs) == AS_NUMBER(rhs);
+        default:
+            UNREACHABLE();
+    }
+}
+
 #define VALUES_MAX 256
 
 #define STACK_MAX 256
@@ -520,8 +535,14 @@ static void vm_run_bytecode(Chunk* chunk) {
                 vm_stack_push(chunk, BOOL_VAL(value_is_falsy(v)));
                 break;
             }
+            case OP_EQUAL: {
+                const Value rhs = vm_stack_pop(chunk);
+                const Value lhs = vm_stack_pop(chunk);
+                vm_stack_push(chunk, BOOL_VAL(value_eq(lhs, rhs)));
+            }
             default:
-                fprintf(stderr, "%zu:Unknown opcode %d\n", line, opcode);
+                fprintf(stderr, "%zu:Unknown opcode %s\n", line,
+                        opcode_str[opcode]);
                 exit(EINVAL);
         }
         chunk->ip += 1;
