@@ -18,6 +18,14 @@
         abort();                                                            \
     } while (0);
 
+#define LOG(fmt, ...)                                              \
+    do {                                                           \
+        if (getenv("LOX_DEBUG")) {                                 \
+            printf("%s:%d:" fmt, __func__, __LINE__, __VA_ARGS__); \
+            puts("");                                              \
+        }                                                          \
+    } while (0)
+
 typedef struct {
     const char* source;
     size_t source_len;
@@ -632,6 +640,7 @@ static void parse_error(Parser* parser, const char* err, size_t err_len) {
 }
 
 static void parse_emit_byte(Parser* parser, uint8_t byte) {
+    LOG("byte=%d", byte);
     buf_push(parser->chunk->lines, parser->current.line);
     buf_push(parser->chunk->opcodes, byte);
 }
