@@ -260,7 +260,6 @@ typedef enum {
     OP_COUNT,
 } OpCode;
 
-#ifndef NDEBUG
 static const char opcode_str[OP_COUNT][12] = {
     [OP_RETURN] = "OP_RETURN",     [OP_CONSTANT] = "OP_CONSTANT",
     [OP_NEGATE] = "OP_NEGATE",     [OP_ADD] = "OP_ADD",
@@ -270,7 +269,6 @@ static const char opcode_str[OP_COUNT][12] = {
     [OP_NOT] = "OP_NOT",           [OP_EQUAL] = "OP_EQUAL",
     [OP_GREATER] = "OP_GREATER",   [OP_LESS] = "OP_LESS",
 };
-#endif
 
 typedef struct {
     uint8_t* opcodes;
@@ -377,22 +375,19 @@ static void vm_dump(Chunk* chunk) {
 
         switch (opcode) {
             case OP_RETURN:
-                printf("%zu:OP_RETURN\n", line);
-                break;
             case OP_NEGATE:
-                printf("%zu:OP_NEGATE\n", line);
-                break;
             case OP_ADD:
-                printf("%zu:OP_ADD\n", line);
-                break;
             case OP_SUBTRACT:
-                printf("%zu:OP_SUBTRACT\n", line);
-                break;
             case OP_MULTIPLY:
-                printf("%zu:OP_MULTIPLY\n", line);
-                break;
             case OP_DIVIDE:
-                printf("%zu:OP_DIVIDE\n", line);
+            case OP_NIL:
+            case OP_TRUE:
+            case OP_FALSE:
+            case OP_NOT:
+            case OP_EQUAL:
+            case OP_LESS:
+            case OP_GREATER:
+                printf("%zu:%s\n", line, opcode_str[opcode]);
                 break;
             case OP_CONSTANT:
                 chunk->ip += 1;
@@ -409,18 +404,6 @@ static void vm_dump(Chunk* chunk) {
                 printf("%zu:OP_CONSTANT:", line);
                 value_print(stdout, value);
                 puts("");
-                break;
-            case OP_NIL:
-                printf("OP_NIL\n");
-                break;
-            case OP_TRUE:
-                printf("OP_TRUE\n");
-                break;
-            case OP_FALSE:
-                printf("OP_FALSE\n");
-                break;
-            case OP_NOT:
-                printf("OP_NOT\n");
                 break;
             default:
                 fprintf(stderr, "%zu:Unknown opcode %hhu\n", line, opcode);
