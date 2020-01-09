@@ -164,6 +164,9 @@ typedef enum {
     OP_SUBTRACT = 4,
     OP_MULTIPLY = 5,
     OP_DIVIDE = 6,
+    OP_NIL = 7,
+    OP_TRUE = 8,
+    OP_FALSE = 9,
 } OpCode;
 
 typedef struct {
@@ -312,7 +315,7 @@ static void vm_dump(Chunk* chunk) {
     }
 }
 
-static void vm_interpret_dummy(Chunk* chunk) {
+static void vm_run_bytecode(Chunk* chunk) {
     while (chunk->ip < buf_size(chunk->opcodes)) {
         const uint8_t opcode = chunk->opcodes[chunk->ip];
         const size_t line = chunk->lines[chunk->ip];
@@ -390,6 +393,15 @@ static void vm_interpret_dummy(Chunk* chunk) {
                 const uint8_t value_index = chunk->opcodes[chunk->ip];
                 const Value value = chunk->constants[value_index];
                 vm_stack_push(chunk, value);
+                break;
+            case OP_NIL:
+                vm_stack_push(chunk, NIL_VAL);
+                break;
+            case OP_TRUE:
+                vm_stack_push(chunk, BOOL_VAL(true));
+                break;
+            case OP_FALSE:
+                vm_stack_push(chunk, BOOL_VAL(false));
                 break;
             default:
                 fprintf(stderr, "%zu:Unknown opcode %d\n", line, opcode);
@@ -718,6 +730,7 @@ static void parse_grouping(Parser*);
 static void parse_unary(Parser*);
 static void parse_binary(Parser*);
 static void parse_number(Parser*);
+static void parse_literal(Parser*);
 
 static const ParseRule rules[TOKEN_COUNT] = {
     [TOKEN_LEFT_PAREN] = {.prefix = parse_grouping},
@@ -728,6 +741,9 @@ static const ParseRule rules[TOKEN_COUNT] = {
     [TOKEN_SLASH] = {.infix = parse_binary, .precedence = PREC_FACTOR},
     [TOKEN_STAR] = {.infix = parse_binary, .precedence = PREC_FACTOR},
     [TOKEN_NUMBER] = {.prefix = parse_number},
+    [TOKEN_NIL] = {.prefix = parse_literal},
+    [TOKEN_TRUE] = {.prefix = parse_literal},
+    [TOKEN_FALSE] = {.prefix = parse_literal},
 };
 
 static void parse_error(Parser* parser, const char* err, size_t err_len) {
@@ -800,6 +816,22 @@ static void parse_number(Parser* parser) {
     parse_emit_byte(parser, buf_size(parser->chunk->constants) - 1);
 }
 
+static void parse_literal(Parser* parser) {
+    switch (parser->previous.type) {
+        case TOKEN_NIL:
+            parse_emit_byte(parser, OP_NIL);
+            break;
+        case TOKEN_TRUE:
+            parse_emit_byte(parser, OP_TRUE);
+            break;
+        case TOKEN_FALSE:
+            parse_emit_byte(parser, OP_FALSE);
+            break;
+        default:
+            UNREACHABLE();
+    }
+}
+
 static void parse_expression(Parser* parser);
 
 static void parse_grouping(Parser* parser) {
@@ -866,7 +898,7 @@ static void parse_compile(const char* source, size_t source_len, Chunk* chunk) {
 static void vm_interpret(const char* source, size_t source_len) {
     Chunk chunk = {0};
     parse_compile(source, source_len, &chunk);
-    vm_interpret_dummy(&chunk);
+    vm_run_bytecode(&chunk);
 }
 
 int main(int argc, char* argv[]) {
