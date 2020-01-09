@@ -1,7 +1,7 @@
 # lox-c
 
 
-A bytecode vm for the programming language lox
+A compiler and bytecode vm for the programming language lox.
 
 
 ## Quickstart
