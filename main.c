@@ -19,13 +19,18 @@
         abort();                                                            \
     } while (0);
 
-#define LOG(fmt, ...)                                              \
-    do {                                                           \
-        if (getenv("LOX_DEBUG")) {                                 \
-            printf("%s:%d:" fmt, __func__, __LINE__, __VA_ARGS__); \
-            puts("");                                              \
-        }                                                          \
+#ifndef NDEBUG
+#define LOG(fmt, ...)                                               \
+    do {                                                            \
+        printf("%s:%d:" fmt "\n", __func__, __LINE__, __VA_ARGS__); \
     } while (0)
+#else
+#ifdef NDEBUG
+#define LOG(fmt, ...) \
+    do {              \
+    } while (0)
+#endif
+#endif
 
 #define BUF_LEN 100
 
@@ -89,6 +94,7 @@ typedef enum {
     TOKEN_COUNT,
 } TokenType;
 
+#ifndef NDEBUG
 static const char token_type_str[TOKEN_COUNT][19] = {
     [TOKEN_LEFT_PAREN] = "TOKEN_LEFT_PAREN",
     [TOKEN_RIGHT_PAREN] = "TOKEN_RIGHT_PAREN",
@@ -131,6 +137,7 @@ static const char token_type_str[TOKEN_COUNT][19] = {
     [TOKEN_ERROR] = "TOKEN_ERROR",
     [TOKEN_EOF] = "TOKEN_EOF",
 };
+#endif
 
 typedef struct {
     size_t line;
@@ -155,6 +162,7 @@ typedef enum {
     PREC_COUNT,
 } Precedence;
 
+#ifndef NDEBUG
 static const char precedence_str[PREC_COUNT][15] = {
     [PREC_NONE] = "PREC_NONE",
     [PREC_ASSIGNMENT] = "PREC_ASSIGNMENT",
@@ -168,6 +176,7 @@ static const char precedence_str[PREC_COUNT][15] = {
     [PREC_CALL] = "PREC_CALL",
     [PREC_PRIMARY] = "PREC_PRIMARY",
 };
+#endif
 
 typedef enum {
     VAL_BOOL,
@@ -236,6 +245,7 @@ typedef enum {
     OP_COUNT,
 } OpCode;
 
+#ifndef NDEBUG
 static const char opcode_str[OP_COUNT][11] = {
     [OP_RETURN] = "OP_RETURN",     [OP_CONSTANT] = "OP_CONSTANT",
     [OP_NEGATE] = "OP_NEGATE",     [OP_ADD] = "OP_ADD",
@@ -245,6 +255,7 @@ static const char opcode_str[OP_COUNT][11] = {
     [OP_NOT] = "OP_NOT",           [OP_EQUAL] = "OP_EQUAL",
     [OP_GREATER] = "OP_GREATER",   [OP_LESS] = "OP_LESS",
 };
+#endif
 
 typedef struct {
     uint8_t* opcodes;

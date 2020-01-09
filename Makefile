@@ -6,7 +6,7 @@ debug: main.c
 	$(CC) $(CFLAGS_DEBUG) -o lox-debug $^
 
 release: main.c
-	$(CC) $(CFLAGS_RELEASE) -o lox-release $^
+	$(CC) $(CFLAGS_RELEASE) -DNDEBUG -o lox-release $^
 
 clean:
 	rm -f lox-debug lox-release
