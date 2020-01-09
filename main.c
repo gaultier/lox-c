@@ -182,13 +182,13 @@ typedef struct {
 static void value_print(FILE* out, Value v) {
     switch (v.type) {
         case VAL_BOOL:
-            fprintf(out, "%s", v.as.boolean ? "true" : "false");
+            fprintf(out, "`%s`", v.as.boolean ? "true" : "false");
             break;
         case VAL_NIL:
-            fprintf(out, "nil");
+            fprintf(out, "`nil`");
             break;
         case VAL_NUMBER:
-            fprintf(out, "%f", v.as.number);
+            fprintf(out, "`%f`", v.as.number);
             break;
         default:
             UNREACHABLE();
