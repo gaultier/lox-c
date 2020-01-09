@@ -538,6 +538,9 @@ static void lex_scan_token(Lex* lex, Token* token) {
         case '(':
             lex_init_token(lex, token, TOKEN_LEFT_PAREN, &start_lex);
             return;
+        case ')':
+            lex_init_token(lex, token, TOKEN_RIGHT_PAREN, &start_lex);
+            return;
         case ';':
             lex_init_token(lex, token, TOKEN_SEMICOLON, &start_lex);
             return;
