@@ -220,16 +220,19 @@ static bool value_is_falsy(Value v) {
 
 typedef enum {
     OP_RETURN = 0,
-    OP_CONSTANT = 1,
-    OP_NEGATE = 2,
-    OP_ADD = 3,
-    OP_SUBTRACT = 4,
-    OP_MULTIPLY = 5,
-    OP_DIVIDE = 6,
-    OP_NIL = 7,
-    OP_TRUE = 8,
-    OP_FALSE = 9,
-    OP_NOT = 10,
+    OP_CONSTANT,
+    OP_NEGATE,
+    OP_ADD,
+    OP_SUBTRACT,
+    OP_MULTIPLY,
+    OP_DIVIDE,
+    OP_NIL,
+    OP_TRUE,
+    OP_FALSE,
+    OP_NOT,
+    OP_EQUAL,
+    OP_GREATER,
+    OP_LESS,
     OP_COUNT,
 } OpCode;
 
@@ -239,7 +242,8 @@ static const char opcode_str[OP_COUNT][11] = {
     [OP_SUBTRACT] = "OP_SUBTRACT", [OP_MULTIPLY] = "OP_MULTIPLY",
     [OP_DIVIDE] = "OP_DIVIDE",     [OP_NIL] = "OP_NIL",
     [OP_TRUE] = "OP_TRUE",         [OP_FALSE] = "OP_FALSE",
-    [OP_NOT] = "OP_NOT",
+    [OP_NOT] = "OP_NOT",           [OP_EQUAL] = "OP_EQUAL",
+    [OP_GREATER] = "OP_GREATER",   [OP_LESS] = "OP_LESS",
 };
 
 typedef struct {
