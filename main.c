@@ -1001,6 +1001,27 @@ static void parse_binary(Parser* parser) {
         case TOKEN_SLASH:
             parse_emit_byte(parser, OP_DIVIDE);
             break;
+        case TOKEN_EQUAL_EQUAL:
+            parse_emit_byte(parser, OP_EQUAL);
+            break;
+        case TOKEN_BANG_EQUAL:
+            parse_emit_byte(parser, OP_EQUAL);
+            parse_emit_byte(parser, OP_NOT);
+            break;
+        case TOKEN_GREATER:
+            parse_emit_byte(parser, OP_GREATER);
+            break;
+        case TOKEN_GREATER_EQUAL:
+            parse_emit_byte(parser, OP_EQUAL);
+            parse_emit_byte(parser, OP_NOT);
+            break;
+        case TOKEN_LESS:
+            parse_emit_byte(parser, OP_LESS);
+            break;
+        case TOKEN_LESS_EQUAL:
+            parse_emit_byte(parser, OP_LESS);
+            parse_emit_byte(parser, OP_NOT);
+            break;
         default:
             UNREACHABLE();
     }
