@@ -416,6 +416,24 @@ static void vm_run_bytecode(Chunk* chunk) {
             case OP_FALSE:
                 vm_stack_push(chunk, BOOL_VAL(false));
                 break;
+            case OP_NOT: {
+                const Value v = vm_stack_pop(chunk);
+                switch (v.type) {
+                    case VAL_NIL:
+                        vm_stack_push(chunk, BOOL_VAL(true));
+                        break;
+                    case VAL_BOOL:
+                        vm_stack_push(chunk, BOOL_VAL(!AS_BOOL(v)));
+                        break;
+                    case VAL_NUMBER:
+                        vm_stack_push(chunk, BOOL_VAL(!AS_NUMBER(v)));
+                        break;
+                    default:
+                        VM_ERROR(line,
+                                 "Expected a boolean-like operand, got:", v);
+                }
+                break;
+            }
             default:
                 fprintf(stderr, "%zu:Unknown opcode %d\n", line, opcode);
                 exit(EINVAL);
