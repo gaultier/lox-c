@@ -191,6 +191,7 @@ typedef enum {
 
 typedef struct {
     ObjType type;
+    struct Obj* next;
 } Obj;
 
 #define OBJ_TYPE(value) (AS_OBJ(value)->type)
@@ -281,6 +282,11 @@ static bool value_eq(Value lhs, Value rhs) {
     }
 }
 
+static ObjString* value_obj_str_allocate(size_t size) {
+    ObjString* obj = calloc(1, size);
+    return obj;
+}
+
 static void value_str_cat(Value lhs, Value rhs, Value* res) {
     assert(IS_STRING(lhs));
     assert(IS_STRING(rhs));
@@ -290,7 +296,8 @@ static void value_str_cat(Value lhs, Value rhs, Value* res) {
     const char* const rhs_s = AS_CSTRING(rhs);
     const size_t rhs_len = AS_STRING(rhs)->len;
 
-    ObjString* os = realloc(NULL, sizeof(ObjString) + lhs_len + rhs_len + 1);
+    ObjString* os =
+        value_obj_str_allocate(sizeof(ObjString) + lhs_len + rhs_len + 1);
     os->len = lhs_len + rhs_len;
     os->obj.type = OBJ_STRING;
     memcpy(os->s, lhs_s, lhs_len);
@@ -339,7 +346,15 @@ typedef struct {
     size_t ip;
     Value stack[STACK_MAX];
     uint8_t stack_len;
+    Obj* objects;
 } Chunk;
+
+typedef struct {
+    size_t ip;
+    Value stack[STACK_MAX];
+    uint8_t stack_len;
+
+} Vm;
 
 #define VM_ERROR(line, fmt, value)         \
     do {                                   \
@@ -1049,7 +1064,7 @@ static void parse_string(Parser* parser) {
 
     const size_t s_len = parser->previous.source_len;
 
-    ObjString* os = realloc(NULL, sizeof(ObjString) + s_len + 1);
+    ObjString* os = value_obj_str_allocate(sizeof(ObjString) + s_len + 1);
     os->len = s_len;
     os->obj.type = OBJ_STRING;
     memcpy(os->s, parser->previous.source, s_len);
