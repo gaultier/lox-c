@@ -281,6 +281,25 @@ static bool value_eq(Value lhs, Value rhs) {
     }
 }
 
+static void value_str_cat(Value lhs, Value rhs, Value* res) {
+    assert(IS_STRING(lhs));
+    assert(IS_STRING(rhs));
+
+    const char* const lhs_s = AS_CSTRING(lhs);
+    const size_t lhs_len = AS_STRING(lhs)->len;
+    const char* const rhs_s = AS_CSTRING(rhs);
+    const size_t rhs_len = AS_STRING(rhs)->len;
+
+    ObjString* os = realloc(NULL, sizeof(ObjString) + lhs_len + rhs_len + 1);
+    os->len = lhs_len + rhs_len;
+    os->obj.type = OBJ_STRING;
+    memcpy(os->s, lhs_s, lhs_len);
+    memcpy(os->s + lhs_len, rhs_s, rhs_len);
+    os->s[os->len] = '\0';
+
+    *res = OBJ_VAL(os);
+}
+
 #define VALUES_MAX 256
 
 #define STACK_MAX 256
@@ -480,10 +499,18 @@ static void vm_run_bytecode(Chunk* chunk) {
             }
             case OP_ADD: {
                 const Value rhs = vm_stack_pop(chunk);
+                const Value lhs = vm_stack_pop(chunk);
+
+                if (IS_STRING(lhs) && IS_STRING(rhs)) {
+                    Value v;
+                    value_str_cat(lhs, rhs, &v);
+                    vm_stack_push(chunk, v);
+                    break;
+                }
+
                 if (!IS_NUMBER(rhs))
                     VM_ERROR(line, "Expected a number, got:", rhs);
 
-                const Value lhs = vm_stack_pop(chunk);
                 if (!IS_NUMBER(lhs))
                     VM_ERROR(line, "Expected a number, got:", lhs);
 
