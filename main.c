@@ -605,8 +605,8 @@ static Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
                     VM_ERROR(line, "Expected a number, got:", lhs);
 
                 // TODO: Check for underflow/overflow
-                vm_stack_push(vm, chunk,
-                              NUMBER_VAL(AS_NUMBER(lhs) + AS_NUMBER(rhs)));
+                RETURN_IF_ERR(vm_stack_push(
+                    vm, chunk, NUMBER_VAL(AS_NUMBER(lhs) + AS_NUMBER(rhs))));
                 break;
             }
             case OP_SUBTRACT: {
@@ -621,8 +621,8 @@ static Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
                     VM_ERROR(line, "Expected a number, got:", lhs);
 
                 // TODO: Check for underflow/overflow
-                vm_stack_push(vm, chunk,
-                              NUMBER_VAL(AS_NUMBER(lhs) - AS_NUMBER(rhs)));
+                RETURN_IF_ERR(vm_stack_push(
+                    vm, chunk, NUMBER_VAL(AS_NUMBER(lhs) - AS_NUMBER(rhs))));
                 break;
             }
             case OP_MULTIPLY: {
@@ -637,8 +637,8 @@ static Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
                     VM_ERROR(line, "Expected a number, got:", lhs);
 
                 // TODO: Check for underflow/overflow
-                vm_stack_push(vm, chunk,
-                              NUMBER_VAL(AS_NUMBER(lhs) * AS_NUMBER(rhs)));
+                RETURN_IF_ERR(vm_stack_push(
+                    vm, chunk, NUMBER_VAL(AS_NUMBER(lhs) * AS_NUMBER(rhs))));
                 break;
             }
             case OP_DIVIDE: {
@@ -652,13 +652,13 @@ static Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
                 if (!IS_NUMBER(lhs))
                     VM_ERROR(line, "Expected a number, got:", lhs);
 
-                vm_stack_push(vm, chunk,
-                              NUMBER_VAL(AS_NUMBER(lhs) / AS_NUMBER(rhs)));
+                RETURN_IF_ERR(vm_stack_push(
+                    vm, chunk, NUMBER_VAL(AS_NUMBER(lhs) / AS_NUMBER(rhs))));
                 break;
             }
             case OP_CONSTANT: {
                 Value v = {0};
-                vm_read_value_in_next_byte(vm, chunk, &v);
+                RETURN_IF_ERR(vm_read_value_in_next_byte(vm, chunk, &v));
                 RETURN_IF_ERR(vm_stack_push(vm, chunk, v));
             } break;
             case OP_NIL:
@@ -698,8 +698,8 @@ static Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
                     VM_ERROR(line, "Expected a number, got:", lhs);
 
                 // TODO: Check for 0
-                vm_stack_push(vm, chunk,
-                              BOOL_VAL(AS_NUMBER(lhs) < AS_NUMBER(rhs)));
+                RETURN_IF_ERR(vm_stack_push(
+                    vm, chunk, BOOL_VAL(AS_NUMBER(lhs) < AS_NUMBER(rhs))));
                 break;
             }
             case OP_GREATER: {
@@ -714,8 +714,8 @@ static Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
                     VM_ERROR(line, "Expected a number, got:", lhs);
 
                 // TODO: Check for 0
-                vm_stack_push(vm, chunk,
-                              BOOL_VAL(AS_NUMBER(lhs) > AS_NUMBER(rhs)));
+                RETURN_IF_ERR(vm_stack_push(
+                    vm, chunk, BOOL_VAL(AS_NUMBER(lhs) > AS_NUMBER(rhs))));
                 break;
             }
             case OP_PRINT: {
