@@ -502,6 +502,27 @@ static void read_file(const char path[], char** content, size_t* content_len) {
     fclose(file);
 }
 
+static Result vm_dump_opcode_1_operand(Vm* vm, Chunk* chunk) {
+    const uint8_t opcode = chunk->opcodes[vm->ip];
+    const size_t line = chunk->lines[vm->ip];
+
+    vm->ip += 1;
+
+    if (!(vm->ip < buf_size(chunk->opcodes))) {
+        fprintf(stderr, "%zu:Malformed opcode: missing operand for %s\n", line,
+                opcode_str[opcode]);
+        return RES_RUN_ERR;
+    }
+    const uint8_t value_index = chunk->opcodes[vm->ip];
+    const Value value = chunk->constants[value_index];
+
+    printf("%zu:%s:", line, opcode_str[opcode]);
+    value_print(stdout, value);
+    puts("");
+
+    return RES_OK;
+}
+
 static Result vm_dump(Vm* vm, Chunk* chunk) {
     while (vm->ip < buf_size(chunk->opcodes)) {
         const uint8_t opcode = chunk->opcodes[vm->ip];
@@ -526,20 +547,8 @@ static Result vm_dump(Vm* vm, Chunk* chunk) {
                 printf("%zu:%s\n", line, opcode_str[opcode]);
                 break;
             case OP_CONSTANT:
-                vm->ip += 1;
-                if (!(vm->ip < buf_size(chunk->opcodes))) {
-                    fprintf(stderr,
-                            "%zu:Malformed opcode: missing operand for "
-                            "OP_CONSTANT\n",
-                            line);
-                    return RES_RUN_ERR;
-                }
-                const uint8_t value_index = chunk->opcodes[vm->ip];
-                const Value value = chunk->constants[value_index];
-
-                printf("%zu:OP_CONSTANT:", line);
-                value_print(stdout, value);
-                puts("");
+            case OP_DEFINE_GLOBAL:
+                RETURN_IF_ERR(vm_dump_opcode_1_operand(vm, chunk));
                 break;
             default:
                 fprintf(stderr, "%zu:Unknown opcode %hhu\n", line, opcode);
