@@ -380,7 +380,7 @@ static void value_str_cat(Value lhs, Value rhs, Value* res) {
     do {                                   \
         fprintf(stderr, "%zu:" fmt, line); \
         value_print(stderr, value);        \
-        exit(EINVAL);                      \
+        return RES_RUN_ERR;                \
     } while (0)
 
 static Result vm_stack_push(Vm* vm, Chunk* chunk, Value v) {
@@ -467,7 +467,7 @@ static void read_file(const char path[], char** content, size_t* content_len) {
     fclose(file);
 }
 
-static void vm_dump(Vm* vm, Chunk* chunk) {
+static Result vm_dump(Vm* vm, Chunk* chunk) {
     while (vm->ip < buf_size(chunk->opcodes)) {
         const uint8_t opcode = chunk->opcodes[vm->ip];
         const size_t line = chunk->lines[vm->ip];
@@ -495,7 +495,7 @@ static void vm_dump(Vm* vm, Chunk* chunk) {
                             "%zu:Malformed opcode: missing operand for "
                             "OP_CONSTANT\n",
                             line);
-                    exit(EINVAL);
+                    return RES_RUN_ERR;
                 }
                 const uint8_t value_index = chunk->opcodes[vm->ip];
                 const Value value = chunk->constants[value_index];
@@ -506,13 +506,14 @@ static void vm_dump(Vm* vm, Chunk* chunk) {
                 break;
             default:
                 fprintf(stderr, "%zu:Unknown opcode %hhu\n", line, opcode);
-                exit(EINVAL);
+                return RES_RUN_ERR;
         }
         vm->ip += 1;
     }
+    return RES_OK;
 }
 
-static void vm_run_bytecode(Vm* vm, Chunk* chunk) {
+static Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
     while (vm->ip < buf_size(chunk->opcodes)) {
         const uint8_t opcode = chunk->opcodes[vm->ip];
         const size_t line = chunk->lines[vm->ip];
@@ -524,7 +525,7 @@ static void vm_run_bytecode(Vm* vm, Chunk* chunk) {
                 printf("Stack size=%hhu top value=", vm->stack_len);
                 value_print(stdout, value);
                 puts("");
-                return;
+                return RES_OK;
             }
             case OP_NEGATE: {
                 Value value = {0};
@@ -615,7 +616,7 @@ static void vm_run_bytecode(Vm* vm, Chunk* chunk) {
                             "%zu:Malformed opcode: missing operand for "
                             "OP_CONSTANT\n",
                             line);
-                    exit(EINVAL);
+                    return RES_RUN_ERR;
                 }
                 const uint8_t value_index = chunk->opcodes[vm->ip];
                 const Value value = chunk->constants[value_index];
@@ -679,10 +680,11 @@ static void vm_run_bytecode(Vm* vm, Chunk* chunk) {
             default:
                 fprintf(stderr, "%zu:Unknown opcode %s\n", line,
                         opcode_str[opcode]);
-                exit(EINVAL);
+                return RES_RUN_ERR;
         }
         vm->ip += 1;
     }
+    UNREACHABLE();
 }
 
 static void lex_init_token(const Lex* lex, Token* token, TokenType type,
