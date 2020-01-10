@@ -502,7 +502,7 @@ static void read_file(const char path[], char** content, size_t* content_len) {
     fclose(file);
 }
 
-static Result vm_dump_opcode_1_operand(Vm* vm, Chunk* chunk) {
+static Result vm_read_value(Vm* vm, Chunk* chunk, Value* v) {
     const uint8_t opcode = chunk->opcodes[vm->ip];
     const size_t line = chunk->lines[vm->ip];
 
@@ -514,8 +514,17 @@ static Result vm_dump_opcode_1_operand(Vm* vm, Chunk* chunk) {
         return RES_RUN_ERR;
     }
     const uint8_t value_index = chunk->opcodes[vm->ip];
-    const Value value = chunk->constants[value_index];
+    *v = chunk->constants[value_index];
 
+    return RES_OK;
+}
+
+static Result vm_dump_opcode_1_operand(Vm* vm, Chunk* chunk) {
+    Value value = {0};
+    RETURN_IF_ERR(vm_read_value(vm, chunk, &value));
+
+    const uint8_t opcode = chunk->opcodes[vm->ip];
+    const size_t line = chunk->lines[vm->ip];
     printf("%zu:%s:", line, opcode_str[opcode]);
     value_print(stdout, value);
     puts("");
@@ -647,19 +656,11 @@ static Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
                               NUMBER_VAL(AS_NUMBER(lhs) / AS_NUMBER(rhs)));
                 break;
             }
-            case OP_CONSTANT:
-                vm->ip += 1;
-                if (!(vm->ip < buf_size(chunk->opcodes))) {
-                    fprintf(stderr,
-                            "%zu:Malformed opcode: missing operand for "
-                            "OP_CONSTANT\n",
-                            line);
-                    return RES_RUN_ERR;
-                }
-                const uint8_t value_index = chunk->opcodes[vm->ip];
-                const Value value = chunk->constants[value_index];
-                RETURN_IF_ERR(vm_stack_push(vm, chunk, value));
-                break;
+            case OP_CONSTANT: {
+                Value v = {0};
+                vm_read_value(vm, chunk, &v);
+                RETURN_IF_ERR(vm_stack_push(vm, chunk, v));
+            } break;
             case OP_NIL:
                 RETURN_IF_ERR(vm_stack_push(vm, chunk, NIL_VAL));
                 break;
