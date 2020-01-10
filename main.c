@@ -518,9 +518,7 @@ static Result vm_read_constant_in_next_byte(Vm* vm, Chunk* chunk, Value* v) {
     }
     const uint8_t value_index = chunk->opcodes[vm->ip];
     *v = chunk->constants[value_index];
-    LOG("constant index=%d constant=", value_index);
-    value_print(stdout, *v);
-    puts("");
+    LOG("constant index=%d\n", value_index);
 
     return RES_OK;
 }
@@ -754,7 +752,7 @@ static Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
                 const size_t s_len = AS_STRING(name)->len;
                 Value* value = ht_search(vm->globals, s, s_len);
                 if (!value) {
-                    fprintf(stderr, "%zu:Undefined variable %.*s", line,
+                    fprintf(stderr, "%zu:Undefined variable %.*s\n", line,
                             (int)s_len, s);
                     return RES_RUN_ERR;
                 }
@@ -1167,9 +1165,7 @@ static uint8_t parse_make_constant(Parser* parser, Value v) {
     const size_t constant_i = buf_size(parser->chunk->constants) - 1;
     parse_emit_byte(parser, constant_i);
 
-    LOG("new constant index=%zu constant=", constant_i);
-    value_print(stdout, v);
-    puts("");
+    LOG("new constant index=%zu\n", constant_i);
 
     return constant_i;
 }
@@ -1473,6 +1469,8 @@ cleanup:
 }
 
 static void vm_repl() {
+    Vm vm = {.globals = ht_init(100, NULL)};
+
     while (true) {
         char* source = NULL;
         size_t source_len = 0;
@@ -1485,6 +1483,14 @@ static void vm_repl() {
             exit(errno);
         }
 
+        Chunk chunk = {0};
+        Result result = RES_OK;
+
+        if ((result = parse_compile(source, source_len, &chunk, &vm)) != RES_OK)
+            continue;
+
+        LOG("parsing successful%s\n", "");
+        vm_run_bytecode(&vm, &chunk);
         vm_interpret(source, source_len);
     }
 }
