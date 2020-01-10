@@ -1266,7 +1266,7 @@ static Result parse_compile(const char* source, size_t source_len,
     return RES_OK;
 }
 
-static void vm_interpret(const char* source, size_t source_len) {
+static Result vm_interpret(const char* source, size_t source_len) {
     Vm vm = {0};
     Chunk chunk = {0};
     Result result = RES_OK;
@@ -1279,7 +1279,7 @@ cleanup:
     value_obj_free();
     free((char*)source);
 
-    if (result != RES_OK) exit(1);
+    return result;
 }
 
 static void vm_repl() {
@@ -1318,7 +1318,7 @@ int main(int argc, const char* argv[]) {
         if (strcmp(argv[1], "vm_dump") == 0)
             vm_dump(NULL, NULL);  // FIXME
         else if (strcmp(argv[1], "run") == 0)
-            vm_interpret(source, source_len);
+            return vm_interpret(source, source_len);
     } else
         cli_help(argv);
 }
