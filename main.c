@@ -544,8 +544,6 @@ static Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
         const size_t line = chunk->lines[vm->ip];
 
         switch (opcode) {
-            case OP_RETURN:
-                return RES_OK;
             case OP_NEGATE: {
                 Value value = {0};
                 RETURN_IF_ERR(vm_stack_pop(vm, chunk, &value));
@@ -711,7 +709,7 @@ static Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
         }
         vm->ip += 1;
     }
-    UNREACHABLE();
+    return RES_OK;
 }
 
 static void lex_init_token(const Lex* lex, Token* token, TokenType type,
@@ -1297,8 +1295,6 @@ static Result parse_compile(const char* source, size_t source_len, Chunk* chunk,
     }
 
     if (parser.state != PARSER_STATE_OK) return RES_PARSE_ERR;
-
-    parse_emit_byte(&parser, OP_RETURN);
 
     return RES_OK;
 }
