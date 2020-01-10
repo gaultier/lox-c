@@ -21,9 +21,9 @@
     } while (0);
 
 #ifndef NDEBUG
-#define LOG(fmt, ...)                                               \
-    do {                                                            \
-        printf("%s:%d:" fmt "\n", __func__, __LINE__, __VA_ARGS__); \
+#define LOG(fmt, ...)                                          \
+    do {                                                       \
+        printf("%s:%d:" fmt, __func__, __LINE__, __VA_ARGS__); \
     } while (0)
 #else
 #ifdef NDEBUG
@@ -48,7 +48,7 @@ static void realloc_safe(void** ptr, size_t new_size, const char* func,
                 line, new_size);
         exit(ENOMEM);
     }
-    LOG("func=%s line=%d allocated=%zu", func, line, new_size);
+    LOG("func=%s line=%d allocated=%zu\n", func, line, new_size);
 }
 
 #define REALLOC_SAFE(ptr, new_size) \
@@ -391,7 +391,7 @@ static ObjString* vm_obj_str_allocate(Vm* vm, size_t size) {
 static ObjString* vm_make_string(Vm* vm, size_t s_len) {
     ObjString* os = vm_obj_str_allocate(vm, sizeof(ObjString) + s_len);
     os->len = s_len;
-    LOG("allocated string size=%zu", os->len);
+    LOG("allocated string size=%zu\n", os->len);
     os->obj.type = OBJ_STRING;
 
     return os;
@@ -463,7 +463,7 @@ static void read_stdin(char** content, size_t* content_len) {
                 strerror(errno), errno);
         exit(errno);
     }
-    LOG("content_len=%zu", *content_len);
+    LOG("content_len=%zu\n", *content_len);
 }
 
 static void read_file(const char path[], char** content, size_t* content_len) {
@@ -515,7 +515,7 @@ static Result vm_read_constant_in_next_byte(Vm* vm, Chunk* chunk, Value* v) {
     }
     const uint8_t value_index = chunk->opcodes[vm->ip];
     *v = chunk->constants[value_index];
-    LOG("constant index=%d", value_index);
+    LOG("constant index=%d constant=", value_index);
     value_print(stdout, *v);
     puts("");
 
@@ -734,7 +734,7 @@ static Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
             case OP_DEFINE_GLOBAL: {
                 Value v = {0};
                 RETURN_IF_ERR(vm_read_constant_in_next_byte(vm, chunk, &v));
-                LOG("todo define global=%.*s", (int)AS_STRING(v)->len,
+                LOG("todo define global=%.*s\n", (int)AS_STRING(v)->len,
                     AS_CSTRING(v));
                 break;
             }
@@ -755,7 +755,7 @@ static void lex_init_token(const Lex* lex, Token* token, TokenType type,
     token->type = type;
     token->source = &lex->source[start_lex->pos];
     token->source_len = lex->pos - start_lex->pos;
-    LOG("type=%s line=%zu column=%zu source=`%.*s` source_len=%zu",
+    LOG("type=%s line=%zu column=%zu source=`%.*s` source_len=%zu\n",
         token_type_str[type], token->line, token->column,
         (int)token->source_len, token->source, token->source_len);
 }
@@ -1100,17 +1100,17 @@ static const ParseRule rules[TOKEN_COUNT] = {
 
 static void parse_error(Parser* parser, const char* err, size_t err_len) {
     if (parser->state == PARSER_STATE_OK) {
-        LOG("new parser error, entering error mode err=`%.*s`", (int)err_len,
+        LOG("new parser error, entering error mode err=`%.*s`\n", (int)err_len,
             err);
         parser->state = PARSER_STATE_ERROR;
     } else if (parser->state == PARSER_STATE_ERROR) {
-        LOG("new parser error, entering panic mode err=`%.*s`", (int)err_len,
+        LOG("new parser error, entering panic mode err=`%.*s`\n", (int)err_len,
             err);
         parser->state = PARSER_STATE_PANIC_MODE;
         return;
     } else {
-        LOG("new parser error in panic mode, skipping err=`%.*s`", (int)err_len,
-            err);
+        LOG("new parser error in panic mode, skipping err=`%.*s`\n",
+            (int)err_len, err);
         return;
     }
 
@@ -1119,7 +1119,7 @@ static void parse_error(Parser* parser, const char* err, size_t err_len) {
 }
 
 static void parse_emit_byte(Parser* parser, uint8_t byte) {
-    LOG("byte=%d opcode=%s", byte, opcode_str[byte]);
+    LOG("byte=%d opcode=%s\n", byte, opcode_str[byte]);
     buf_push(parser->chunk->lines, parser->current.line);
     buf_push(parser->chunk->opcodes, byte);
 }
@@ -1141,7 +1141,7 @@ static uint8_t parse_make_constant(Parser* parser, Value v) {
     const size_t constant_i = buf_size(parser->chunk->constants) - 1;
     parse_emit_byte(parser, constant_i);
 
-    LOG("new constant index=%zu v=", constant_i);
+    LOG("new constant index=%zu constant=", constant_i);
     value_print(stdout, v);
     puts("");
 
@@ -1149,11 +1149,11 @@ static uint8_t parse_make_constant(Parser* parser, Value v) {
 }
 
 static void parse_precedence(Parser* parser, Precedence precedence, Vm* vm) {
-    LOG("precedence=%s previous_type=%s current_type=%s",
+    LOG("precedence=%s previous_type=%s current_type=%s\n",
         precedence_str[precedence], token_type_str[parser->previous.type],
         token_type_str[parser->current.type]);
     parse_advance(parser);
-    LOG("precedence=%s previous_type=%s current_type=%s",
+    LOG("precedence=%s previous_type=%s current_type=%s\n",
         precedence_str[precedence], token_type_str[parser->previous.type],
         token_type_str[parser->current.type]);
 
@@ -1390,7 +1390,7 @@ static void parse_declaration(Parser* parser, Vm* vm) {
 
 static Result parse_compile(const char* source, size_t source_len, Chunk* chunk,
                             Vm* vm) {
-    LOG("source_len=%zu source=`%.*s`", source_len, (int)source_len, source);
+    LOG("source_len=%zu source=`%.*s`\n", source_len, (int)source_len, source);
 
     Parser parser = {.lex =
                          {
@@ -1421,7 +1421,7 @@ static Result vm_interpret(const char* source, size_t source_len) {
     if ((result = parse_compile(source, source_len, &chunk, &vm)) != RES_OK)
         goto cleanup;
 
-    LOG("parsing successful%s", "");
+    LOG("parsing successful%s\n", "");
     vm_run_bytecode(&vm, &chunk);
 
 cleanup:
