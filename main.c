@@ -182,6 +182,7 @@ typedef enum {
     PREC_COUNT,
 } Precedence;
 
+#ifndef NDEBUG
 static const char precedence_str[PREC_COUNT][16] = {
     [PREC_NONE] = "PREC_NONE",
     [PREC_ASSIGNMENT] = "PREC_ASSIGNMENT",
@@ -195,6 +196,7 @@ static const char precedence_str[PREC_COUNT][16] = {
     [PREC_CALL] = "PREC_CALL",
     [PREC_PRIMARY] = "PREC_PRIMARY",
 };
+#endif
 
 typedef enum {
     VAL_BOOL,
@@ -308,18 +310,18 @@ typedef struct {
 static void value_print(FILE* out, Value v) {
     switch (v.type) {
         case VAL_BOOL:
-            fprintf(out, "`%s`", v.as.boolean ? "true" : "false");
+            fprintf(out, "%s", v.as.boolean ? "true" : "false");
             break;
         case VAL_NIL:
-            fprintf(out, "`nil`");
+            fprintf(out, "nil");
             break;
         case VAL_NUMBER:
-            fprintf(out, "`%f`", v.as.number);
+            fprintf(out, "%f", v.as.number);
             break;
         case VAL_OBJ:
             switch (AS_OBJ(v)->type) {
                 case OBJ_STRING:
-                    fprintf(out, "`\"%.*s\"`", (int)AS_STRING(v)->len,
+                    fprintf(out, "\"%.*s\"", (int)AS_STRING(v)->len,
                             AS_CSTRING(v));
                     break;
                 default:
@@ -508,6 +510,7 @@ static Result vm_dump(Vm* vm, Chunk* chunk) {
             case OP_EQUAL:
             case OP_LESS:
             case OP_GREATER:
+            case OP_PRINT:
                 printf("%zu:%s\n", line, opcode_str[opcode]);
                 break;
             case OP_CONSTANT:
@@ -541,14 +544,8 @@ static Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
         const size_t line = chunk->lines[vm->ip];
 
         switch (opcode) {
-            case OP_RETURN: {
-                Value value = {0};
-                RETURN_IF_ERR(vm_stack_pop(vm, chunk, &value));
-                printf("Stack size=%hhu top value=", vm->stack_len);
-                value_print(stdout, value);
-                puts("");
+            case OP_RETURN:
                 return RES_OK;
-            }
             case OP_NEGATE: {
                 Value value = {0};
                 RETURN_IF_ERR(vm_stack_pop(vm, chunk, &value));
@@ -701,6 +698,12 @@ static Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
                               BOOL_VAL(AS_NUMBER(lhs) > AS_NUMBER(rhs)));
                 break;
             }
+            case OP_PRINT: {
+                Value value = {0};
+                RETURN_IF_ERR(vm_stack_pop(vm, chunk, &value));
+                value_print(stdout, value);
+                puts("");
+            } break;
             default:
                 fprintf(stderr, "%zu:Unknown opcode %s\n", line,
                         opcode_str[opcode]);
