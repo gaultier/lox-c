@@ -1121,7 +1121,7 @@ static const ParseRule rules[TOKEN_COUNT] = {
     [TOKEN_LESS] = {.infix = parse_binary, .precedence = PREC_COMPARISON},
     [TOKEN_LESS_EQUAL] = {.infix = parse_binary, .precedence = PREC_COMPARISON},
     [TOKEN_STRING] = {.prefix = parse_string},
-    [TOKEN_VAR] = {.prefix = parse_variable},
+    [TOKEN_IDENTIFIER] = {.prefix = parse_variable},
 };
 
 static void parse_error(Parser* parser, const char* err, size_t err_len) {
