@@ -47,7 +47,7 @@ static void realloc_safe(void** ptr, size_t new_size, const char* func,
                 line, new_size);
         exit(ENOMEM);
     }
-    LOG("func=%s allocated=%zu", func, new_size);
+    LOG("func=%s line=%d allocated=%zu", func, line, new_size);
 }
 
 #define REALLOC_SAFE(ptr, new_size) \
@@ -387,6 +387,8 @@ static void value_str_cat(Value lhs, Value rhs, Value* res) {
     ObjString* os =
         value_obj_str_allocate(sizeof(ObjString) + lhs_len + rhs_len + 1);
     os->len = lhs_len + rhs_len;
+    LOG("allocated string size=%zu", os->len);
+
     os->obj.type = OBJ_STRING;
     memcpy(os->s, lhs_s, lhs_len);
     memcpy(os->s + lhs_len, rhs_s, rhs_len);
@@ -1128,6 +1130,7 @@ static void parse_string(Parser* parser) {
 
     ObjString* os = value_obj_str_allocate(sizeof(ObjString) + s_len + 1);
     os->len = s_len;
+    LOG("allocated string size=%zu", os->len);
     os->obj.type = OBJ_STRING;
     memcpy(os->s, parser->previous.source, s_len);
     os->s[s_len] = '\0';
