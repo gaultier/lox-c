@@ -376,6 +376,8 @@ static ObjString* vm_obj_str_allocate(Vm* vm, size_t size) {
 }
 
 static ObjString* vm_make_string(Vm* vm, const char* s, size_t s_len) {
+    assert(s != NULL);
+
     if (ht_search(vm->strings, (void*)s, s_len)) {
         LOG("string is interned s=`%.*s`", (int)s_len, s);
     } else {
@@ -387,10 +389,8 @@ static ObjString* vm_make_string(Vm* vm, const char* s, size_t s_len) {
     os->len = s_len;
     LOG("allocated string size=%zu", os->len);
     os->obj.type = OBJ_STRING;
-    if (s) {
-        memcpy(os->s, s, s_len);
-        os->s[s_len] = '\0';
-    }
+    memcpy(os->s, s, s_len);
+    os->s[s_len] = '\0';
 
     return os;
 }
@@ -404,11 +404,14 @@ static void vm_str_cat(Vm* vm, Value lhs, Value rhs, Value* res) {
     const char* const rhs_s = AS_CSTRING(rhs);
     const size_t rhs_len = AS_STRING(rhs)->len;
 
-    ObjString* const os = vm_make_string(vm, NULL, lhs_len + rhs_len);
+    char* cat = NULL;
+    const size_t cat_len = lhs_len + rhs_len;
+    REALLOC_SAFE(&cat, cat_len);
+    memcpy(cat, lhs_s, lhs_len);
+    memcpy(cat + lhs_len, rhs_s, rhs_len);
 
-    memcpy(os->s, lhs_s, lhs_len);
-    memcpy(os->s + lhs_len, rhs_s, rhs_len);
-    os->s[os->len] = '\0';
+    ObjString* const os = vm_make_string(vm, cat, cat_len);
+    free(cat);
 
     *res = OBJ_VAL(os);
 }
