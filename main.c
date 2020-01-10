@@ -502,7 +502,7 @@ static void read_file(const char path[], char** content, size_t* content_len) {
     fclose(file);
 }
 
-static Result vm_read_value(Vm* vm, Chunk* chunk, Value* v) {
+static Result vm_read_value_in_next_byte(Vm* vm, Chunk* chunk, Value* v) {
     const uint8_t opcode = chunk->opcodes[vm->ip];
     const size_t line = chunk->lines[vm->ip];
 
@@ -521,7 +521,7 @@ static Result vm_read_value(Vm* vm, Chunk* chunk, Value* v) {
 
 static Result vm_dump_opcode_1_operand(Vm* vm, Chunk* chunk) {
     Value value = {0};
-    RETURN_IF_ERR(vm_read_value(vm, chunk, &value));
+    RETURN_IF_ERR(vm_read_value_in_next_byte(vm, chunk, &value));
 
     const uint8_t opcode = chunk->opcodes[vm->ip];
     const size_t line = chunk->lines[vm->ip];
@@ -658,7 +658,7 @@ static Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
             }
             case OP_CONSTANT: {
                 Value v = {0};
-                vm_read_value(vm, chunk, &v);
+                vm_read_value_in_next_byte(vm, chunk, &v);
                 RETURN_IF_ERR(vm_stack_push(vm, chunk, v));
             } break;
             case OP_NIL:
