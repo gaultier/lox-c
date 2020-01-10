@@ -317,7 +317,8 @@ static void value_print(FILE* out, Value v) {
         case VAL_OBJ:
             switch (AS_OBJ(v)->type) {
                 case OBJ_STRING:
-                    fprintf(out, "`\"%s\"`", AS_CSTRING(v));
+                    fprintf(out, "`\"%.*s\"`", (int)AS_STRING(v)->len,
+                            AS_CSTRING(v));
                     break;
                 default:
                     UNREACHABLE();
@@ -372,15 +373,11 @@ static ObjString* vm_obj_str_allocate(Vm* vm, size_t size) {
     return obj;
 }
 
-static ObjString* vm_make_string(Vm* vm, const char* s, size_t s_len) {
-    ObjString* os = vm_obj_str_allocate(vm, sizeof(ObjString) + s_len + 1);
+static ObjString* vm_make_string(Vm* vm, size_t s_len) {
+    ObjString* os = vm_obj_str_allocate(vm, sizeof(ObjString) + s_len);
     os->len = s_len;
     LOG("allocated string size=%zu", os->len);
     os->obj.type = OBJ_STRING;
-    if (s) {
-        memcpy(os->s, s, s_len);
-        os->s[s_len] = '\0';
-    }
 
     return os;
 }
@@ -394,11 +391,10 @@ static void vm_str_cat(Vm* vm, Value lhs, Value rhs, Value* res) {
     const char* const rhs_s = AS_CSTRING(rhs);
     const size_t rhs_len = AS_STRING(rhs)->len;
 
-    ObjString* const os = vm_make_string(vm, NULL, lhs_len + rhs_len);
+    ObjString* const os = vm_make_string(vm, lhs_len + rhs_len);
 
     memcpy(os->s, lhs_s, lhs_len);
     memcpy(os->s + lhs_len, rhs_s, rhs_len);
-    os->s[os->len] = '\0';
 
     *res = OBJ_VAL(os);
 }
@@ -1150,8 +1146,8 @@ static void parse_number(Parser* parser, Vm* vm) {
 static void parse_string(Parser* parser, Vm* vm) {
     assert(parser->previous.type = TOKEN_STRING);
 
-    const ObjString* const os = vm_make_string(vm, parser->previous.source,
-                                               parser->previous.source_len);
+    ObjString* const os = vm_make_string(vm, parser->previous.source_len);
+    memcpy(os->s, parser->previous.source, os->len);
     const Value v = OBJ_VAL(os);
 
     parse_emit_byte(parser, OP_CONSTANT);
