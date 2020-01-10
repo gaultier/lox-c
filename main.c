@@ -162,7 +162,8 @@ typedef enum {
     PREC_COUNT,
 } Precedence;
 
-#ifndef NDEBUG
+// TODO: See if we keep this
+#if 0
 static const char precedence_str[PREC_COUNT][16] = {
     [PREC_NONE] = "PREC_NONE",
     [PREC_ASSIGNMENT] = "PREC_ASSIGNMENT",
@@ -237,6 +238,13 @@ static bool value_obj_is_type(Value v, ObjType type) {
 #define VALUES_MAX 256
 
 #define STACK_MAX 256
+
+typedef enum {
+    RES_OK = 0,
+    RES_LEX_ERR,
+    RES_PARSE_ERR,
+    RES_RUN_ERR,
+} Result;
 
 typedef enum {
     OP_RETURN = 0,
@@ -375,28 +383,30 @@ static void value_str_cat(Value lhs, Value rhs, Value* res) {
         exit(EINVAL);                      \
     } while (0)
 
-static void vm_stack_push(Vm* vm, Chunk* chunk, Value v) {
+static Result vm_stack_push(Vm* vm, Chunk* chunk, Value v) {
     if (vm->stack_len == (STACK_MAX - 1)) {
         fprintf(stderr, "%zu:Maximum stack size reached: %d\n",
                 chunk->lines[vm->ip], STACK_MAX);
-        exit(ENOMEM);
+        return RES_RUN_ERR;
     }
     vm->stack_len += 1;
     vm->stack[vm->stack_len - 1] = v;
+
+    return RES_OK;
 }
 
-static Value vm_stack_pop(Vm* vm, Chunk* chunk) {
+static Result vm_stack_pop(Vm* vm, Chunk* chunk, Value* v) {
     if (vm->stack_len == 0) {
         fprintf(stderr, "%zu:Cannot pop from an empty stack\n",
                 chunk->lines[vm->ip]);
-        exit(EINVAL);
+        return RES_RUN_ERR;
     }
 
-    const Value value = vm->stack[vm->stack_len - 1];
+    *v = vm->stack[vm->stack_len - 1];
     vm->stack[vm->stack_len - 1] = (Value){0};
     vm->stack_len -= 1;
 
-    return value;
+    return RES_OK;
 }
 
 static void read_stdin(char** content, size_t* content_len) {
@@ -509,14 +519,16 @@ static void vm_run_bytecode(Vm* vm, Chunk* chunk) {
 
         switch (opcode) {
             case OP_RETURN: {
-                const Value value = vm_stack_pop(vm, chunk);
+                Value value = {0};
+                vm_stack_pop(vm, chunk, &value);
                 printf("Stack size=%hhu top value=", vm->stack_len);
                 value_print(stdout, value);
                 puts("");
                 return;
             }
             case OP_NEGATE: {
-                const Value value = vm_stack_pop(vm, chunk);
+                Value value = {0};
+                vm_stack_pop(vm, chunk, &value);
 
                 if (!IS_NUMBER(value))
                     VM_ERROR(line, "Expected a number, got:", value);
@@ -525,8 +537,10 @@ static void vm_run_bytecode(Vm* vm, Chunk* chunk) {
                 break;
             }
             case OP_ADD: {
-                const Value rhs = vm_stack_pop(vm, chunk);
-                const Value lhs = vm_stack_pop(vm, chunk);
+                Value rhs = {0};
+                vm_stack_pop(vm, chunk, &rhs);
+                Value lhs = {0};
+                vm_stack_pop(vm, chunk, &lhs);
 
                 if (IS_STRING(lhs) && IS_STRING(rhs)) {
                     Value v;
@@ -547,11 +561,13 @@ static void vm_run_bytecode(Vm* vm, Chunk* chunk) {
                 break;
             }
             case OP_SUBTRACT: {
-                const Value rhs = vm_stack_pop(vm, chunk);
+                Value rhs = {0};
+                vm_stack_pop(vm, chunk, &rhs);
                 if (!IS_NUMBER(rhs))
                     VM_ERROR(line, "Expected a number, got:", rhs);
 
-                const Value lhs = vm_stack_pop(vm, chunk);
+                Value lhs = {0};
+                vm_stack_pop(vm, chunk, &lhs);
                 if (!IS_NUMBER(lhs))
                     VM_ERROR(line, "Expected a number, got:", lhs);
 
@@ -561,11 +577,13 @@ static void vm_run_bytecode(Vm* vm, Chunk* chunk) {
                 break;
             }
             case OP_MULTIPLY: {
-                const Value rhs = vm_stack_pop(vm, chunk);
+                Value rhs = {0};
+                vm_stack_pop(vm, chunk, &rhs);
                 if (!IS_NUMBER(rhs))
                     VM_ERROR(line, "Expected a number, got:", rhs);
 
-                const Value lhs = vm_stack_pop(vm, chunk);
+                Value lhs = {0};
+                vm_stack_pop(vm, chunk, &lhs);
                 if (!IS_NUMBER(lhs))
                     VM_ERROR(line, "Expected a number, got:", lhs);
 
@@ -575,11 +593,13 @@ static void vm_run_bytecode(Vm* vm, Chunk* chunk) {
                 break;
             }
             case OP_DIVIDE: {
-                const Value rhs = vm_stack_pop(vm, chunk);
+                Value rhs = {0};
+                vm_stack_pop(vm, chunk, &rhs);
                 if (!IS_NUMBER(rhs))
                     VM_ERROR(line, "Expected a number, got:", rhs);
 
-                const Value lhs = vm_stack_pop(vm, chunk);
+                Value lhs = {0};
+                vm_stack_pop(vm, chunk, &lhs);
                 if (!IS_NUMBER(lhs))
                     VM_ERROR(line, "Expected a number, got:", lhs);
 
@@ -611,22 +631,27 @@ static void vm_run_bytecode(Vm* vm, Chunk* chunk) {
                 vm_stack_push(vm, chunk, BOOL_VAL(false));
                 break;
             case OP_NOT: {
-                const Value v = vm_stack_pop(vm, chunk);
+                Value v = {0};
+                vm_stack_pop(vm, chunk, &v);
                 vm_stack_push(vm, chunk, BOOL_VAL(value_is_falsy(v)));
                 break;
             }
             case OP_EQUAL: {
-                const Value rhs = vm_stack_pop(vm, chunk);
-                const Value lhs = vm_stack_pop(vm, chunk);
+                Value rhs = {0};
+                vm_stack_pop(vm, chunk, &rhs);
+                Value lhs = {0};
+                vm_stack_pop(vm, chunk, &lhs);
                 vm_stack_push(vm, chunk, BOOL_VAL(value_eq(lhs, rhs)));
                 break;
             }
             case OP_LESS: {
-                const Value rhs = vm_stack_pop(vm, chunk);
+                Value rhs = {0};
+                vm_stack_pop(vm, chunk, &rhs);
                 if (!IS_NUMBER(rhs))
                     VM_ERROR(line, "Expected a number, got:", rhs);
 
-                const Value lhs = vm_stack_pop(vm, chunk);
+                Value lhs = {0};
+                vm_stack_pop(vm, chunk, &lhs);
                 if (!IS_NUMBER(lhs))
                     VM_ERROR(line, "Expected a number, got:", lhs);
 
@@ -636,11 +661,13 @@ static void vm_run_bytecode(Vm* vm, Chunk* chunk) {
                 break;
             }
             case OP_GREATER: {
-                const Value rhs = vm_stack_pop(vm, chunk);
+                Value rhs = {0};
+                vm_stack_pop(vm, chunk, &rhs);
                 if (!IS_NUMBER(rhs))
                     VM_ERROR(line, "Expected a number, got:", rhs);
 
-                const Value lhs = vm_stack_pop(vm, chunk);
+                Value lhs = {0};
+                vm_stack_pop(vm, chunk, &lhs);
                 if (!IS_NUMBER(lhs))
                     VM_ERROR(line, "Expected a number, got:", lhs);
 
@@ -1232,7 +1259,7 @@ static void vm_repl() {
     }
 }
 
-void cli_help(int argc, const char* argv[]) {
+void cli_help(const char* argv[]) {
     printf("Usage: %s dump|run|repl [filename]\n", argv[0]);
     exit(0);
 }
@@ -1253,5 +1280,5 @@ int main(int argc, const char* argv[]) {
         else if (strcmp(argv[1], "run") == 0)
             vm_interpret(source, source_len);
     } else
-        cli_help(argc, argv);
+        cli_help(argv);
 }
