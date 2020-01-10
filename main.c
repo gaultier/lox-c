@@ -1056,9 +1056,17 @@ static const ParseRule rules[TOKEN_COUNT] = {
 
 static void parse_error(Parser* parser, const char* err, size_t err_len) {
     if (parser->state == PARSER_STATE_OK) {
+        LOG("new parser error, entering error mode err=`%.*s`", (int)err_len,
+            err);
         parser->state = PARSER_STATE_ERROR;
     } else if (parser->state == PARSER_STATE_ERROR) {
+        LOG("new parser error, entering panic mode err=`%.*s`", (int)err_len,
+            err);
         parser->state = PARSER_STATE_PANIC_MODE;
+        return;
+    } else {
+        LOG("new parser error in panic mode, skipping err=`%.*s`", (int)err_len,
+            err);
         return;
     }
 
