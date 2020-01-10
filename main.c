@@ -414,13 +414,25 @@ static Result vm_stack_pop(Vm* vm, Chunk* chunk, Value* v) {
     return RES_OK;
 }
 
+static void realloc_safe(void** ptr, size_t new_size, const char* func,
+                         int line) {
+    if ((*ptr = realloc(*ptr, new_size)) == NULL) {
+        fprintf(stderr, "%s:%d: Could not allocate %zu bytes of memory\n", func,
+                line, new_size);
+        exit(ENOMEM);
+    }
+}
+
+#define REALLOC_SAFE(ptr, new_size) \
+    realloc_safe(ptr, new_size, __func__, __LINE__)
+
 static void read_stdin(char** content, size_t* content_len) {
     char buf[BUF_LEN] = "";
 
     ssize_t effectivily_read = 0;
     while ((effectivily_read = read(0, buf, BUF_LEN)) > 0) {
         *content_len += effectivily_read;
-        *content = realloc(*content, *content_len);
+        REALLOC_SAFE((void*)content, *content_len);
 
         if (*content == NULL) {
             fprintf(stderr, "Could not allocate while reading from stdin\n");
