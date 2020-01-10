@@ -9,6 +9,7 @@
 #include <unistd.h>
 
 #include "buf.h"
+#include "hashtab.h"
 
 #define UNREACHABLE()                                                       \
     do {                                                                    \
@@ -1312,6 +1313,19 @@ void cli_help(const char* argv[]) {
 }
 
 int main(int argc, const char* argv[]) {
+    hashtab_t* strings = ht_init(100, NULL);
+    int foo_v = 0;
+    int bar_v = 1;
+    int hello_v = 42;
+    int print_v = 99;
+    ht_insert(strings, "foo", 3, &foo_v, sizeof(int));
+    ht_insert(strings, "bar", 3, &bar_v, sizeof(int));
+    ht_insert(strings, "hello", 5, &hello_v, sizeof(int));
+    ht_insert(strings, "print", 5, &print_v, sizeof(int));
+
+    int* v = ht_search(strings, "Hello", 5);
+    printf("v=%d\n", v ? *v : -1);
+
     if (argc == 2 && strcmp(argv[1], "repl") == 0)
         vm_repl();
     else if (argc == 3) {
