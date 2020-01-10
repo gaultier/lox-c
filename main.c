@@ -51,7 +51,7 @@ static void realloc_safe(void** ptr, size_t new_size, const char* func,
 }
 
 #define REALLOC_SAFE(ptr, new_size) \
-    realloc_safe(ptr, new_size, __func__, __LINE__)
+    realloc_safe((void*)ptr, new_size, __func__, __LINE__)
 
 typedef struct {
     const char* source;
@@ -367,7 +367,7 @@ static bool value_eq(Value lhs, Value rhs) {
 
 static ObjString* value_obj_str_allocate(size_t size) {
     ObjString* obj = NULL;
-    REALLOC_SAFE((void*)&obj, size);
+    REALLOC_SAFE(&obj, size);
     obj->obj.next = objects;
 
     objects = &obj->obj;
@@ -436,7 +436,7 @@ static void read_stdin(char** content, size_t* content_len) {
     ssize_t effectivily_read = 0;
     while ((effectivily_read = read(0, buf, BUF_LEN)) > 0) {
         *content_len += effectivily_read;
-        REALLOC_SAFE((void*)content, *content_len);
+        REALLOC_SAFE(content, *content_len);
 
         memcpy(*content + *content_len - effectivily_read, buf,
                effectivily_read);
@@ -470,7 +470,7 @@ static void read_file(const char path[], char** content, size_t* content_len) {
 
     rewind(file);
 
-    REALLOC_SAFE((void*)content, file_size + 1);
+    REALLOC_SAFE(content, file_size + 1);
     (*content)[file_size] = '\0';
 
     const size_t bytes_read = fread(*content, 1, file_size, file);
@@ -995,7 +995,8 @@ static void lex_scan_token(Lex* lex, Token* token) {
             return;
         default: {
             char* err = NULL;
-            asprintf(&err, "Unknown token `%c`", c);
+            REALLOC_SAFE(&err, 19);
+            snprintf(err, 19, "Unknown token `%c`", c);
             lex_init_token_err(lex, token, err);
         }
     }
