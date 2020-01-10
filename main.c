@@ -277,6 +277,7 @@ typedef enum {
     OP_EQUAL,
     OP_GREATER,
     OP_LESS,
+    OP_PRINT,
     OP_COUNT,
 } OpCode;
 
@@ -288,6 +289,7 @@ static const char opcode_str[OP_COUNT][12] = {
     [OP_TRUE] = "OP_TRUE",         [OP_FALSE] = "OP_FALSE",
     [OP_NOT] = "OP_NOT",           [OP_EQUAL] = "OP_EQUAL",
     [OP_GREATER] = "OP_GREATER",   [OP_LESS] = "OP_LESS",
+    [OP_PRINT] = "OP_PRINT",
 };
 
 typedef struct {
@@ -1247,6 +1249,30 @@ static void parse_expression(Parser* parser, Vm* vm) {
     parse_precedence(parser, PREC_ASSIGNMENT, vm);
 }
 
+static bool parse_match(Parser* parser, TokenType type) {
+    if (parser->current.type != type) return false;
+
+    parse_advance(parser);
+    return true;
+}
+
+static void parse_print_stmt(Parser* parser, Vm* vm) {
+    parse_expression(parser, vm);
+    parse_expect(parser, TOKEN_SEMICOLON,
+                 "Expected terminating semicolon after expression", 47);
+    parse_emit_byte(parser, OP_PRINT);
+}
+
+static void parse_statement(Parser* parser, Vm* vm) {
+    if (parse_match(parser, TOKEN_PRINT)) {
+        parse_print_stmt(parser, vm);
+    }
+}
+
+static void parse_declaration(Parser* parser, Vm* vm) {
+    parse_statement(parser, vm);
+}
+
 static Result parse_compile(const char* source, size_t source_len, Chunk* chunk,
                             Vm* vm) {
     LOG("source_len=%zu source=`%.*s`", source_len, (int)source_len, source);
@@ -1262,8 +1288,10 @@ static Result parse_compile(const char* source, size_t source_len, Chunk* chunk,
                      .chunk = chunk};
 
     parse_advance(&parser);
-    parse_expression(&parser, vm);
-    parse_expect(&parser, TOKEN_EOF, "Expected EOF", 12);
+
+    while (!parse_match(&parser, TOKEN_EOF)) {
+        parse_declaration(&parser, vm);
+    }
 
     if (parser.state != PARSER_STATE_OK) return RES_PARSE_ERR;
 
