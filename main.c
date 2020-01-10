@@ -1472,6 +1472,8 @@ static void vm_repl() {
     Vm vm = {.globals = ht_init(100, NULL)};
 
     while (true) {
+        vm.ip = 0;
+
         char* source = NULL;
         size_t source_len = 0;
         size_t line_cap = 255;
@@ -1491,7 +1493,6 @@ static void vm_repl() {
 
         LOG("parsing successful%s\n", "");
         vm_run_bytecode(&vm, &chunk);
-        vm_interpret(source, source_len);
     }
 }
 
