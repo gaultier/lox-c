@@ -41,6 +41,8 @@
 
 #define BUF_LEN 100
 
+static const int sentinel = 1;
+
 static void realloc_safe(void** ptr, size_t new_size, const char* func,
                          int line) {
     if ((*ptr = realloc(*ptr, new_size)) == NULL) {
@@ -374,6 +376,13 @@ static ObjString* vm_obj_str_allocate(Vm* vm, size_t size) {
 }
 
 static ObjString* vm_make_string(Vm* vm, const char* s, size_t s_len) {
+    if (ht_search(vm->strings, (void*)s, s_len)) {
+        LOG("string is interned s=`%.*s`", (int)s_len, s);
+    } else {
+        ht_insert(vm->strings, (void*)s, s_len, (void*)&sentinel, sizeof(int));
+        LOG("interned s=`%.*s`", (int)s_len, s);
+    }
+
     ObjString* os = vm_obj_str_allocate(vm, sizeof(ObjString) + s_len + 1);
     os->len = s_len;
     LOG("allocated string size=%zu", os->len);
@@ -1278,7 +1287,7 @@ static Result parse_compile(const char* source, size_t source_len, Chunk* chunk,
 }
 
 static Result vm_interpret(const char* source, size_t source_len) {
-    Vm vm = {0};
+    Vm vm = {.strings = ht_init(100, NULL)};
     Chunk chunk = {0};
     Result result = RES_OK;
 
