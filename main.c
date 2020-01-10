@@ -1131,14 +1131,13 @@ static void parse_precedence(Parser* parser, Precedence precedence, Vm* vm) {
     }
 }
 
-static void parse_expect(Parser* parser, TokenType type, const char* err,
-                         size_t err_len) {
+static void parse_expect(Parser* parser, TokenType type, const char err[]) {
     if (parser->current.type == type) {
         parse_advance(parser);
         return;
     }
 
-    parse_error(parser, err, err_len);
+    parse_error(parser, err, strlen(err));
 }
 
 static void parse_number(Parser* parser, Vm* vm) {
@@ -1187,8 +1186,7 @@ static void parse_expression(Parser* parser, Vm* vm);
 
 static void parse_grouping(Parser* parser, Vm* vm) {
     parse_expression(parser, vm);
-    parse_expect(parser, TOKEN_RIGHT_PAREN, "Expected `)` after expression",
-                 12);
+    parse_expect(parser, TOKEN_RIGHT_PAREN, "Expected `)` after expression");
 }
 
 static void parse_unary(Parser* parser, Vm* vm) {
@@ -1267,14 +1265,14 @@ static bool parse_match(Parser* parser, TokenType type) {
 static void parse_print_stmt(Parser* parser, Vm* vm) {
     parse_expression(parser, vm);
     parse_expect(parser, TOKEN_SEMICOLON,
-                 "Expected terminating semicolon after expression", 47);
+                 "Expected terminating semicolon after expression");
     parse_emit_byte(parser, OP_PRINT);
 }
 
 static void parse_expr_stmt(Parser* parser, Vm* vm) {
     parse_expression(parser, vm);
     parse_expect(parser, TOKEN_SEMICOLON,
-                 "Expected terminating semicolon after expression", 47);
+                 "Expected terminating semicolon after expression");
     parse_emit_byte(parser, OP_POP);
 }
 
@@ -1318,7 +1316,8 @@ static void parse_var_declaration(Parser* parser, Vm* vm) {
     else
         parse_emit_byte(parser, OP_NIL);
 
-    parse_expect(parser, TOKEN_SEMICOLON, "", 0);
+    parse_expect(parser, TOKEN_SEMICOLON,
+                 "Expected semicolon after variable declaration");
 }
 
 static void parse_declaration(Parser* parser, Vm* vm) {
