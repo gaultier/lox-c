@@ -502,7 +502,7 @@ static void read_file(const char path[], char** content, size_t* content_len) {
     fclose(file);
 }
 
-static Result vm_read_value_in_next_byte(Vm* vm, Chunk* chunk, Value* v) {
+static Result vm_read_constant_in_next_byte(Vm* vm, Chunk* chunk, Value* v) {
     const uint8_t opcode = chunk->opcodes[vm->ip];
     const size_t line = chunk->lines[vm->ip];
 
@@ -515,13 +515,16 @@ static Result vm_read_value_in_next_byte(Vm* vm, Chunk* chunk, Value* v) {
     }
     const uint8_t value_index = chunk->opcodes[vm->ip];
     *v = chunk->constants[value_index];
+    LOG("constant index=%d", value_index);
+    value_print(stdout, *v);
+    puts("");
 
     return RES_OK;
 }
 
 static Result vm_dump_opcode_1_operand(Vm* vm, Chunk* chunk) {
     Value value = {0};
-    RETURN_IF_ERR(vm_read_value_in_next_byte(vm, chunk, &value));
+    RETURN_IF_ERR(vm_read_constant_in_next_byte(vm, chunk, &value));
 
     const uint8_t opcode = chunk->opcodes[vm->ip];
     const size_t line = chunk->lines[vm->ip];
@@ -658,7 +661,7 @@ static Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
             }
             case OP_CONSTANT: {
                 Value v = {0};
-                RETURN_IF_ERR(vm_read_value_in_next_byte(vm, chunk, &v));
+                RETURN_IF_ERR(vm_read_constant_in_next_byte(vm, chunk, &v));
                 RETURN_IF_ERR(vm_stack_push(vm, chunk, v));
             } break;
             case OP_NIL:
@@ -730,7 +733,7 @@ static Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
             } break;
             case OP_DEFINE_GLOBAL: {
                 Value v = {0};
-                RETURN_IF_ERR(vm_read_value_in_next_byte(vm, chunk, &v));
+                RETURN_IF_ERR(vm_read_constant_in_next_byte(vm, chunk, &v));
                 LOG("todo define global=%.*s", (int)AS_STRING(v)->len,
                     AS_CSTRING(v));
                 break;
@@ -1138,6 +1141,10 @@ static uint8_t parse_make_constant(Parser* parser, Value v) {
     const size_t constant_i = buf_size(parser->chunk->constants) - 1;
     parse_emit_byte(parser, constant_i);
 
+    LOG("new constant index=%zu v=", constant_i);
+    value_print(stdout, v);
+    puts("");
+
     return constant_i;
 }
 
@@ -1346,8 +1353,8 @@ static void parse_sync(Parser* parser) {
 
 static uint8_t parse_variable_name(Parser* parser, Vm* vm, const char err[]) {
     parse_expect(parser, TOKEN_IDENTIFIER, err);
-    const ObjString* os = vm_make_string(vm, parser->previous.source_len);
-    memcmp(os->s, parser->previous.source, os->len);
+    ObjString* const os = vm_make_string(vm, parser->previous.source_len);
+    memcpy(os->s, parser->previous.source, os->len);
 
     return parse_make_constant(parser, OBJ_VAL(os));
 }
