@@ -281,18 +281,28 @@ typedef enum {
     OP_LESS,
     OP_PRINT,
     OP_POP,
+    OP_DEFINE_GLOBAL,
     OP_COUNT,
 } OpCode;
 
-static const char opcode_str[OP_COUNT][12] = {
-    [OP_RETURN] = "OP_RETURN",     [OP_CONSTANT] = "OP_CONSTANT",
-    [OP_NEGATE] = "OP_NEGATE",     [OP_ADD] = "OP_ADD",
-    [OP_SUBTRACT] = "OP_SUBTRACT", [OP_MULTIPLY] = "OP_MULTIPLY",
-    [OP_DIVIDE] = "OP_DIVIDE",     [OP_NIL] = "OP_NIL",
-    [OP_TRUE] = "OP_TRUE",         [OP_FALSE] = "OP_FALSE",
-    [OP_NOT] = "OP_NOT",           [OP_EQUAL] = "OP_EQUAL",
-    [OP_GREATER] = "OP_GREATER",   [OP_LESS] = "OP_LESS",
-    [OP_PRINT] = "OP_PRINT",       [OP_POP] = "OP_POP",
+static const char opcode_str[OP_COUNT][17] = {
+    [OP_RETURN] = "OP_RETURN",
+    [OP_CONSTANT] = "OP_CONSTANT",
+    [OP_NEGATE] = "OP_NEGATE",
+    [OP_ADD] = "OP_ADD",
+    [OP_SUBTRACT] = "OP_SUBTRACT",
+    [OP_MULTIPLY] = "OP_MULTIPLY",
+    [OP_DIVIDE] = "OP_DIVIDE",
+    [OP_NIL] = "OP_NIL",
+    [OP_TRUE] = "OP_TRUE",
+    [OP_FALSE] = "OP_FALSE",
+    [OP_NOT] = "OP_NOT",
+    [OP_EQUAL] = "OP_EQUAL",
+    [OP_GREATER] = "OP_GREATER",
+    [OP_LESS] = "OP_LESS",
+    [OP_PRINT] = "OP_PRINT",
+    [OP_POP] = "OP_POP",
+    [OP_DEFINE_GLOBAL] = "OP_DEFINE_GLOBAL",
 };
 
 typedef struct {
@@ -1105,6 +1115,15 @@ static void parse_advance(Parser* parser) {
     }
 }
 
+static uint8_t parse_make_constant(Parser* parser, Value v) {
+    parse_emit_byte(parser, OP_CONSTANT);
+    buf_push(parser->chunk->constants, v);
+    const size_t constant_i = buf_size(parser->chunk->constants) - 1;
+    parse_emit_byte(parser, constant_i);
+
+    return constant_i;
+}
+
 static void parse_precedence(Parser* parser, Precedence precedence, Vm* vm) {
     LOG("precedence=%s previous_type=%s current_type=%s",
         precedence_str[precedence], token_type_str[parser->previous.type],
@@ -1147,9 +1166,7 @@ static void parse_number(Parser* parser, Vm* vm) {
     const double number = strtod(parser->previous.source, NULL);
     const Value v = NUMBER_VAL(number);
 
-    parse_emit_byte(parser, OP_CONSTANT);
-    buf_push(parser->chunk->constants, v);
-    parse_emit_byte(parser, buf_size(parser->chunk->constants) - 1);
+    parse_make_constant(parser, v);
 }
 
 static void parse_string(Parser* parser, Vm* vm) {
@@ -1310,7 +1327,23 @@ static void parse_sync(Parser* parser) {
     }
 }
 
+static uint8_t parse_variable_name(Parser* parser, Vm* vm, const char err[]) {
+    parse_expect(parser, TOKEN_IDENTIFIER, err);
+    const ObjString* os = vm_make_string(vm, parser->previous.source_len);
+    memcmp(os->s, parser->previous.source, os->len);
+
+    return parse_make_constant(parser, OBJ_VAL(os));
+}
+
+static void parse_define_variable(Parser* parser, uint8_t global_i) {
+    parse_emit_byte(parser, OP_DEFINE_GLOBAL);
+    parse_emit_byte(parser, global_i);
+}
+
 static void parse_var_declaration(Parser* parser, Vm* vm) {
+    const uint8_t global_i =
+        parse_variable_name(parser, vm, "Expected variable name");
+
     if (parse_match(parser, TOKEN_EQUAL))
         parse_expression(parser, vm);
     else
@@ -1318,6 +1351,8 @@ static void parse_var_declaration(Parser* parser, Vm* vm) {
 
     parse_expect(parser, TOKEN_SEMICOLON,
                  "Expected semicolon after variable declaration");
+
+    parse_define_variable(parser, global_i);
 }
 
 static void parse_declaration(Parser* parser, Vm* vm) {
