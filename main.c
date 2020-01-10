@@ -181,8 +181,6 @@ typedef enum {
     PREC_COUNT,
 } Precedence;
 
-// TODO: See if we keep this
-#if 0
 static const char precedence_str[PREC_COUNT][16] = {
     [PREC_NONE] = "PREC_NONE",
     [PREC_ASSIGNMENT] = "PREC_ASSIGNMENT",
@@ -196,7 +194,6 @@ static const char precedence_str[PREC_COUNT][16] = {
     [PREC_CALL] = "PREC_CALL",
     [PREC_PRIMARY] = "PREC_PRIMARY",
 };
-#endif
 
 typedef enum {
     VAL_BOOL,
@@ -575,7 +572,7 @@ static Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
                 if (!IS_NUMBER(lhs))
                     VM_ERROR(line, "Expected a number, got:", lhs);
 
-                // TODO: Check for overflow
+                // TODO: Check for underflow/overflow
                 vm_stack_push(vm, chunk,
                               NUMBER_VAL(AS_NUMBER(lhs) + AS_NUMBER(rhs)));
                 break;
@@ -591,7 +588,7 @@ static Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
                 if (!IS_NUMBER(lhs))
                     VM_ERROR(line, "Expected a number, got:", lhs);
 
-                // TODO: Check for underflow
+                // TODO: Check for underflow/overflow
                 vm_stack_push(vm, chunk,
                               NUMBER_VAL(AS_NUMBER(lhs) - AS_NUMBER(rhs)));
                 break;
@@ -607,7 +604,7 @@ static Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
                 if (!IS_NUMBER(lhs))
                     VM_ERROR(line, "Expected a number, got:", lhs);
 
-                // TODO: Check for overflow
+                // TODO: Check for underflow/overflow
                 vm_stack_push(vm, chunk,
                               NUMBER_VAL(AS_NUMBER(lhs) * AS_NUMBER(rhs)));
                 break;
@@ -1092,7 +1089,13 @@ static void parse_advance(Parser* parser) {
 }
 
 static void parse_precedence(Parser* parser, Precedence precedence) {
+    LOG("precedence=%s previous_type=%s current_type=%s",
+        precedence_str[precedence], token_type_str[parser->previous.type],
+        token_type_str[parser->current.type]);
     parse_advance(parser);
+    LOG("precedence=%s previous_type=%s current_type=%s",
+        precedence_str[precedence], token_type_str[parser->previous.type],
+        token_type_str[parser->current.type]);
 
     const ParseFn prefix_rule = rules[parser->previous.type].prefix;
     if (!prefix_rule) {
@@ -1273,6 +1276,8 @@ static Result vm_interpret(const char* source, size_t source_len) {
 
     if ((result = parse_compile(source, source_len, &chunk)) != RES_OK)
         goto cleanup;
+
+    LOG("parsing successful%s", "");
     vm_run_bytecode(&vm, &chunk);
 
 cleanup:
