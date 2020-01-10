@@ -728,6 +728,13 @@ static Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
                 Value value = {0};
                 RETURN_IF_ERR(vm_stack_pop(vm, chunk, &value));
             } break;
+            case OP_DEFINE_GLOBAL: {
+                Value v = {0};
+                RETURN_IF_ERR(vm_read_value_in_next_byte(vm, chunk, &v));
+                LOG("todo define global=%.*s", (int)AS_STRING(v)->len,
+                    AS_CSTRING(v));
+                break;
+            }
             default:
                 fprintf(stderr, "%zu:Unknown opcode %s\n", line,
                         opcode_str[opcode]);
