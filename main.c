@@ -1019,6 +1019,7 @@ typedef enum {
     PARSER_STATE_OK = 0,
     PARSER_STATE_ERROR,
     PARSER_STATE_PANIC_MODE,
+    PARSER_STATE_SYNCED,
 } ParserState;
 
 typedef struct {
@@ -1285,8 +1286,36 @@ static void parse_statement(Parser* parser, Vm* vm) {
     }
 }
 
+static void parse_sync(Parser* parser) {
+    parser->state = PARSER_STATE_SYNCED;
+
+    while (parser->current.type != TOKEN_EOF) {
+        if (parser->previous.type == TOKEN_SEMICOLON) return;
+
+        switch (parser->current.type) {
+            case TOKEN_CLASS:
+            case TOKEN_FUN:
+            case TOKEN_VAR:
+            case TOKEN_FOR:
+            case TOKEN_IF:
+            case TOKEN_WHILE:
+            case TOKEN_PRINT:
+            case TOKEN_RETURN:
+                return;
+
+            default:
+                // Do nothing.
+                ;
+        }
+
+        parse_advance(parser);
+    }
+}
+
 static void parse_declaration(Parser* parser, Vm* vm) {
     parse_statement(parser, vm);
+
+    if (parser->state == PARSER_STATE_PANIC_MODE) parse_sync(parser);
 }
 
 static Result parse_compile(const char* source, size_t source_len, Chunk* chunk,
