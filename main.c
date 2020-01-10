@@ -282,6 +282,7 @@ typedef enum {
     OP_PRINT,
     OP_POP,
     OP_DEFINE_GLOBAL,
+    OP_GET_GLOBAL,
     OP_COUNT,
 } OpCode;
 
@@ -303,6 +304,7 @@ static const char opcode_str[OP_COUNT][17] = {
     [OP_PRINT] = "OP_PRINT",
     [OP_POP] = "OP_POP",
     [OP_DEFINE_GLOBAL] = "OP_DEFINE_GLOBAL",
+    [OP_GET_GLOBAL] = "OP_GET_GLOBAL",
 };
 
 typedef struct {
@@ -561,6 +563,7 @@ static Result vm_dump(Vm* vm, Chunk* chunk) {
                 break;
             case OP_CONSTANT:
             case OP_DEFINE_GLOBAL:
+            case OP_GET_GLOBAL:
                 RETURN_IF_ERR(vm_dump_opcode_1_operand(vm, chunk));
                 break;
             default:
@@ -739,14 +742,24 @@ static Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
                 Value value = {0};
                 RETURN_IF_ERR(vm_stack_pop(vm, chunk, &value));
 
-                LOG("todo define global %s", "");
-                value_print(stdout, name);
-                printf("=");
-                value_print(stdout, value);
-                puts("");
-
                 ht_insert(vm->globals, AS_CSTRING(name), AS_STRING(name)->len,
                           &value, sizeof(value));
+                break;
+            }
+            case OP_GET_GLOBAL: {
+                Value name = {0};
+                RETURN_IF_ERR(vm_read_constant_in_next_byte(vm, chunk, &name));
+
+                char* const s = AS_CSTRING(name);
+                const size_t s_len = AS_STRING(name)->len;
+                Value* value = ht_search(vm->globals, s, s_len);
+                if (!value) {
+                    fprintf(stderr, "%zu:Undefined variable %.*s", line,
+                            (int)s_len, s);
+                    return RES_RUN_ERR;
+                }
+
+                RETURN_IF_ERR(vm_stack_push(vm, chunk, *value));
                 break;
             }
             default:
@@ -1225,7 +1238,15 @@ static void parse_string(Parser* parser, Vm* vm) {
     parse_emit_byte(parser, buf_size(parser->chunk->constants) - 1);
 }
 
-static void parse_variable(Parser* parser, Vm* vm) {}
+static void parse_named_variable(Parser* parser, Vm* vm) {
+    uint8_t arg = parse_make_identifier_constant(parser, vm);
+    parse_emit_byte(parser, OP_GET_GLOBAL);
+    parse_emit_byte(parser, arg);
+}
+
+static void parse_variable(Parser* parser, Vm* vm) {
+    parse_named_variable(parser, vm);
+}
 
 static void parse_literal(Parser* parser, Vm* vm) {
     (void)vm;
