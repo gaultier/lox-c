@@ -300,9 +300,8 @@ typedef struct {
     size_t ip;
     Value stack[STACK_MAX];
     uint8_t stack_len;
+    Obj* objects;
 } Vm;
-
-static Obj* objects;
 
 static void value_print(FILE* out, Value v) {
     switch (v.type) {
@@ -330,8 +329,8 @@ static void value_print(FILE* out, Value v) {
     }
 }
 
-static void value_obj_free() {
-    Obj* obj = objects;
+static void value_obj_free(Vm* vm) {
+    Obj* obj = vm->objects;
     while (obj) {
         Obj* next = obj->next;
         free(obj);
@@ -363,17 +362,17 @@ static bool value_eq(Value lhs, Value rhs) {
     }
 }
 
-static ObjString* value_obj_str_allocate(size_t size) {
+static ObjString* vm_obj_str_allocate(Vm* vm, size_t size) {
     ObjString* obj = NULL;
     REALLOC_SAFE(&obj, size);
-    obj->obj.next = objects;
+    obj->obj.next = vm->objects;
 
-    objects = &obj->obj;
+    vm->objects = &obj->obj;
 
     return obj;
 }
 
-static void value_str_cat(Value lhs, Value rhs, Value* res) {
+static void vm_str_cat(Vm* vm, Value lhs, Value rhs, Value* res) {
     assert(IS_STRING(lhs));
     assert(IS_STRING(rhs));
 
@@ -383,7 +382,7 @@ static void value_str_cat(Value lhs, Value rhs, Value* res) {
     const size_t rhs_len = AS_STRING(rhs)->len;
 
     ObjString* os =
-        value_obj_str_allocate(sizeof(ObjString) + lhs_len + rhs_len + 1);
+        vm_obj_str_allocate(vm, sizeof(ObjString) + lhs_len + rhs_len + 1);
     os->len = lhs_len + rhs_len;
     LOG("allocated string size=%zu", os->len);
 
@@ -562,7 +561,7 @@ static Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
 
                 if (IS_STRING(lhs) && IS_STRING(rhs)) {
                     Value v;
-                    value_str_cat(lhs, rhs, &v);
+                    vm_str_cat(vm, lhs, rhs, &v);
                     RETURN_IF_ERR(vm_stack_push(vm, chunk, v));
                     break;
                 }
@@ -1016,7 +1015,7 @@ typedef struct {
     Chunk* chunk;
 } Parser;
 
-typedef void (*ParseFn)(Parser*);
+typedef void (*ParseFn)(Parser*, Vm*);
 
 typedef struct {
     ParseFn prefix;
@@ -1024,12 +1023,12 @@ typedef struct {
     Precedence precedence;
 } ParseRule;
 
-static void parse_grouping(Parser*);
-static void parse_unary(Parser*);
-static void parse_binary(Parser*);
-static void parse_number(Parser*);
-static void parse_literal(Parser*);
-static void parse_string(Parser*);
+static void parse_grouping(Parser*, Vm* vm);
+static void parse_unary(Parser*, Vm* vm);
+static void parse_binary(Parser*, Vm* vm);
+static void parse_number(Parser*, Vm* vm);
+static void parse_literal(Parser*, Vm* vm);
+static void parse_string(Parser*, Vm* vm);
 
 static const ParseRule rules[TOKEN_COUNT] = {
     [TOKEN_LEFT_PAREN] = {.prefix = parse_grouping},
@@ -1091,7 +1090,7 @@ static void parse_advance(Parser* parser) {
     }
 }
 
-static void parse_precedence(Parser* parser, Precedence precedence) {
+static void parse_precedence(Parser* parser, Precedence precedence, Vm* vm) {
     LOG("precedence=%s previous_type=%s current_type=%s",
         precedence_str[precedence], token_type_str[parser->previous.type],
         token_type_str[parser->current.type]);
@@ -1106,14 +1105,14 @@ static void parse_precedence(Parser* parser, Precedence precedence) {
         return;
     }
 
-    prefix_rule(parser);
+    prefix_rule(parser, vm);
 
     while (precedence <= rules[parser->current.type].precedence) {
         parse_advance(parser);
 
         const ParseFn infix_rule = rules[parser->previous.type].infix;
 
-        infix_rule(parser);
+        infix_rule(parser, vm);
     }
 }
 
@@ -1127,7 +1126,8 @@ static void parse_expect(Parser* parser, TokenType type, const char* err,
     parse_error(parser, err, err_len);
 }
 
-static void parse_number(Parser* parser) {
+static void parse_number(Parser* parser, Vm* vm) {
+    (void)vm;
     assert(parser->previous.type = TOKEN_NUMBER);
 
     const double number = strtod(parser->previous.source, NULL);
@@ -1138,12 +1138,12 @@ static void parse_number(Parser* parser) {
     parse_emit_byte(parser, buf_size(parser->chunk->constants) - 1);
 }
 
-static void parse_string(Parser* parser) {
+static void parse_string(Parser* parser, Vm* vm) {
     assert(parser->previous.type = TOKEN_STRING);
 
     const size_t s_len = parser->previous.source_len;
 
-    ObjString* os = value_obj_str_allocate(sizeof(ObjString) + s_len + 1);
+    ObjString* os = vm_obj_str_allocate(vm, sizeof(ObjString) + s_len + 1);
     os->len = s_len;
     LOG("allocated string size=%zu", os->len);
     os->obj.type = OBJ_STRING;
@@ -1157,7 +1157,9 @@ static void parse_string(Parser* parser) {
     parse_emit_byte(parser, buf_size(parser->chunk->constants) - 1);
 }
 
-static void parse_literal(Parser* parser) {
+static void parse_literal(Parser* parser, Vm* vm) {
+    (void)vm;
+
     switch (parser->previous.type) {
         case TOKEN_NIL:
             parse_emit_byte(parser, OP_NIL);
@@ -1173,18 +1175,18 @@ static void parse_literal(Parser* parser) {
     }
 }
 
-static void parse_expression(Parser* parser);
+static void parse_expression(Parser* parser, Vm* vm);
 
-static void parse_grouping(Parser* parser) {
-    parse_expression(parser);
+static void parse_grouping(Parser* parser, Vm* vm) {
+    parse_expression(parser, vm);
     parse_expect(parser, TOKEN_RIGHT_PAREN, "Expected `)` after expression",
                  12);
 }
 
-static void parse_unary(Parser* parser) {
+static void parse_unary(Parser* parser, Vm* vm) {
     const TokenType previousType = parser->previous.type;
 
-    parse_precedence(parser, PREC_UNARY);
+    parse_precedence(parser, PREC_UNARY, vm);
 
     switch (previousType) {
         case TOKEN_MINUS:
@@ -1198,11 +1200,11 @@ static void parse_unary(Parser* parser) {
     }
 }
 
-static void parse_binary(Parser* parser) {
+static void parse_binary(Parser* parser, Vm* vm) {
     const TokenType previousType = parser->previous.type;
 
     const ParseRule* const rule = &rules[previousType];
-    parse_precedence(parser, rule->precedence + 1);
+    parse_precedence(parser, rule->precedence + 1, vm);
 
     switch (previousType) {
         case TOKEN_PLUS:
@@ -1243,12 +1245,12 @@ static void parse_binary(Parser* parser) {
     }
 }
 
-static void parse_expression(Parser* parser) {
-    parse_precedence(parser, PREC_ASSIGNMENT);
+static void parse_expression(Parser* parser, Vm* vm) {
+    parse_precedence(parser, PREC_ASSIGNMENT, vm);
 }
 
-static Result parse_compile(const char* source, size_t source_len,
-                            Chunk* chunk) {
+static Result parse_compile(const char* source, size_t source_len, Chunk* chunk,
+                            Vm* vm) {
     LOG("source_len=%zu source=`%.*s`", source_len, (int)source_len, source);
 
     Parser parser = {.lex =
@@ -1262,7 +1264,7 @@ static Result parse_compile(const char* source, size_t source_len,
                      .chunk = chunk};
 
     parse_advance(&parser);
-    parse_expression(&parser);
+    parse_expression(&parser, vm);
     parse_expect(&parser, TOKEN_EOF, "Expected EOF", 12);
 
     if (parser.state != PARSER_STATE_OK) return RES_PARSE_ERR;
@@ -1277,14 +1279,14 @@ static Result vm_interpret(const char* source, size_t source_len) {
     Chunk chunk = {0};
     Result result = RES_OK;
 
-    if ((result = parse_compile(source, source_len, &chunk)) != RES_OK)
+    if ((result = parse_compile(source, source_len, &chunk, &vm)) != RES_OK)
         goto cleanup;
 
     LOG("parsing successful%s", "");
     vm_run_bytecode(&vm, &chunk);
 
 cleanup:
-    value_obj_free();
+    value_obj_free(&vm);
     free((char*)source);
 
     return result;
