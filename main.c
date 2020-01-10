@@ -41,8 +41,6 @@
 
 #define BUF_LEN 100
 
-static const int sentinel = 1;
-
 static void realloc_safe(void** ptr, size_t new_size, const char* func,
                          int line) {
     if ((*ptr = realloc(*ptr, new_size)) == NULL) {
@@ -303,7 +301,6 @@ typedef struct {
     Value stack[STACK_MAX];
     uint8_t stack_len;
     Obj* objects;
-    hashtab_t* strings;
 } Vm;
 
 static void value_print(FILE* out, Value v) {
@@ -376,21 +373,14 @@ static ObjString* vm_obj_str_allocate(Vm* vm, size_t size) {
 }
 
 static ObjString* vm_make_string(Vm* vm, const char* s, size_t s_len) {
-    assert(s != NULL);
-
-    if (ht_search(vm->strings, (void*)s, s_len)) {
-        LOG("string is interned s=`%.*s`", (int)s_len, s);
-    } else {
-        ht_insert(vm->strings, (void*)s, s_len, (void*)&sentinel, sizeof(int));
-        LOG("interned s=`%.*s`", (int)s_len, s);
-    }
-
     ObjString* os = vm_obj_str_allocate(vm, sizeof(ObjString) + s_len + 1);
     os->len = s_len;
     LOG("allocated string size=%zu", os->len);
     os->obj.type = OBJ_STRING;
-    memcpy(os->s, s, s_len);
-    os->s[s_len] = '\0';
+    if (s) {
+        memcpy(os->s, s, s_len);
+        os->s[s_len] = '\0';
+    }
 
     return os;
 }
@@ -404,14 +394,11 @@ static void vm_str_cat(Vm* vm, Value lhs, Value rhs, Value* res) {
     const char* const rhs_s = AS_CSTRING(rhs);
     const size_t rhs_len = AS_STRING(rhs)->len;
 
-    char* cat = NULL;
-    const size_t cat_len = lhs_len + rhs_len;
-    REALLOC_SAFE(&cat, cat_len);
-    memcpy(cat, lhs_s, lhs_len);
-    memcpy(cat + lhs_len, rhs_s, rhs_len);
+    ObjString* const os = vm_make_string(vm, NULL, lhs_len + rhs_len);
 
-    ObjString* const os = vm_make_string(vm, cat, cat_len);
-    free(cat);
+    memcpy(os->s, lhs_s, lhs_len);
+    memcpy(os->s + lhs_len, rhs_s, rhs_len);
+    os->s[os->len] = '\0';
 
     *res = OBJ_VAL(os);
 }
@@ -1290,7 +1277,7 @@ static Result parse_compile(const char* source, size_t source_len, Chunk* chunk,
 }
 
 static Result vm_interpret(const char* source, size_t source_len) {
-    Vm vm = {.strings = ht_init(100, NULL)};
+    Vm vm = {0};
     Chunk chunk = {0};
     Result result = RES_OK;
 
@@ -1330,19 +1317,6 @@ void cli_help(const char* argv[]) {
 }
 
 int main(int argc, const char* argv[]) {
-    hashtab_t* strings = ht_init(100, NULL);
-    int foo_v = 0;
-    int bar_v = 1;
-    int hello_v = 42;
-    int print_v = 99;
-    ht_insert(strings, "foo", 3, &foo_v, sizeof(int));
-    ht_insert(strings, "bar", 3, &bar_v, sizeof(int));
-    ht_insert(strings, "hello", 5, &hello_v, sizeof(int));
-    ht_insert(strings, "print", 5, &print_v, sizeof(int));
-
-    int* v = ht_search(strings, "Hello", 5);
-    printf("v=%d\n", v ? *v : -1);
-
     if (argc == 2 && strcmp(argv[1], "repl") == 0)
         vm_repl();
     else if (argc == 3) {
