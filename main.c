@@ -303,6 +303,15 @@ static void value_print(FILE* out, Value v) {
     }
 }
 
+static void value_obj_free() {
+    Obj* obj = objects;
+    while (obj) {
+        Obj* next = obj->next;
+        free(obj);
+        obj = next;
+    }
+}
+
 static bool value_is_falsy(Value v) {
     return IS_NIL(v) || (IS_BOOL(v) && !AS_BOOL(v));
 }
@@ -1189,6 +1198,7 @@ static void vm_interpret(const char* source, size_t source_len) {
     Chunk chunk = {0};
     parse_compile(source, source_len, &chunk);
     vm_run_bytecode(&chunk);
+    value_obj_free();
 }
 
 int main(int argc, char* argv[]) {
