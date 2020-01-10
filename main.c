@@ -40,6 +40,19 @@
 
 #define BUF_LEN 100
 
+static void realloc_safe(void** ptr, size_t new_size, const char* func,
+                         int line) {
+    if ((*ptr = realloc(*ptr, new_size)) == NULL) {
+        fprintf(stderr, "%s:%d: Could not allocate %zu bytes of memory\n", func,
+                line, new_size);
+        exit(ENOMEM);
+    }
+    LOG("func=%s allocated=%zu", func, new_size);
+}
+
+#define REALLOC_SAFE(ptr, new_size) \
+    realloc_safe(ptr, new_size, __func__, __LINE__)
+
 typedef struct {
     const char* source;
     size_t source_len;
@@ -353,7 +366,8 @@ static bool value_eq(Value lhs, Value rhs) {
 }
 
 static ObjString* value_obj_str_allocate(size_t size) {
-    ObjString* obj = calloc(1, size);
+    ObjString* obj = NULL;
+    REALLOC_SAFE((void*)&obj, size);
     obj->obj.next = objects;
 
     objects = &obj->obj;
@@ -413,19 +427,6 @@ static Result vm_stack_pop(Vm* vm, Chunk* chunk, Value* v) {
 
     return RES_OK;
 }
-
-static void realloc_safe(void** ptr, size_t new_size, const char* func,
-                         int line) {
-    if ((*ptr = realloc(*ptr, new_size)) == NULL) {
-        fprintf(stderr, "%s:%d: Could not allocate %zu bytes of memory\n", func,
-                line, new_size);
-        exit(ENOMEM);
-    }
-    LOG("func=%s allocated=%zu", func, new_size);
-}
-
-#define REALLOC_SAFE(ptr, new_size) \
-    realloc_safe(ptr, new_size, __func__, __LINE__)
 
 static void read_stdin(char** content, size_t* content_len) {
     char buf[BUF_LEN] = "";
