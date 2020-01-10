@@ -1182,6 +1182,8 @@ static void parse_expression(Parser* parser) {
 }
 
 static void parse_compile(const char* source, size_t source_len, Chunk* chunk) {
+    LOG("source_len=%zu source=`%.*s`", source_len, (int)source_len, source);
+
     Parser parser = {.lex =
                          {
                              .source = source,
@@ -1207,22 +1209,49 @@ static void vm_interpret(const char* source, size_t source_len) {
     value_obj_free();
 }
 
-int main(int argc, char* argv[]) {
-    if (argc != 3) {
-        printf("Usage: %s vm_dump|run filename\n", argv[0]);
-        return 0;
-    }
-    char* source = NULL;
-    size_t source_len = 0;
-    if (strcmp(argv[2], "-") == 0)
-        read_stdin(&source, &source_len);
-    else
-        read_file(argv[2], &source, &source_len);
+static void vm_repl() {
+    while (true) {
+        Vm vm = {0};
+        Chunk chunk = {0};
+        char* source = NULL;
+        size_t source_len = 0;
+        size_t line_cap = 255;
 
-    if (strcmp(argv[1], "vm_dump") == 0)
-        vm_dump(NULL, NULL);  // FIXME
-    else if (strcmp(argv[1], "run") == 0)
-        vm_interpret(source, source_len);
-    else
-        printf("Usage: %s vm_dump|run filename\n", argv[0]);
+        printf("> ");
+        if ((source_len = getline(&source, &line_cap, stdin)) <= 0) {
+            fprintf(stderr, "Could not read from stdin: errno=%s error=%d\n",
+                    strerror(errno), errno);
+            exit(errno);
+        }
+
+        parse_compile(source, source_len, &chunk);
+        vm_run_bytecode(&vm, &chunk);
+
+        value_obj_free();
+        free(source);
+    }
+}
+
+void cli_help(int argc, const char* argv[]) {
+    printf("Usage: %s dump|run|repl [filename]\n", argv[0]);
+    exit(0);
+}
+
+int main(int argc, const char* argv[]) {
+    if (argc == 2 && strcmp(argv[1], "repl") == 0)
+        vm_repl();
+    else if (argc == 3) {
+        char* source = NULL;
+        size_t source_len = 0;
+        if (strcmp(argv[2], "-") == 0)
+            read_stdin(&source, &source_len);
+        else
+            read_file(argv[2], &source, &source_len);
+
+        if (strcmp(argv[1], "vm_dump") == 0)
+            vm_dump(NULL, NULL);  // FIXME
+        else if (strcmp(argv[1], "run") == 0)
+            vm_interpret(source, source_len);
+    } else
+        cli_help(argc, argv);
 }
