@@ -63,7 +63,7 @@ typedef struct {
 
 typedef enum {
     // Single-character tokens.
-    TOKEN_LEFT_PAREN = 0,
+    TOKEN_LEFT_PAREN = 1,
     TOKEN_RIGHT_PAREN,
     TOKEN_LEFT_BRACE,
     TOKEN_RIGHT_BRACE,
@@ -114,7 +114,7 @@ typedef enum {
 } TokenType;
 
 #ifndef NDEBUG
-static const char token_type_str[TOKEN_COUNT][20] = {
+static const char token_type_str[TOKEN_COUNT + 1][20] = {
     [TOKEN_LEFT_PAREN] = "TOKEN_LEFT_PAREN",
     [TOKEN_RIGHT_PAREN] = "TOKEN_RIGHT_PAREN",
     [TOKEN_LEFT_BRACE] = "TOKEN_LEFT_BRACE",
@@ -773,7 +773,10 @@ static void lex_skip_whitespace(Lex* lex) {
                 lex_newline(lex);
                 break;
             case '/':
-                if (lex_peek_next(lex) == '/') lex_skip_until_char(lex, '\n');
+                if (lex_peek_next(lex) == '/')
+                    lex_skip_until_char(lex, '\n');
+                else
+                    return;
                 break;
             default:
                 return;
