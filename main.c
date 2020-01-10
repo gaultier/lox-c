@@ -301,6 +301,7 @@ typedef struct {
     Value stack[STACK_MAX];
     uint8_t stack_len;
     Obj* objects;
+    hashtab_t* strings;
 } Vm;
 
 static void value_print(FILE* out, Value v) {
@@ -372,6 +373,19 @@ static ObjString* vm_obj_str_allocate(Vm* vm, size_t size) {
     return obj;
 }
 
+static ObjString* vm_make_string(Vm* vm, const char* s, size_t s_len) {
+    ObjString* os = vm_obj_str_allocate(vm, sizeof(ObjString) + s_len + 1);
+    os->len = s_len;
+    LOG("allocated string size=%zu", os->len);
+    os->obj.type = OBJ_STRING;
+    if (s) {
+        memcpy(os->s, s, s_len);
+        os->s[s_len] = '\0';
+    }
+
+    return os;
+}
+
 static void vm_str_cat(Vm* vm, Value lhs, Value rhs, Value* res) {
     assert(IS_STRING(lhs));
     assert(IS_STRING(rhs));
@@ -381,12 +395,8 @@ static void vm_str_cat(Vm* vm, Value lhs, Value rhs, Value* res) {
     const char* const rhs_s = AS_CSTRING(rhs);
     const size_t rhs_len = AS_STRING(rhs)->len;
 
-    ObjString* os =
-        vm_obj_str_allocate(vm, sizeof(ObjString) + lhs_len + rhs_len + 1);
-    os->len = lhs_len + rhs_len;
-    LOG("allocated string size=%zu", os->len);
+    ObjString* const os = vm_make_string(vm, NULL, lhs_len + rhs_len);
 
-    os->obj.type = OBJ_STRING;
     memcpy(os->s, lhs_s, lhs_len);
     memcpy(os->s + lhs_len, rhs_s, rhs_len);
     os->s[os->len] = '\0';
@@ -1141,15 +1151,8 @@ static void parse_number(Parser* parser, Vm* vm) {
 static void parse_string(Parser* parser, Vm* vm) {
     assert(parser->previous.type = TOKEN_STRING);
 
-    const size_t s_len = parser->previous.source_len;
-
-    ObjString* os = vm_obj_str_allocate(vm, sizeof(ObjString) + s_len + 1);
-    os->len = s_len;
-    LOG("allocated string size=%zu", os->len);
-    os->obj.type = OBJ_STRING;
-    memcpy(os->s, parser->previous.source, s_len);
-    os->s[s_len] = '\0';
-
+    const ObjString* const os = vm_make_string(vm, parser->previous.source,
+                                               parser->previous.source_len);
     const Value v = OBJ_VAL(os);
 
     parse_emit_byte(parser, OP_CONSTANT);
