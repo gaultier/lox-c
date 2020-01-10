@@ -1003,7 +1003,7 @@ static void lex_scan_token(Lex* lex, Token* token) {
 }
 
 typedef enum {
-    PARSER_STATE_OK,
+    PARSER_STATE_OK = 0,
     PARSER_STATE_ERROR,
     PARSER_STATE_PANIC_MODE,
 } ParserState;
@@ -1259,6 +1259,8 @@ static Result parse_compile(const char* source, size_t source_len,
     parse_expression(&parser);
     parse_expect(&parser, TOKEN_EOF, "Expected EOF", 12);
 
+    if (parser.state != PARSER_STATE_OK) return RES_PARSE_ERR;
+
     parse_emit_byte(&parser, OP_RETURN);
 
     return RES_OK;
@@ -1267,12 +1269,17 @@ static Result parse_compile(const char* source, size_t source_len,
 static void vm_interpret(const char* source, size_t source_len) {
     Vm vm = {0};
     Chunk chunk = {0};
-    if (parse_compile(source, source_len, &chunk) != RES_OK) goto cleanup;
+    Result result = RES_OK;
+
+    if ((result = parse_compile(source, source_len, &chunk)) != RES_OK)
+        goto cleanup;
     vm_run_bytecode(&vm, &chunk);
 
 cleanup:
     value_obj_free();
     free((char*)source);
+
+    if (result != RES_OK) exit(1);
 }
 
 static void vm_repl() {
