@@ -1079,12 +1079,13 @@ typedef struct {
     Precedence precedence;
 } ParseRule;
 
-static void parse_grouping(Parser*, Vm* vm);
-static void parse_unary(Parser*, Vm* vm);
-static void parse_binary(Parser*, Vm* vm);
-static void parse_number(Parser*, Vm* vm);
-static void parse_literal(Parser*, Vm* vm);
-static void parse_string(Parser*, Vm* vm);
+static void parse_grouping(Parser*, Vm*);
+static void parse_unary(Parser*, Vm*);
+static void parse_binary(Parser*, Vm*);
+static void parse_number(Parser*, Vm*);
+static void parse_literal(Parser*, Vm*);
+static void parse_string(Parser*, Vm*);
+static void parse_variable(Parser*, Vm*);
 
 static const ParseRule rules[TOKEN_COUNT] = {
     [TOKEN_LEFT_PAREN] = {.prefix = parse_grouping},
@@ -1107,6 +1108,7 @@ static const ParseRule rules[TOKEN_COUNT] = {
     [TOKEN_LESS] = {.infix = parse_binary, .precedence = PREC_COMPARISON},
     [TOKEN_LESS_EQUAL] = {.infix = parse_binary, .precedence = PREC_COMPARISON},
     [TOKEN_STRING] = {.prefix = parse_string},
+    [TOKEN_VAR] = {.prefix = parse_variable},
 };
 
 static void parse_error(Parser* parser, const char* err, size_t err_len) {
@@ -1157,6 +1159,13 @@ static uint8_t parse_make_constant(Parser* parser, Value v) {
     puts("");
 
     return constant_i;
+}
+
+static uint8_t parse_make_identifier_constant(Parser* parser, Vm* vm) {
+    ObjString* const os = vm_make_string(vm, parser->previous.source_len);
+    memcpy(os->s, parser->previous.source, os->len);
+
+    return parse_make_constant(parser, OBJ_VAL(os));
 }
 
 static void parse_precedence(Parser* parser, Precedence precedence, Vm* vm) {
@@ -1215,6 +1224,8 @@ static void parse_string(Parser* parser, Vm* vm) {
     buf_push(parser->chunk->constants, v);
     parse_emit_byte(parser, buf_size(parser->chunk->constants) - 1);
 }
+
+static void parse_variable(Parser* parser, Vm* vm) {}
 
 static void parse_literal(Parser* parser, Vm* vm) {
     (void)vm;
@@ -1364,10 +1375,8 @@ static void parse_sync(Parser* parser) {
 
 static uint8_t parse_variable_name(Parser* parser, Vm* vm, const char err[]) {
     parse_expect(parser, TOKEN_IDENTIFIER, err);
-    ObjString* const os = vm_make_string(vm, parser->previous.source_len);
-    memcpy(os->s, parser->previous.source, os->len);
 
-    return parse_make_constant(parser, OBJ_VAL(os));
+    return parse_make_identifier_constant(parser, vm);
 }
 
 static void parse_define_variable(Parser* parser, uint8_t global_i) {
