@@ -1219,7 +1219,8 @@ static void parse_expression(Parser* parser) {
     parse_precedence(parser, PREC_ASSIGNMENT);
 }
 
-static void parse_compile(const char* source, size_t source_len, Chunk* chunk) {
+static Result parse_compile(const char* source, size_t source_len,
+                            Chunk* chunk) {
     LOG("source_len=%zu source=`%.*s`", source_len, (int)source_len, source);
 
     Parser parser = {.lex =
@@ -1237,20 +1238,23 @@ static void parse_compile(const char* source, size_t source_len, Chunk* chunk) {
     parse_expect(&parser, TOKEN_EOF, "Expected EOF", 12);
 
     parse_emit_byte(&parser, OP_RETURN);
+
+    return RES_OK;
 }
 
 static void vm_interpret(const char* source, size_t source_len) {
     Vm vm = {0};
     Chunk chunk = {0};
-    parse_compile(source, source_len, &chunk);
+    if (parse_compile(source, source_len, &chunk) != RES_OK) goto cleanup;
     vm_run_bytecode(&vm, &chunk);
+
+cleanup:
     value_obj_free();
+    free((char*)source);
 }
 
 static void vm_repl() {
     while (true) {
-        Vm vm = {0};
-        Chunk chunk = {0};
         char* source = NULL;
         size_t source_len = 0;
         size_t line_cap = 255;
@@ -1262,11 +1266,7 @@ static void vm_repl() {
             exit(errno);
         }
 
-        parse_compile(source, source_len, &chunk);
-        vm_run_bytecode(&vm, &chunk);
-
-        value_obj_free();
-        free(source);
+        vm_interpret(source, source_len);
     }
 }
 
