@@ -32,6 +32,12 @@
 #endif
 #endif
 
+#define RETURN_IF_ERR(e)             \
+    do {                             \
+        const Result _e = e;         \
+        if (_e != RES_OK) return _e; \
+    } while (0);
+
 #define BUF_LEN 100
 
 typedef struct {
@@ -521,7 +527,7 @@ static Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
         switch (opcode) {
             case OP_RETURN: {
                 Value value = {0};
-                vm_stack_pop(vm, chunk, &value);
+                RETURN_IF_ERR(vm_stack_pop(vm, chunk, &value));
                 printf("Stack size=%hhu top value=", vm->stack_len);
                 value_print(stdout, value);
                 puts("");
@@ -529,24 +535,25 @@ static Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
             }
             case OP_NEGATE: {
                 Value value = {0};
-                vm_stack_pop(vm, chunk, &value);
+                RETURN_IF_ERR(vm_stack_pop(vm, chunk, &value));
 
                 if (!IS_NUMBER(value))
                     VM_ERROR(line, "Expected a number, got:", value);
 
-                vm_stack_push(vm, chunk, NUMBER_VAL(-AS_NUMBER(value)));
+                RETURN_IF_ERR(
+                    vm_stack_push(vm, chunk, NUMBER_VAL(-AS_NUMBER(value))));
                 break;
             }
             case OP_ADD: {
                 Value rhs = {0};
-                vm_stack_pop(vm, chunk, &rhs);
+                RETURN_IF_ERR(vm_stack_pop(vm, chunk, &rhs));
                 Value lhs = {0};
-                vm_stack_pop(vm, chunk, &lhs);
+                RETURN_IF_ERR(vm_stack_pop(vm, chunk, &lhs));
 
                 if (IS_STRING(lhs) && IS_STRING(rhs)) {
                     Value v;
                     value_str_cat(lhs, rhs, &v);
-                    vm_stack_push(vm, chunk, v);
+                    RETURN_IF_ERR(vm_stack_push(vm, chunk, v));
                     break;
                 }
 
@@ -563,12 +570,12 @@ static Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
             }
             case OP_SUBTRACT: {
                 Value rhs = {0};
-                vm_stack_pop(vm, chunk, &rhs);
+                RETURN_IF_ERR(vm_stack_pop(vm, chunk, &rhs));
                 if (!IS_NUMBER(rhs))
                     VM_ERROR(line, "Expected a number, got:", rhs);
 
                 Value lhs = {0};
-                vm_stack_pop(vm, chunk, &lhs);
+                RETURN_IF_ERR(vm_stack_pop(vm, chunk, &lhs));
                 if (!IS_NUMBER(lhs))
                     VM_ERROR(line, "Expected a number, got:", lhs);
 
@@ -579,12 +586,12 @@ static Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
             }
             case OP_MULTIPLY: {
                 Value rhs = {0};
-                vm_stack_pop(vm, chunk, &rhs);
+                RETURN_IF_ERR(vm_stack_pop(vm, chunk, &rhs));
                 if (!IS_NUMBER(rhs))
                     VM_ERROR(line, "Expected a number, got:", rhs);
 
                 Value lhs = {0};
-                vm_stack_pop(vm, chunk, &lhs);
+                RETURN_IF_ERR(vm_stack_pop(vm, chunk, &lhs));
                 if (!IS_NUMBER(lhs))
                     VM_ERROR(line, "Expected a number, got:", lhs);
 
@@ -595,12 +602,12 @@ static Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
             }
             case OP_DIVIDE: {
                 Value rhs = {0};
-                vm_stack_pop(vm, chunk, &rhs);
+                RETURN_IF_ERR(vm_stack_pop(vm, chunk, &rhs));
                 if (!IS_NUMBER(rhs))
                     VM_ERROR(line, "Expected a number, got:", rhs);
 
                 Value lhs = {0};
-                vm_stack_pop(vm, chunk, &lhs);
+                RETURN_IF_ERR(vm_stack_pop(vm, chunk, &lhs));
                 if (!IS_NUMBER(lhs))
                     VM_ERROR(line, "Expected a number, got:", lhs);
 
@@ -620,39 +627,41 @@ static Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
                 }
                 const uint8_t value_index = chunk->opcodes[vm->ip];
                 const Value value = chunk->constants[value_index];
-                vm_stack_push(vm, chunk, value);
+                RETURN_IF_ERR(vm_stack_push(vm, chunk, value));
                 break;
             case OP_NIL:
-                vm_stack_push(vm, chunk, NIL_VAL);
+                RETURN_IF_ERR(vm_stack_push(vm, chunk, NIL_VAL));
                 break;
             case OP_TRUE:
-                vm_stack_push(vm, chunk, BOOL_VAL(true));
+                RETURN_IF_ERR(vm_stack_push(vm, chunk, BOOL_VAL(true)));
                 break;
             case OP_FALSE:
-                vm_stack_push(vm, chunk, BOOL_VAL(false));
+                RETURN_IF_ERR(vm_stack_push(vm, chunk, BOOL_VAL(false)));
                 break;
             case OP_NOT: {
                 Value v = {0};
-                vm_stack_pop(vm, chunk, &v);
-                vm_stack_push(vm, chunk, BOOL_VAL(value_is_falsy(v)));
+                RETURN_IF_ERR(vm_stack_pop(vm, chunk, &v));
+                RETURN_IF_ERR(
+                    vm_stack_push(vm, chunk, BOOL_VAL(value_is_falsy(v))));
                 break;
             }
             case OP_EQUAL: {
                 Value rhs = {0};
-                vm_stack_pop(vm, chunk, &rhs);
+                RETURN_IF_ERR(vm_stack_pop(vm, chunk, &rhs));
                 Value lhs = {0};
-                vm_stack_pop(vm, chunk, &lhs);
-                vm_stack_push(vm, chunk, BOOL_VAL(value_eq(lhs, rhs)));
+                RETURN_IF_ERR(vm_stack_pop(vm, chunk, &lhs));
+                RETURN_IF_ERR(
+                    vm_stack_push(vm, chunk, BOOL_VAL(value_eq(lhs, rhs))));
                 break;
             }
             case OP_LESS: {
                 Value rhs = {0};
-                vm_stack_pop(vm, chunk, &rhs);
+                RETURN_IF_ERR(vm_stack_pop(vm, chunk, &rhs));
                 if (!IS_NUMBER(rhs))
                     VM_ERROR(line, "Expected a number, got:", rhs);
 
                 Value lhs = {0};
-                vm_stack_pop(vm, chunk, &lhs);
+                RETURN_IF_ERR(vm_stack_pop(vm, chunk, &lhs));
                 if (!IS_NUMBER(lhs))
                     VM_ERROR(line, "Expected a number, got:", lhs);
 
@@ -663,12 +672,12 @@ static Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
             }
             case OP_GREATER: {
                 Value rhs = {0};
-                vm_stack_pop(vm, chunk, &rhs);
+                RETURN_IF_ERR(vm_stack_pop(vm, chunk, &rhs));
                 if (!IS_NUMBER(rhs))
                     VM_ERROR(line, "Expected a number, got:", rhs);
 
                 Value lhs = {0};
-                vm_stack_pop(vm, chunk, &lhs);
+                RETURN_IF_ERR(vm_stack_pop(vm, chunk, &lhs));
                 if (!IS_NUMBER(lhs))
                     VM_ERROR(line, "Expected a number, got:", lhs);
 
