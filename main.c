@@ -512,6 +512,7 @@ static Result vm_dump(Vm* vm, Chunk* chunk) {
             case OP_LESS:
             case OP_GREATER:
             case OP_PRINT:
+            case OP_POP:
                 printf("%zu:%s\n", line, opcode_str[opcode]);
                 break;
             case OP_CONSTANT:
@@ -702,6 +703,10 @@ static Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
                 RETURN_IF_ERR(vm_stack_pop(vm, chunk, &value));
                 value_print(stdout, value);
                 puts("");
+            } break;
+            case OP_POP: {
+                Value value = {0};
+                RETURN_IF_ERR(vm_stack_pop(vm, chunk, &value));
             } break;
             default:
                 fprintf(stderr, "%zu:Unknown opcode %s\n", line,
