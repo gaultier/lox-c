@@ -316,6 +316,7 @@ typedef struct {
     Value stack[STACK_MAX];
     uint8_t stack_len;
     Obj* objects;
+    hashtab_t* globals;
 } Vm;
 
 static void value_print(FILE* out, Value v) {
@@ -732,10 +733,20 @@ static Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
                 RETURN_IF_ERR(vm_stack_pop(vm, chunk, &value));
             } break;
             case OP_DEFINE_GLOBAL: {
-                Value v = {0};
-                RETURN_IF_ERR(vm_read_constant_in_next_byte(vm, chunk, &v));
-                LOG("todo define global=%.*s\n", (int)AS_STRING(v)->len,
-                    AS_CSTRING(v));
+                Value name = {0};
+                RETURN_IF_ERR(vm_read_constant_in_next_byte(vm, chunk, &name));
+
+                Value value = {0};
+                RETURN_IF_ERR(vm_stack_pop(vm, chunk, &value));
+
+                LOG("todo define global %s", "");
+                value_print(stdout, name);
+                printf("=");
+                value_print(stdout, value);
+                puts("");
+
+                ht_insert(vm->globals, AS_CSTRING(name), AS_STRING(name)->len,
+                          &value, sizeof(value));
                 break;
             }
             default:
@@ -1414,7 +1425,7 @@ static Result parse_compile(const char* source, size_t source_len, Chunk* chunk,
 }
 
 static Result vm_interpret(const char* source, size_t source_len) {
-    Vm vm = {0};
+    Vm vm = {.globals = ht_init(100, NULL)};
     Chunk chunk = {0};
     Result result = RES_OK;
 
