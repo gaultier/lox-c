@@ -1312,8 +1312,20 @@ static void parse_sync(Parser* parser) {
     }
 }
 
+static void parse_var_declaration(Parser* parser, Vm* vm) {
+    if (parse_match(parser, TOKEN_EQUAL))
+        parse_expression(parser, vm);
+    else
+        parse_emit_byte(parser, OP_NIL);
+
+    parse_expect(parser, TOKEN_SEMICOLON, "", 0);
+}
+
 static void parse_declaration(Parser* parser, Vm* vm) {
-    parse_statement(parser, vm);
+    if (parse_match(parser, TOKEN_VAR))
+        parse_var_declaration(parser, vm);
+    else
+        parse_statement(parser, vm);
 
     if (parser->state == PARSER_STATE_PANIC_MODE) parse_sync(parser);
 }
