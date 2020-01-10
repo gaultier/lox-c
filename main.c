@@ -247,7 +247,6 @@ static bool value_obj_is_type(Value v, ObjType type) {
 
 typedef enum {
     RES_OK = 0,
-    RES_LEX_ERR,
     RES_PARSE_ERR,
     RES_RUN_ERR,
 } Result;
