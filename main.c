@@ -620,7 +620,6 @@ static Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
                 if (!IS_NUMBER(lhs))
                     VM_ERROR(line, "Expected a number, got:", lhs);
 
-                // TODO: Check for 0
                 vm_stack_push(vm, chunk,
                               NUMBER_VAL(AS_NUMBER(lhs) / AS_NUMBER(rhs)));
                 break;
