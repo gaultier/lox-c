@@ -421,6 +421,7 @@ static void realloc_safe(void** ptr, size_t new_size, const char* func,
                 line, new_size);
         exit(ENOMEM);
     }
+    LOG("func=%s allocated=%zu", func, new_size);
 }
 
 #define REALLOC_SAFE(ptr, new_size) \
@@ -433,11 +434,6 @@ static void read_stdin(char** content, size_t* content_len) {
     while ((effectivily_read = read(0, buf, BUF_LEN)) > 0) {
         *content_len += effectivily_read;
         REALLOC_SAFE((void*)content, *content_len);
-
-        if (*content == NULL) {
-            fprintf(stderr, "Could not allocate while reading from stdin\n");
-            exit(ENOMEM);
-        }
 
         memcpy(*content + *content_len - effectivily_read, buf,
                effectivily_read);
@@ -471,14 +467,16 @@ static void read_file(const char path[], char** content, size_t* content_len) {
 
     rewind(file);
 
-    *content = calloc(file_size + 1, 1);
-    if (*content == NULL) {
-        fprintf(stderr, "Could not allocate file content: errno=%d error=%s\n",
-                errno, strerror(errno));
-        exit(errno);
-    }
+    REALLOC_SAFE((void*)content, file_size + 1);
+    (*content)[file_size] = '\0';
 
     const size_t bytes_read = fread(*content, 1, file_size, file);
+    if (bytes_read != file_size) {
+        fprintf(stderr,
+                "Could not read whole file: bytes_read=%zu file_size=%zu\n",
+                bytes_read, file_size);
+        exit(EIO);
+    }
     *content_len = bytes_read;
 
     fclose(file);
