@@ -1,3 +1,5 @@
+#define _POSIX_C_SOURCE 200809L
+
 #include <assert.h>
 #include <ctype.h>
 #include <errno.h>
@@ -1471,6 +1473,7 @@ cleanup:
 
 static void vm_repl() {
     Vm vm = {.globals = ht_init(100, NULL)};
+    setvbuf(stdout, (char*)NULL, _IONBF, 0);
 
     while (true) {
         vm.ip = 0;

@@ -4,9 +4,9 @@ RUN apk update && apk add make gcc build-base
 
 WORKDIR /lox-c
 
-COPY Makefile .
-COPY *.h .
-COPY *.c .
+COPY Makefile ./
+COPY *.h ./
+COPY *.c ./
 
 RUN make release
 
