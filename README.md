@@ -18,6 +18,10 @@ $ ./lox-release dump hello.lox
 ```
 
 
+## Major differences with the official implementation
+
+- Strings are not interned
+
 ## License
 
 MIT
