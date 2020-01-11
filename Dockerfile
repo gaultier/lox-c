@@ -1,5 +1,7 @@
 FROM alpine as builder
 
+RUN apk update && apk add make gcc build-base
+
 WORKDIR /lox-c
 
 COPY Makefile .
