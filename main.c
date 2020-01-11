@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <ctype.h>
 #include <errno.h>
+#include <signal.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -1471,7 +1472,14 @@ cleanup:
     return result;
 }
 
+void sig_quit(int signal) {
+    printf("\nBye!\n");
+    exit(signal);
+}
+
 static void vm_repl() {
+    signal(SIGINT, sig_quit);
+
     Vm vm = {.globals = ht_init(100, NULL)};
     setvbuf(stdout, (char*)NULL, _IONBF, 0);
 
