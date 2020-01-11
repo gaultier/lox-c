@@ -1450,7 +1450,8 @@ static Result parse_compile(const char* source, size_t source_len, Chunk* chunk,
     return RES_OK;
 }
 
-static Result vm_interpret(const char* source, size_t source_len) {
+static Result vm_interpret(const char* source, size_t source_len,
+                           Result (*bytecode_fn)(Vm*, Chunk*)) {
     Vm vm = {.globals = ht_init(100, NULL)};
     Chunk chunk = {0};
     Result result = RES_OK;
@@ -1459,7 +1460,7 @@ static Result vm_interpret(const char* source, size_t source_len) {
         goto cleanup;
 
     LOG("parsing successful%s\n", "");
-    vm_run_bytecode(&vm, &chunk);
+    result = bytecode_fn(&vm, &chunk);
 
 cleanup:
     value_obj_free(&vm);
@@ -1512,10 +1513,10 @@ int main(int argc, const char* argv[]) {
         else
             read_file(argv[2], &source, &source_len);
 
-        if (strcmp(argv[1], "vm_dump") == 0)
-            vm_dump(NULL, NULL);  // FIXME
+        if (strcmp(argv[1], "dump") == 0)
+            vm_interpret(source, source_len, vm_dump);
         else if (strcmp(argv[1], "run") == 0)
-            return vm_interpret(source, source_len);
+            return vm_interpret(source, source_len, vm_run_bytecode);
     } else
         cli_help(argv);
 }
