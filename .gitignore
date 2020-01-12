@@ -1,3 +1,4 @@
 lox-debug
 lox-release
 *.dSYM
+.vagrant/
