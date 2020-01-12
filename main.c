@@ -338,8 +338,7 @@ static void value_print(FILE* out, Value v) {
         case VAL_OBJ:
             switch (AS_OBJ(v)->type) {
                 case OBJ_STRING:
-                    fprintf(out, "\"%.*s\"", (int)AS_STRING(v)->len,
-                            AS_CSTRING(v));
+                    fprintf(out, "%.*s", (int)AS_STRING(v)->len, AS_CSTRING(v));
                     break;
                 default:
                     UNREACHABLE();
