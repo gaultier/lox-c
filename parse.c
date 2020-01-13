@@ -142,6 +142,11 @@ static void parse_precedence(Parser* parser, Precedence precedence, Vm* vm) {
 
         infix_rule(parser, vm, canAssign);
     }
+
+    if (canAssign && parse_match(parser, TOKEN_EQUAL)) {
+        parse_error(parser, "Expression cannot be assigned", 30);
+        return;
+    }
 }
 
 static void parse_expect(Parser* parser, TokenType type, const char err[]) {
