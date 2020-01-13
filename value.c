@@ -32,8 +32,8 @@ void value_print(FILE* out, Value v) {
     }
 }
 
-bool value_is_falsy(Value v) {
-    return IS_NIL(v) || (IS_BOOL(v) && !AS_BOOL(v));
+bool value_is_falsy(const Value* v) {
+    return IS_NIL(*v) || (IS_BOOL(*v) && !AS_BOOL(*v));
 }
 
 bool value_eq(Value lhs, Value rhs) {

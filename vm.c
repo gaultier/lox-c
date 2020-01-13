@@ -235,7 +235,7 @@ Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
                 Value v = {0};
                 RETURN_IF_ERR(vm_stack_pop(vm, chunk, &v));
                 RETURN_IF_ERR(
-                    vm_stack_push(vm, chunk, BOOL_VAL(value_is_falsy(v))));
+                    vm_stack_push(vm, chunk, BOOL_VAL(value_is_falsy(&v))));
                 break;
             }
             case OP_EQUAL: {
