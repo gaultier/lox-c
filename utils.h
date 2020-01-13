@@ -1,5 +1,6 @@
 #pragma once
 #include <ctype.h>
+#include <stdbool.h>
 
 #define UNREACHABLE()                                                       \
     do {                                                                    \
@@ -31,3 +32,4 @@
 void realloc_safe(void** ptr, size_t new_size, const char* func, int line);
 void read_file(const char path[], char** content, size_t* content_len);
 void read_stdin(char** content, size_t* content_len);
+bool str_eq(const char* a, size_t a_len, const char* b, size_t b_len);

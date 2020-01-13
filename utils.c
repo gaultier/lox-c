@@ -69,3 +69,10 @@ void read_file(const char path[], char** content, size_t* content_len) {
 
     fclose(file);
 }
+
+bool str_eq(const char* a, size_t a_len, const char* b, size_t b_len) {
+    if (!a || !b) return false;
+    if (a_len != b_len) return false;
+
+    return memcmp(a, b, a_len) == 0;
+}
