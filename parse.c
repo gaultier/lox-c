@@ -8,7 +8,7 @@
 #include "lex.h"
 #include "utils.h"
 
-typedef void (*ParseFn)(Parser*, Vm*);
+typedef void (*ParseFn)(Parser*, Vm*, bool);
 
 typedef struct {
     ParseFn prefix;
@@ -16,13 +16,13 @@ typedef struct {
     Precedence precedence;
 } ParseRule;
 
-static void parse_grouping(Parser*, Vm*);
-static void parse_unary(Parser*, Vm*);
-static void parse_binary(Parser*, Vm*);
-static void parse_number(Parser*, Vm*);
-static void parse_literal(Parser*, Vm*);
-static void parse_string(Parser*, Vm*);
-static void parse_variable(Parser*, Vm*);
+static void parse_grouping(Parser*, Vm*, bool);
+static void parse_unary(Parser*, Vm*, bool);
+static void parse_binary(Parser*, Vm*, bool);
+static void parse_number(Parser*, Vm*, bool);
+static void parse_literal(Parser*, Vm*, bool);
+static void parse_string(Parser*, Vm*, bool);
+static void parse_variable(Parser*, Vm*, bool);
 static void parse_expression(Parser* parser, Vm* vm);
 
 static const ParseRule rules[TOKEN_COUNT] = {
@@ -132,14 +132,15 @@ static void parse_precedence(Parser* parser, Precedence precedence, Vm* vm) {
         return;
     }
 
-    prefix_rule(parser, vm);
+    const bool canAssign = precedence <= PREC_ASSIGNMENT;
+    prefix_rule(parser, vm, canAssign);
 
     while (precedence <= rules[parser->current.type].precedence) {
         parse_advance(parser);
 
         const ParseFn infix_rule = rules[parser->previous.type].infix;
 
-        infix_rule(parser, vm);
+        infix_rule(parser, vm, canAssign);
     }
 }
 
@@ -152,7 +153,7 @@ static void parse_expect(Parser* parser, TokenType type, const char err[]) {
     parse_error(parser, err, strlen(err));
 }
 
-static void parse_number(Parser* parser, Vm* vm) {
+static void parse_number(Parser* parser, Vm* vm, bool canAssign) {
     (void)vm;
     assert(parser->previous.type = TOKEN_NUMBER);
 
@@ -162,7 +163,7 @@ static void parse_number(Parser* parser, Vm* vm) {
     parse_make_constant(parser, v);
 }
 
-static void parse_string(Parser* parser, Vm* vm) {
+static void parse_string(Parser* parser, Vm* vm, bool canAssign) {
     assert(parser->previous.type = TOKEN_STRING);
 
     ObjString* const os =
@@ -175,10 +176,10 @@ static void parse_string(Parser* parser, Vm* vm) {
     parse_emit_byte(parser, buf_size(parser->chunk->constants) - 1);
 }
 
-static void parse_named_variable(Parser* parser, Vm* vm) {
+static void parse_named_variable(Parser* parser, Vm* vm, bool canAssign) {
     uint8_t arg = parse_make_identifier_constant(parser, vm);
 
-    if (parse_match(parser, TOKEN_EQUAL)) {
+    if (canAssign && parse_match(parser, TOKEN_EQUAL)) {
         parse_expression(parser, vm);
         parse_emit_byte(parser, OP_SET_GLOBAL);
     } else
@@ -187,11 +188,11 @@ static void parse_named_variable(Parser* parser, Vm* vm) {
     parse_emit_byte(parser, arg);
 }
 
-static void parse_variable(Parser* parser, Vm* vm) {
-    parse_named_variable(parser, vm);
+static void parse_variable(Parser* parser, Vm* vm, bool canAssign) {
+    parse_named_variable(parser, vm, canAssign);
 }
 
-static void parse_literal(Parser* parser, Vm* vm) {
+static void parse_literal(Parser* parser, Vm* vm, bool canAssign) {
     (void)vm;
 
     switch (parser->previous.type) {
@@ -209,12 +210,12 @@ static void parse_literal(Parser* parser, Vm* vm) {
     }
 }
 
-static void parse_grouping(Parser* parser, Vm* vm) {
+static void parse_grouping(Parser* parser, Vm* vm, bool canAssign) {
     parse_expression(parser, vm);
     parse_expect(parser, TOKEN_RIGHT_PAREN, "Expected `)` after expression");
 }
 
-static void parse_unary(Parser* parser, Vm* vm) {
+static void parse_unary(Parser* parser, Vm* vm, bool canAssign) {
     const TokenType previousType = parser->previous.type;
 
     parse_precedence(parser, PREC_UNARY, vm);
@@ -231,7 +232,7 @@ static void parse_unary(Parser* parser, Vm* vm) {
     }
 }
 
-static void parse_binary(Parser* parser, Vm* vm) {
+static void parse_binary(Parser* parser, Vm* vm, bool canAssign) {
     const TokenType previousType = parser->previous.type;
 
     const ParseRule* const rule = &rules[previousType];
