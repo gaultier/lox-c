@@ -311,6 +311,11 @@ Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
                     AS_CSTRING(name));
                 LOG_VALUE(value);
                 puts("");
+
+                Value dummy = {0};
+                RETURN_IF_ERR(vm_stack_pop(vm, chunk, &dummy));
+
+                LOG("stack size: %d\n", vm->stack_len);
                 break;
             }
             case OP_GET_GLOBAL: {
