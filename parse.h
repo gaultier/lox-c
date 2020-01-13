@@ -22,7 +22,7 @@ typedef enum {
     PREC_COUNT,
 } Precedence;
 
-#ifndef NDEBUG
+#ifdef WITH_LOGS
 static const char precedence_str[PREC_COUNT][16] = {
     [PREC_NONE] = "PREC_NONE",
     [PREC_ASSIGNMENT] = "PREC_ASSIGNMENT",

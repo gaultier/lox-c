@@ -8,15 +8,29 @@ A compiler and bytecode vm for the programming language lox.
 
 Prerequisites:
 - A C99 compiler
-- POSIX Make
+- Meson (`pip3 install --user meson`)
+- Ninja
 
 ```sh
-$ make release
-$ ./lox-release run hello.lox
+$ meson build --buildtype=release
+$ ninja -C build
+$ ./build/lox run hello.lox
 $ printf "(12 + 2) * 3" | ./lox-release run -
-$ ./lox-release dump hello.lox
+$ ./build/lox dump hello.lox
 ```
 
+
+## Development
+
+**Recommended setup**
+
+
+```sh
+# The last option will only work with clang
+$ meson build -Dwith_logs=true -Db_sanitize=address 
+$ ninja -C build
+$ ./build/lox
+```
 
 ## Major differences with the official implementation
 

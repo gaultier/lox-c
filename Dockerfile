@@ -1,6 +1,6 @@
 FROM alpine as builder
 
-RUN apk update && apk add make gcc build-base
+RUN apk update && apk add meson gcc build-base
 
 WORKDIR /lox-c
 

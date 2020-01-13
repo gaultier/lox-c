@@ -61,7 +61,7 @@ typedef enum {
     TOKEN_COUNT,
 } TokenType;
 
-#ifndef NDEBUG
+#ifdef WITH_LOGS
 static const char token_type_str[TOKEN_COUNT + 1][20] = {
     [TOKEN_LEFT_PAREN] = "TOKEN_LEFT_PAREN",
     [TOKEN_RIGHT_PAREN] = "TOKEN_RIGHT_PAREN",

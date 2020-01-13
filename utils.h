@@ -11,13 +11,13 @@
         abort();                                                            \
     } while (0);
 
-#ifndef NDEBUG
+#ifdef WITH_LOGS
 #define LOG(fmt, ...)                                          \
     do {                                                       \
         printf("%s:%d:" fmt, __func__, __LINE__, __VA_ARGS__); \
     } while (0)
 #else
-#ifdef NDEBUG
+#ifndef WITH_LOGS
 #define LOG(fmt, ...) \
     do {              \
     } while (0)

@@ -1,0 +1,1 @@
+option('with_logs', type : 'boolean', value : false)
