@@ -1,6 +1,8 @@
 
 #pragma once
+#include <ctype.h>
 #include <stdbool.h>
+#include <stdio.h>
 
 typedef enum {
     VAL_BOOL,
@@ -54,7 +56,9 @@ typedef struct {
 #define IS_OBJ(value) ((value).type == VAL_OBJ)
 #define IS_STRING(value) value_obj_is_type(value, OBJ_STRING)
 
-bool value_obj_is_type(Value v, ObjType type) {
-    return IS_OBJ(v) && AS_OBJ(v)->type == type;
-}
-
+ObjString* value_make_string(Obj** objects, size_t s_len);
+bool value_obj_is_type(Value v, ObjType type);
+ObjString* value_obj_str_allocate(Obj** objects, size_t size);
+bool value_eq(Value lhs, Value rhs);
+bool value_is_falsy(Value v);
+void value_print(FILE* out, Value v);

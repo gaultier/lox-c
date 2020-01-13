@@ -8,4 +8,6 @@ executable('lox',
            'utils.c',
            'main.c',
            'parse.c',
+           'value.c',
+           'hashtab.c',
            install : true)

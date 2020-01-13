@@ -97,7 +97,8 @@ static uint8_t parse_make_constant(Parser* parser, Value v) {
 }
 
 static uint8_t parse_make_identifier_constant(Parser* parser, Vm* vm) {
-    ObjString* const os = vm_make_string(vm, parser->previous.source_len);
+    ObjString* const os =
+        value_make_string(&vm->objects, parser->previous.source_len);
     memcpy(os->s, parser->previous.source, os->len);
 
     return parse_make_constant(parser, OBJ_VAL(os));
@@ -151,7 +152,8 @@ static void parse_number(Parser* parser, Vm* vm) {
 static void parse_string(Parser* parser, Vm* vm) {
     assert(parser->previous.type = TOKEN_STRING);
 
-    ObjString* const os = vm_make_string(vm, parser->previous.source_len);
+    ObjString* const os =
+        value_make_string(&vm->objects, parser->previous.source_len);
     memcpy(os->s, parser->previous.source, os->len);
     const Value v = OBJ_VAL(os);
 

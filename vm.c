@@ -9,84 +9,6 @@
 #include "parse.h"
 #include "utils.h"
 
-static void value_print(FILE* out, Value v) {
-    switch (v.type) {
-        case VAL_BOOL:
-            fprintf(out, "%s", v.as.boolean ? "true" : "false");
-            break;
-        case VAL_NIL:
-            fprintf(out, "nil");
-            break;
-        case VAL_NUMBER:
-            fprintf(out, "%f", v.as.number);
-            break;
-        case VAL_OBJ:
-            switch (AS_OBJ(v)->type) {
-                case OBJ_STRING:
-                    fprintf(out, "%.*s", (int)AS_STRING(v)->len, AS_CSTRING(v));
-                    break;
-                default:
-                    UNREACHABLE();
-            }
-
-            break;
-        default:
-            UNREACHABLE();
-    }
-}
-
-static void value_obj_free(Vm* vm) {
-    Obj* obj = vm->objects;
-    while (obj) {
-        Obj* next = obj->next;
-        free(obj);
-        obj = next;
-    }
-}
-
-static bool value_is_falsy(Value v) {
-    return IS_NIL(v) || (IS_BOOL(v) && !AS_BOOL(v));
-}
-
-static bool value_eq(Value lhs, Value rhs) {
-    if (lhs.type != rhs.type) return false;
-
-    switch (lhs.type) {
-        case VAL_BOOL:
-            return AS_BOOL(lhs) == AS_BOOL(rhs);
-        case VAL_NIL:
-            return true;
-        case VAL_NUMBER:
-            return AS_NUMBER(lhs) == AS_NUMBER(rhs);
-        case VAL_OBJ:
-            if (AS_STRING(lhs)->len != AS_STRING(rhs)->len) return false;
-            return memcmp(AS_STRING(lhs)->s, AS_STRING(rhs)->s,
-                          AS_STRING(lhs)->len) == 0;
-
-        default:
-            UNREACHABLE();
-    }
-}
-
-static ObjString* vm_obj_str_allocate(Vm* vm, size_t size) {
-    ObjString* obj = NULL;
-    REALLOC_SAFE(&obj, size);
-    obj->obj.next = vm->objects;
-
-    vm->objects = &obj->obj;
-
-    return obj;
-}
-
-static ObjString* vm_make_string(Vm* vm, size_t s_len) {
-    ObjString* os = vm_obj_str_allocate(vm, sizeof(ObjString) + s_len);
-    os->len = s_len;
-    LOG("allocated string size=%zu\n", os->len);
-    os->obj.type = OBJ_STRING;
-
-    return os;
-}
-
 static void vm_str_cat(Vm* vm, Value lhs, Value rhs, Value* res) {
     assert(IS_STRING(lhs));
     assert(IS_STRING(rhs));
@@ -96,7 +18,7 @@ static void vm_str_cat(Vm* vm, Value lhs, Value rhs, Value* res) {
     const char* const rhs_s = AS_CSTRING(rhs);
     const size_t rhs_len = AS_STRING(rhs)->len;
 
-    ObjString* const os = vm_make_string(vm, lhs_len + rhs_len);
+    ObjString* const os = value_make_string(&vm->objects, lhs_len + rhs_len);
 
     memcpy(os->s, lhs_s, lhs_len);
     memcpy(os->s + lhs_len, rhs_s, rhs_len);
@@ -400,6 +322,15 @@ Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
         vm->ip += 1;
     }
     return RES_OK;
+}
+
+static void value_obj_free(Vm* vm) {
+    Obj* obj = vm->objects;
+    while (obj) {
+        Obj* next = obj->next;
+        free(obj);
+        obj = next;
+    }
 }
 
 Result vm_interpret(const char* source, size_t source_len,
