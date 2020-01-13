@@ -108,7 +108,6 @@ static bool parse_match(Parser* parser, TokenType type) {
 static uint8_t parse_make_constant(Parser* parser, Value v) {
     buf_push(parser->chunk->constants, v);
     const size_t constant_i = buf_size(parser->chunk->constants) - 1;
-    parse_emit_byte2(parser, OP_CONSTANT, constant_i);
 
     return constant_i;
 }
@@ -172,7 +171,7 @@ static void parse_number(Parser* parser, Vm* vm, bool canAssign) {
     const double number = strtod(parser->previous.source, NULL);
     const Value v = NUMBER_VAL(number);
 
-    parse_make_constant(parser, v);
+    parse_emit_byte2(parser, OP_CONSTANT, parse_make_constant(parser, v));
 }
 
 static void parse_string(Parser* parser, Vm* vm, bool canAssign) {
