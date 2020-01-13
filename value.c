@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <strings.h>
 
 #include "utils.h"
 
@@ -58,7 +59,7 @@ bool value_eq(Value lhs, Value rhs) {
 ObjString* value_obj_str_allocate(Obj** objects, size_t size) {
     ObjString* obj = NULL;
     REALLOC_SAFE(&obj, size);
-    obj->obj.next = objects;
+    obj->obj.next = *objects;
 
     *objects = &obj->obj;
 
