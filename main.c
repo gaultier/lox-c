@@ -1,6 +1,4 @@
 #define _POSIX_C_SOURCE 200809L
-#include "lex.h"
-#include "parse.h"
 #include "utils.h"
 #include "vm.h"
 
