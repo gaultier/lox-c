@@ -15,7 +15,7 @@ void value_print(FILE* out, Value v) {
             fprintf(out, "nil");
             break;
         case VAL_NUMBER:
-            fprintf(out, "%f", v.as.number);
+            fprintf(out, "%g", v.as.number);
             break;
         case VAL_OBJ:
             switch (AS_OBJ(v)->type) {

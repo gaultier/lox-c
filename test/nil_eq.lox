@@ -1,0 +1,11 @@
+print nil == nil; // expect: true
+
+print nil == 1; // expect: false
+
+print nil == 0; // expect: false
+
+// nil is only equal to nil
+print nil == false; // expect: false 
+
+print nil == !!nil; // expect: false
+

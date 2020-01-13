@@ -45,8 +45,7 @@ static Result vm_stack_push(Vm* vm, Chunk* chunk, Value v) {
     vm->stack[vm->stack_len - 1] = v;
 
     LOG("pushed %s", "");
-    LOG_VALUE(v);
-    puts("");
+    LOG_VALUE_LN(v);
 
     return RES_OK;
 }
@@ -71,8 +70,7 @@ static Result vm_stack_pop(Vm* vm, Chunk* chunk, Value* v) {
 
     *v = vm->stack[vm->stack_len - 1];
     LOG("popped %s", "");
-    LOG_VALUE(*v);
-    puts("");
+    LOG_VALUE_LN(*v);
     vm->stack[vm->stack_len - 1] = (Value){0};
     vm->stack_len -= 1;
 
@@ -104,7 +102,7 @@ static Result vm_dump_opcode_1_operand(Vm* vm, Chunk* chunk) {
     RETURN_IF_ERR(vm_read_constant_in_next_byte(vm, chunk, &value));
 
     printf("%zu:%s:", line, opcode_str[opcode]);
-    LOG_VALUE(value);
+    value_print(stdout, value);
     puts("");
 
     return RES_OK;
@@ -302,7 +300,7 @@ Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
             case OP_PRINT: {
                 Value value = {0};
                 RETURN_IF_ERR(vm_stack_pop(vm, chunk, &value));
-                LOG_VALUE(value);
+                value_print(stdout, value);
                 puts("");
             } break;
             case OP_POP: {
@@ -320,8 +318,7 @@ Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
                           &value, sizeof(value));
                 LOG("def global name=%.*s value=", (int)AS_STRING(name)->len,
                     AS_CSTRING(name));
-                LOG_VALUE(value);
-                puts("");
+                LOG_VALUE_LN(value);
 
                 LOG("stack size: %d\n", vm->stack_len);
                 break;
@@ -334,8 +331,7 @@ Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
                 const size_t s_len = AS_STRING(name)->len;
                 Value* value = ht_search(vm->globals, s, s_len);
                 LOG("get global name=%.*s value=", (int)s_len, s);
-                LOG_VALUE(*value);
-                puts("");
+                LOG_VALUE_LN(*value);
 
                 if (!value) {
                     fprintf(stderr, "%zu:Undefined variable %.*s\n", line,
@@ -361,8 +357,7 @@ Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
 
                 RETURN_IF_ERR(vm_stack_peek(vm, chunk, value));
                 LOG("set global name=%.*s value=", (int)s_len, s);
-                LOG_VALUE(*value);
-                puts("");
+                LOG_VALUE_LN(*value);
 
                 break;
             }
