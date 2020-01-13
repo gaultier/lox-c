@@ -80,6 +80,13 @@ static void parse_emit_byte(Parser* parser, uint8_t byte) {
     buf_push(parser->chunk->opcodes, byte);
 }
 
+static void parse_emit_byte2(Parser* parser, uint8_t byte1, uint8_t byte2) {
+    LOG("opcode1=%s byte2=%d\n", opcode_str[byte1], byte2);
+    buf_push(parser->chunk->lines, parser->current.line);
+    buf_push(parser->chunk->opcodes, byte1);
+    buf_push(parser->chunk->lines, parser->current.line);
+    buf_push(parser->chunk->opcodes, byte2);
+}
 static void parse_advance(Parser* parser) {
     parser->previous = parser->current;
 
@@ -99,12 +106,9 @@ static bool parse_match(Parser* parser, TokenType type) {
 }
 
 static uint8_t parse_make_constant(Parser* parser, Value v) {
-    parse_emit_byte(parser, OP_CONSTANT);
     buf_push(parser->chunk->constants, v);
     const size_t constant_i = buf_size(parser->chunk->constants) - 1;
-    parse_emit_byte(parser, constant_i);
-
-    LOG("new constant index=%zu\n", constant_i);
+    parse_emit_byte2(parser, OP_CONSTANT, constant_i);
 
     return constant_i;
 }
@@ -133,6 +137,8 @@ static void parse_precedence(Parser* parser, Precedence precedence, Vm* vm) {
     }
 
     const bool canAssign = precedence <= PREC_ASSIGNMENT;
+    LOG("precedence=%d PREC_ASSIGNMENT=%d canAssign=%d\n", precedence,
+        PREC_ASSIGNMENT, canAssign);
     prefix_rule(parser, vm, canAssign);
 
     while (precedence <= rules[parser->current.type].precedence) {
@@ -178,21 +184,21 @@ static void parse_string(Parser* parser, Vm* vm, bool canAssign) {
     memcpy(os->s, parser->previous.source, os->len);
     const Value v = OBJ_VAL(os);
 
-    parse_emit_byte(parser, OP_CONSTANT);
     buf_push(parser->chunk->constants, v);
-    parse_emit_byte(parser, buf_size(parser->chunk->constants) - 1);
+    parse_emit_byte2(parser, OP_CONSTANT,
+                     buf_size(parser->chunk->constants) - 1);
 }
 
 static void parse_named_variable(Parser* parser, Vm* vm, bool canAssign) {
     uint8_t arg = parse_make_identifier_constant(parser, vm);
 
+    LOG("canAssign=%d\n", canAssign);
     if (canAssign && parse_match(parser, TOKEN_EQUAL)) {
         parse_expression(parser, vm);
-        parse_emit_byte(parser, OP_SET_GLOBAL);
+        LOG("set global%s\n", "");
+        parse_emit_byte2(parser, OP_SET_GLOBAL, arg);
     } else
-        parse_emit_byte(parser, OP_GET_GLOBAL);
-
-    parse_emit_byte(parser, arg);
+        parse_emit_byte2(parser, OP_GET_GLOBAL, arg);
 }
 
 static void parse_variable(Parser* parser, Vm* vm, bool canAssign) {
@@ -346,8 +352,7 @@ static uint8_t parse_variable_name(Parser* parser, Vm* vm, const char err[]) {
 }
 
 static void parse_define_variable(Parser* parser, uint8_t global_i) {
-    parse_emit_byte(parser, OP_DEFINE_GLOBAL);
-    parse_emit_byte(parser, global_i);
+    parse_emit_byte2(parser, OP_DEFINE_GLOBAL, global_i);
 }
 
 static void parse_var_declaration(Parser* parser, Vm* vm) {

@@ -44,6 +44,10 @@ static Result vm_stack_push(Vm* vm, Chunk* chunk, Value v) {
     vm->stack_len += 1;
     vm->stack[vm->stack_len - 1] = v;
 
+    LOG("pushed %s", "");
+    value_print(stdout, v);
+    puts("");
+
     return RES_OK;
 }
 
@@ -55,6 +59,9 @@ static Result vm_stack_pop(Vm* vm, Chunk* chunk, Value* v) {
     }
 
     *v = vm->stack[vm->stack_len - 1];
+    LOG("popped %s", "");
+    value_print(stdout, *v);
+    puts("");
     vm->stack[vm->stack_len - 1] = (Value){0};
     vm->stack_len -= 1;
 
@@ -80,11 +87,11 @@ static Result vm_read_constant_in_next_byte(Vm* vm, Chunk* chunk, Value* v) {
 }
 
 static Result vm_dump_opcode_1_operand(Vm* vm, Chunk* chunk) {
+    const uint8_t opcode = chunk->opcodes[vm->ip];
+    const size_t line = chunk->lines[vm->ip];
     Value value = {0};
     RETURN_IF_ERR(vm_read_constant_in_next_byte(vm, chunk, &value));
 
-    const uint8_t opcode = chunk->opcodes[vm->ip];
-    const size_t line = chunk->lines[vm->ip];
     printf("%zu:%s:", line, opcode_str[opcode]);
     value_print(stdout, value);
     puts("");
@@ -154,8 +161,9 @@ Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
                 RETURN_IF_ERR(vm_stack_pop(vm, chunk, &lhs));
 
                 if (IS_STRING(lhs) && IS_STRING(rhs)) {
-                    Value v;
+                    Value v = {0};
                     vm_str_cat(vm, lhs, rhs, &v);
+
                     RETURN_IF_ERR(vm_stack_push(vm, chunk, v));
                     break;
                 }
@@ -299,6 +307,10 @@ Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
 
                 ht_insert(vm->globals, AS_CSTRING(name), AS_STRING(name)->len,
                           &value, sizeof(value));
+                LOG("def global name=%.*s value=", (int)AS_STRING(name)->len,
+                    AS_CSTRING(name));
+                value_print(stdout, value);
+                puts("");
                 break;
             }
             case OP_GET_GLOBAL: {
@@ -308,6 +320,10 @@ Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
                 char* const s = AS_CSTRING(name);
                 const size_t s_len = AS_STRING(name)->len;
                 Value* value = ht_search(vm->globals, s, s_len);
+                LOG("get global name=%.*s value=", (int)s_len, s);
+                value_print(stdout, *value);
+                puts("");
+
                 if (!value) {
                     fprintf(stderr, "%zu:Undefined variable %.*s\n", line,
                             (int)s_len, s);
@@ -329,8 +345,14 @@ Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
                             (int)s_len, s);
                     return RES_RUN_ERR;
                 }
+                LOG("set global name=%.*s value=", (int)s_len, s);
+                value_print(stdout, *value);
+                puts("");
 
                 RETURN_IF_ERR(vm_stack_pop(vm, chunk, value));
+                LOG("set global name=%.*s value=", (int)s_len, s);
+                value_print(stdout, *value);
+                puts("");
                 break;
             }
             default:
