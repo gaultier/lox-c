@@ -118,6 +118,7 @@ Result vm_dump(Vm* vm, Chunk* chunk) {
             case OP_CONSTANT:
             case OP_DEFINE_GLOBAL:
             case OP_GET_GLOBAL:
+            case OP_SET_GLOBAL:
                 RETURN_IF_ERR(vm_dump_opcode_1_operand(vm, chunk));
                 break;
             default:
@@ -314,6 +315,22 @@ Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
                 }
 
                 RETURN_IF_ERR(vm_stack_push(vm, chunk, *value));
+                break;
+            }
+            case OP_SET_GLOBAL: {
+                Value name = {0};
+                RETURN_IF_ERR(vm_read_constant_in_next_byte(vm, chunk, &name));
+
+                char* const s = AS_CSTRING(name);
+                const size_t s_len = AS_STRING(name)->len;
+                Value* value = ht_search(vm->globals, s, s_len);
+                if (!value) {
+                    fprintf(stderr, "%zu:Undefined variable %.*s\n", line,
+                            (int)s_len, s);
+                    return RES_RUN_ERR;
+                }
+
+                RETURN_IF_ERR(vm_stack_pop(vm, chunk, value));
                 break;
             }
             default:

@@ -23,6 +23,7 @@ static void parse_number(Parser*, Vm*);
 static void parse_literal(Parser*, Vm*);
 static void parse_string(Parser*, Vm*);
 static void parse_variable(Parser*, Vm*);
+static void parse_expression(Parser* parser, Vm* vm);
 
 static const ParseRule rules[TOKEN_COUNT] = {
     [TOKEN_LEFT_PAREN] = {.prefix = parse_grouping},
@@ -88,6 +89,13 @@ static void parse_advance(Parser* parser) {
 
         parse_error(parser, parser->current.source, parser->current.source_len);
     }
+}
+
+static bool parse_match(Parser* parser, TokenType type) {
+    if (parser->current.type != type) return false;
+
+    parse_advance(parser);
+    return true;
 }
 
 static uint8_t parse_make_constant(Parser* parser, Value v) {
@@ -169,7 +177,13 @@ static void parse_string(Parser* parser, Vm* vm) {
 
 static void parse_named_variable(Parser* parser, Vm* vm) {
     uint8_t arg = parse_make_identifier_constant(parser, vm);
-    parse_emit_byte(parser, OP_GET_GLOBAL);
+
+    if (parse_match(parser, TOKEN_EQUAL)) {
+        parse_expression(parser, vm);
+        parse_emit_byte(parser, OP_SET_GLOBAL);
+    } else
+        parse_emit_byte(parser, OP_GET_GLOBAL);
+
     parse_emit_byte(parser, arg);
 }
 
@@ -194,8 +208,6 @@ static void parse_literal(Parser* parser, Vm* vm) {
             UNREACHABLE();
     }
 }
-
-static void parse_expression(Parser* parser, Vm* vm);
 
 static void parse_grouping(Parser* parser, Vm* vm) {
     parse_expression(parser, vm);
@@ -266,13 +278,6 @@ static void parse_binary(Parser* parser, Vm* vm) {
 
 static void parse_expression(Parser* parser, Vm* vm) {
     parse_precedence(parser, PREC_ASSIGNMENT, vm);
-}
-
-static bool parse_match(Parser* parser, TokenType type) {
-    if (parser->current.type != type) return false;
-
-    parse_advance(parser);
-    return true;
 }
 
 static void parse_print_stmt(Parser* parser, Vm* vm) {
