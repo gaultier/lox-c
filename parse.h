@@ -1,7 +1,5 @@
 #pragma once
 
-#include <ctype.h>
-
 #include "lex.h"
 #include "result.h"
 #include "value.h"
