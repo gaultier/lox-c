@@ -16,10 +16,14 @@
     do {                                                       \
         printf("%s:%d:" fmt, __func__, __LINE__, __VA_ARGS__); \
     } while (0)
+#define LOG_VALUE(v) value_print(stdout, v)
 #else
 #ifndef WITH_LOGS
 #define LOG(fmt, ...) \
     do {              \
+    } while (0)
+#define LOG_VALUE(v) \
+    do {             \
     } while (0)
 #endif
 #endif
