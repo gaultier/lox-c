@@ -144,7 +144,7 @@ static void parse_precedence(Parser* parser, Precedence precedence, Vm* vm) {
     }
 
     if (canAssign && parse_match(parser, TOKEN_EQUAL)) {
-        parse_error(parser, "Expression cannot be assigned", 30);
+        parse_error(parser, "Expression cannot be assigned", 29);
         return;
     }
 }
