@@ -278,14 +278,14 @@ static void parse_binary(Parser* parser, Vm* vm, bool canAssign) {
             parse_emit_byte(parser, OP_GREATER);
             break;
         case TOKEN_GREATER_EQUAL:
-            parse_emit_byte(parser, OP_EQUAL);
+            parse_emit_byte(parser, OP_LESS);
             parse_emit_byte(parser, OP_NOT);
             break;
         case TOKEN_LESS:
             parse_emit_byte(parser, OP_LESS);
             break;
         case TOKEN_LESS_EQUAL:
-            parse_emit_byte(parser, OP_LESS);
+            parse_emit_byte(parser, OP_GREATER);
             parse_emit_byte(parser, OP_NOT);
             break;
         default:
