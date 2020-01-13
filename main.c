@@ -1,18 +1,4 @@
 #define _POSIX_C_SOURCE 200809L
-
-#include <assert.h>
-#include <ctype.h>
-#include <errno.h>
-#include <signal.h>
-#include <stdbool.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-
-#include "buf.h"
-#include "hashtab.h"
 #include "lex.h"
 #include "parse.h"
 #include "utils.h"
