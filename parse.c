@@ -308,7 +308,6 @@ static void parse_sync(Parser* parser) {
             case TOKEN_PRINT:
             case TOKEN_RETURN:
                 return;
-
             default:
                 // Do nothing.
                 ;
