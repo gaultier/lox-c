@@ -157,7 +157,7 @@ Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
                 RETURN_IF_ERR(vm_stack_pop(vm, chunk, &value));
 
                 if (!IS_NUMBER(value))
-                    VM_ERROR(line, "Expected a number, got:", value);
+                    VM_ERROR(line, "Negation: expected a number, got:", value);
 
                 RETURN_IF_ERR(
                     vm_stack_push(vm, chunk, NUMBER_VAL(-AS_NUMBER(value))));
@@ -178,10 +178,10 @@ Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
                 }
 
                 if (!IS_NUMBER(rhs))
-                    VM_ERROR(line, "Expected a number, got:", rhs);
+                    VM_ERROR(line, "Addition: expected a number, got:", rhs);
 
                 if (!IS_NUMBER(lhs))
-                    VM_ERROR(line, "Expected a number, got:", lhs);
+                    VM_ERROR(line, "Addition: expected a number, got:", lhs);
 
                 // TODO: Check for underflow/overflow
                 RETURN_IF_ERR(vm_stack_push(
@@ -192,12 +192,12 @@ Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
                 Value rhs = {0};
                 RETURN_IF_ERR(vm_stack_pop(vm, chunk, &rhs));
                 if (!IS_NUMBER(rhs))
-                    VM_ERROR(line, "Expected a number, got:", rhs);
+                    VM_ERROR(line, "Subtraction: expected a number, got:", rhs);
 
                 Value lhs = {0};
                 RETURN_IF_ERR(vm_stack_pop(vm, chunk, &lhs));
                 if (!IS_NUMBER(lhs))
-                    VM_ERROR(line, "Expected a number, got:", lhs);
+                    VM_ERROR(line, "Subtraction: expected a number, got:", lhs);
 
                 // TODO: Check for underflow/overflow
                 RETURN_IF_ERR(vm_stack_push(
@@ -208,12 +208,14 @@ Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
                 Value rhs = {0};
                 RETURN_IF_ERR(vm_stack_pop(vm, chunk, &rhs));
                 if (!IS_NUMBER(rhs))
-                    VM_ERROR(line, "Expected a number, got:", rhs);
+                    VM_ERROR(line,
+                             "Multiplication: expected a number, got:", rhs);
 
                 Value lhs = {0};
                 RETURN_IF_ERR(vm_stack_pop(vm, chunk, &lhs));
                 if (!IS_NUMBER(lhs))
-                    VM_ERROR(line, "Expected a number, got:", lhs);
+                    VM_ERROR(line,
+                             "Multiplication: expected a number, got:", lhs);
 
                 // TODO: Check for underflow/overflow
                 RETURN_IF_ERR(vm_stack_push(
@@ -224,12 +226,12 @@ Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
                 Value rhs = {0};
                 RETURN_IF_ERR(vm_stack_pop(vm, chunk, &rhs));
                 if (!IS_NUMBER(rhs))
-                    VM_ERROR(line, "Expected a number, got:", rhs);
+                    VM_ERROR(line, "Division: expected a number, got:", rhs);
 
                 Value lhs = {0};
                 RETURN_IF_ERR(vm_stack_pop(vm, chunk, &lhs));
                 if (!IS_NUMBER(lhs))
-                    VM_ERROR(line, "Expected a number, got:", lhs);
+                    VM_ERROR(line, "Division: expected a number, got:", lhs);
 
                 RETURN_IF_ERR(vm_stack_push(
                     vm, chunk, NUMBER_VAL(AS_NUMBER(lhs) / AS_NUMBER(rhs))));
