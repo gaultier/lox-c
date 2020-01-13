@@ -32,6 +32,10 @@ $ ninja -C build
 $ ./build/lox
 ```
 
+## Docker
+
+`docker build -t lox-c .`
+
 ## Major differences with the official implementation
 
 - Strings are not interned
