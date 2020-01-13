@@ -13,49 +13,13 @@
 
 #include "buf.h"
 #include "hashtab.h"
-
-#define UNREACHABLE()                                                       \
-    do {                                                                    \
-        fprintf(stderr,                                                     \
-                "%s:%d:Reached unreachable code in function %s. This is a " \
-                "bug in the compiler.\n",                                   \
-                __FILE__, __LINE__, __func__);                              \
-        abort();                                                            \
-    } while (0);
-
-#ifndef NDEBUG
-#define LOG(fmt, ...)                                          \
-    do {                                                       \
-        printf("%s:%d:" fmt, __func__, __LINE__, __VA_ARGS__); \
-    } while (0)
-#else
-#ifdef NDEBUG
-#define LOG(fmt, ...) \
-    do {              \
-    } while (0)
-#endif
-#endif
+#include "utils.h"
 
 #define RETURN_IF_ERR(e)             \
     do {                             \
         const Result _e = e;         \
         if (_e != RES_OK) return _e; \
     } while (0);
-
-#define BUF_LEN 100
-
-static void realloc_safe(void** ptr, size_t new_size, const char* func,
-                         int line) {
-    if ((*ptr = realloc(*ptr, new_size)) == NULL) {
-        fprintf(stderr, "%s:%d: Could not allocate %zu bytes of memory\n", func,
-                line, new_size);
-        exit(ENOMEM);
-    }
-    LOG("func=%s line=%d allocated=%zu\n", func, line, new_size);
-}
-
-#define REALLOC_SAFE(ptr, new_size) \
-    realloc_safe((void*)ptr, new_size, __func__, __LINE__)
 
 typedef struct {
     const char* source;
@@ -450,61 +414,6 @@ static Result vm_stack_pop(Vm* vm, Chunk* chunk, Value* v) {
     vm->stack_len -= 1;
 
     return RES_OK;
-}
-
-static void read_stdin(char** content, size_t* content_len) {
-    char buf[BUF_LEN] = "";
-
-    ssize_t effectivily_read = 0;
-    while ((effectivily_read = read(0, buf, BUF_LEN)) > 0) {
-        *content_len += effectivily_read;
-        REALLOC_SAFE(content, *content_len);
-
-        memcpy(*content + *content_len - effectivily_read, buf,
-               effectivily_read);
-    }
-    if (effectivily_read == -1) {
-        fprintf(stderr, "Error reading from stdin: errno=%s error=%d\n",
-                strerror(errno), errno);
-        exit(errno);
-    }
-    LOG("content_len=%zu\n", *content_len);
-}
-
-static void read_file(const char path[], char** content, size_t* content_len) {
-    FILE* file = NULL;
-
-    if ((file = fopen(path, "r")) == NULL) {
-        fprintf(stderr, "Could not open the file `%s`: errno=%d error=%s\n",
-                path, errno, strerror(errno));
-        exit(errno);
-    }
-
-    int ret = 0;
-    if ((ret = fseek(file, 0, SEEK_END)) != 0) {
-        fprintf(stderr,
-                "Could not move the file cursor to the end of the file `%s`: "
-                "errno=%d error=%s\n",
-                path, errno, strerror(errno));
-        exit(errno);
-    }
-    const size_t file_size = (size_t)ftell(file);
-
-    rewind(file);
-
-    REALLOC_SAFE(content, file_size + 1);
-    (*content)[file_size] = '\0';
-
-    const size_t bytes_read = fread(*content, 1, file_size, file);
-    if (bytes_read != file_size) {
-        fprintf(stderr,
-                "Could not read whole file: bytes_read=%zu file_size=%zu\n",
-                bytes_read, file_size);
-        exit(EIO);
-    }
-    *content_len = bytes_read;
-
-    fclose(file);
 }
 
 static Result vm_read_constant_in_next_byte(Vm* vm, Chunk* chunk, Value* v) {
