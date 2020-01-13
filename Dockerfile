@@ -10,9 +10,9 @@ COPY *.h ./
 COPY *.c ./
 
 RUN meson build --buildtype=release
-RUN ninja -C install
+RUN ninja -C build
 
 FROM alpine as runner
-COPY --from=builder `which lox` /usr/bin/lox
+COPY --from=builder /lox-c/build/lox /usr/bin/lox
 
 CMD ["lox", "repl"]

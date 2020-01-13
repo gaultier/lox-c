@@ -1,5 +1,7 @@
 #pragma once
 #include <ctype.h>
+#include <stddef.h>
+#include <stdint.h>
 
 typedef struct {
     const char* source;

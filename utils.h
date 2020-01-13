@@ -1,6 +1,7 @@
 #pragma once
 #include <ctype.h>
 #include <stdbool.h>
+#include <stddef.h>
 
 #define UNREACHABLE()                                                       \
     do {                                                                    \

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <ctype.h>
+#include <stdint.h>
 
 #include "hashtab.h"
 #include "result.h"

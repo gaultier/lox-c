@@ -2,8 +2,10 @@
 
 #include <assert.h>
 #include <errno.h>
+#include <signal.h>
+#include <stdint.h>
 #include <stdio.h>
-#include <strings.h>
+#include <string.h>
 
 #include "buf.h"
 #include "parse.h"
