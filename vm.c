@@ -352,7 +352,7 @@ cleanup:
     return result;
 }
 
-void vm_repl_sig_quit(int signal) {
+static void vm_repl_sig_quit(int signal) {
     printf("\nBye!\n");
     exit(signal);
 }
