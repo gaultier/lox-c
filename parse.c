@@ -159,6 +159,7 @@ static void parse_expect(Parser* parser, TokenType type, const char err[]) {
 }
 
 static void parse_number(Parser* parser, Vm* vm, bool canAssign) {
+    (void)canAssign;
     (void)vm;
     assert(parser->previous.type = TOKEN_NUMBER);
 
@@ -169,6 +170,7 @@ static void parse_number(Parser* parser, Vm* vm, bool canAssign) {
 }
 
 static void parse_string(Parser* parser, Vm* vm, bool canAssign) {
+    (void)canAssign;
     assert(parser->previous.type = TOKEN_STRING);
 
     ObjString* const os =
@@ -198,6 +200,7 @@ static void parse_variable(Parser* parser, Vm* vm, bool canAssign) {
 }
 
 static void parse_literal(Parser* parser, Vm* vm, bool canAssign) {
+    (void)canAssign;
     (void)vm;
 
     switch (parser->previous.type) {
@@ -216,11 +219,13 @@ static void parse_literal(Parser* parser, Vm* vm, bool canAssign) {
 }
 
 static void parse_grouping(Parser* parser, Vm* vm, bool canAssign) {
+    (void)canAssign;
     parse_expression(parser, vm);
     parse_expect(parser, TOKEN_RIGHT_PAREN, "Expected `)` after expression");
 }
 
 static void parse_unary(Parser* parser, Vm* vm, bool canAssign) {
+    (void)canAssign;
     const TokenType previousType = parser->previous.type;
 
     parse_precedence(parser, PREC_UNARY, vm);
@@ -238,6 +243,7 @@ static void parse_unary(Parser* parser, Vm* vm, bool canAssign) {
 }
 
 static void parse_binary(Parser* parser, Vm* vm, bool canAssign) {
+    (void)canAssign;
     const TokenType previousType = parser->previous.type;
 
     const ParseRule* const rule = &rules[previousType];
