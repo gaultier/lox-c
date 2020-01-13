@@ -49,23 +49,28 @@ static const ParseRule rules[TOKEN_COUNT] = {
 };
 
 static void parse_error(Parser* parser, const char* err, size_t err_len) {
-    if (parser->state == PARSER_STATE_OK) {
-        LOG("new parser error, entering error mode err=`%.*s`\n", (int)err_len,
-            err);
-        parser->state = PARSER_STATE_ERROR;
-    } else if (parser->state == PARSER_STATE_ERROR) {
-        LOG("new parser error, entering panic mode err=`%.*s`\n", (int)err_len,
-            err);
-        parser->state = PARSER_STATE_PANIC_MODE;
-        return;
-    } else {
-        LOG("new parser error in panic mode, skipping err=`%.*s`\n",
-            (int)err_len, err);
-        return;
-    }
+    switch (parser->state) {
+        case PARSER_STATE_OK:
+            LOG("new parser error, entering error mode err=`%.*s`\n",
+                (int)err_len, err);
+            parser->state = PARSER_STATE_ERROR;
 
-    fprintf(stderr, "%zu:%zu:%.*s\n", parser->current.line,
-            parser->current.column, (int)err_len, err);
+            fprintf(stderr, "%zu:%zu:%.*s\n", parser->current.line,
+                    parser->current.column, (int)err_len, err);
+            return;
+        case PARSER_STATE_ERROR:
+            LOG("new parser error, entering panic mode err=`%.*s`\n",
+                (int)err_len, err);
+            parser->state = PARSER_STATE_PANIC_MODE;
+            return;
+        case PARSER_STATE_PANIC_MODE:
+        case PARSER_STATE_SYNCED:
+            LOG("new parser error in panic mode, skipping err=`%.*s`\n",
+                (int)err_len, err);
+            return;
+        default:
+            UNREACHABLE();
+    }
 }
 
 static void parse_emit_byte(Parser* parser, uint8_t byte) {
