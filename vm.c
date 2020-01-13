@@ -51,6 +51,17 @@ static Result vm_stack_push(Vm* vm, Chunk* chunk, Value v) {
     return RES_OK;
 }
 
+static Result vm_stack_peek(const Vm* vm, const Chunk* chunk, Value* v) {
+    if (vm->stack_len == 0) {
+        fprintf(stderr, "%zu:Cannot peek from an empty stack\n",
+                chunk->lines[vm->ip]);
+        return RES_RUN_ERR;
+    }
+
+    *v = vm->stack[vm->stack_len - 1];
+    return RES_OK;
+}
+
 static Result vm_stack_pop(Vm* vm, Chunk* chunk, Value* v) {
     if (vm->stack_len == 0) {
         fprintf(stderr, "%zu:Cannot pop from an empty stack\n",
@@ -341,20 +352,18 @@ Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
 
                 char* const s = AS_CSTRING(name);
                 const size_t s_len = AS_STRING(name)->len;
-                Value* value = ht_search(vm->globals, s, s_len);
+                Value* const value = ht_search(vm->globals, s, s_len);
                 if (!value) {
                     fprintf(stderr, "%zu:Undefined variable %.*s\n", line,
                             (int)s_len, s);
                     return RES_RUN_ERR;
                 }
+
+                RETURN_IF_ERR(vm_stack_peek(vm, chunk, value));
                 LOG("set global name=%.*s value=", (int)s_len, s);
                 LOG_VALUE(*value);
                 puts("");
 
-                RETURN_IF_ERR(vm_stack_pop(vm, chunk, value));
-                LOG("set global name=%.*s value=", (int)s_len, s);
-                LOG_VALUE(*value);
-                puts("");
                 break;
             }
             default:
