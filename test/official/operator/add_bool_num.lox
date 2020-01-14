@@ -1,2 +1,1 @@
-// expect: Invalid binary expression: (Binary (Literal (Bool true) 1) Plus (Literal (Number 123) 2) 3)
-true + 123;
+true + 123; // expect: 1:Addition: expected a number, got:true
