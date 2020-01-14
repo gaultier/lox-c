@@ -1,2 +1,2 @@
-// expect: 3:1:Unterminated string
+// expect: 3:1:Unterminated string, got: `Unterminated string`
 "this string has no close quote
