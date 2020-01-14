@@ -1,2 +1,2 @@
-// expect: 1:1:Context: Property access. Expected valid property access (e.g `foo.bar`). Got: `no more tokens`.
+// expect: 2:4:Expected terminating semicolon after expression
 123.

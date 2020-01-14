@@ -1,2 +1,2 @@
-// expect: 2:1:Context: Primary. Expected primary (e.g `1` or `(true)` or "hello"). Got: ` . 123 ;`.
+// expect: 2:2:Expected expression
 .123;

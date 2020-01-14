@@ -56,8 +56,9 @@ static void parse_error(Parser* parser, const char* err, size_t err_len) {
                 (int)err_len, err);
             parser->state = PARSER_STATE_ERROR;
 
-            fprintf(stderr, "%zu:%zu:%.*s\n", parser->current.line,
-                    parser->current.column, (int)err_len, err);
+            fprintf(stderr, "%zu:%zu:%.*s, got:`%.*s`\n", parser->previous.line,
+                    parser->previous.column, (int)err_len, err,
+                    (int)parser->previous.source_len, parser->previous.source);
             return;
         case PARSER_STATE_ERROR:
             LOG("new parser error, entering panic mode err=`%.*s`\n",
