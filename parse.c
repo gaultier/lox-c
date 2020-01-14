@@ -373,8 +373,32 @@ static void parse_sync(Parser* parser) {
     }
 }
 
+static void compiler_add_local(Parser* parser, const Token* name) {
+    Compiler* const compiler = parser->compiler;
+
+    if (compiler->locals_len == LOCALS_MAX - 1) {
+        parse_error(parser, name, "Reached the maximum number of locals: 256",
+                    42);
+        return;
+    }
+
+    Local* const local = &compiler->locals[compiler->locals_len++];
+    local->name = *name;
+    local->depth = compiler->scope_depth;
+}
+
+static void parse_declare_variable(Parser* parser) {
+    if (parser->compiler->scope_depth > 0) return;
+
+    const Token* const name = &parser->previous;
+    compiler_add_local(parser, name);
+}
+
 static uint8_t parse_variable_name(Parser* parser, Vm* vm, const char err[]) {
     parse_expect(parser, TOKEN_IDENTIFIER, err);
+
+    parse_declare_variable(parser);
+    if (parser->compiler->scope_depth > 0) return 0;
 
     return parse_make_identifier_constant(parser, vm);
 }
