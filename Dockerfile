@@ -5,9 +5,10 @@ RUN apk update && apk add meson gcc ninja build-base
 WORKDIR /lox-c
 
 COPY meson.build ./
-COPY meson_options.txt ./
 COPY *.h ./
 COPY *.c ./
+# Ensure no logs
+RUN echo "" > config.h
 
 RUN meson build --buildtype=release
 RUN ninja -C build
