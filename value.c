@@ -6,21 +6,48 @@
 
 #include "utils.h"
 
-void value_print(FILE* out, Value v) {
+void value_print(Value v) {
     switch (v.type) {
         case VAL_BOOL:
-            fprintf(out, "%s", v.as.boolean ? "true" : "false");
+            printf("%s", v.as.boolean ? "true" : "false");
             break;
         case VAL_NIL:
-            fprintf(out, "nil");
+            printf("nil");
             break;
         case VAL_NUMBER:
-            fprintf(out, "%g", v.as.number);
+            printf("%g", v.as.number);
             break;
         case VAL_OBJ:
             switch (AS_OBJ(v)->type) {
                 case OBJ_STRING:
-                    fprintf(out, "%.*s", (int)AS_STRING(v)->len, AS_CSTRING(v));
+                    printf("%.*s", (int)AS_STRING(v)->len, AS_CSTRING(v));
+                    break;
+                default:
+                    UNREACHABLE();
+            }
+
+            break;
+        default:
+            UNREACHABLE();
+    }
+}
+
+void value_print_err(Value v) {
+    switch (v.type) {
+        case VAL_BOOL:
+            fprintf(stderr, "%s", v.as.boolean ? "true" : "false");
+            break;
+        case VAL_NIL:
+            fprintf(stderr, "nil");
+            break;
+        case VAL_NUMBER:
+            fprintf(stderr, "%g", v.as.number);
+            break;
+        case VAL_OBJ:
+            switch (AS_OBJ(v)->type) {
+                case OBJ_STRING:
+                    fprintf(stderr, "\"%.*s\"", (int)AS_STRING(v)->len,
+                            AS_CSTRING(v));
                     break;
                 default:
                     UNREACHABLE();

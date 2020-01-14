@@ -10,6 +10,7 @@ Prerequisites:
 - A C99 compiler
 - Meson (`pip3 install --user meson`)
 - Ninja
+- GNU parallel (optional, only to run the tests)
 
 ```sh
 $ meson build --buildtype=release
@@ -29,7 +30,10 @@ $ ./build/lox dump hello.lox
 # The last option will only work with clang
 $ meson build -Dwith_logs=true -Db_sanitize=address 
 $ ninja -C build
-$ ./build/lox
+# Run
+$ ./lox
+# Test
+$ ./test.sh
 ```
 
 ## Docker

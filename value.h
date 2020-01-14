@@ -61,4 +61,5 @@ bool value_obj_is_type(Value v, ObjType type);
 ObjString* value_obj_str_allocate(Obj** objects, size_t size);
 bool value_eq(Value lhs, Value rhs);
 bool value_is_falsy(const Value* v);
-void value_print(FILE* out, Value v);
+void value_print(Value v);
+void value_print_err(Value v);

@@ -31,7 +31,7 @@ static void vm_str_cat(Vm* vm, Value lhs, Value rhs, Value* res) {
 #define VM_ERROR(line, fmt, value)         \
     do {                                   \
         fprintf(stderr, "%zu:" fmt, line); \
-        value_print(stderr, value);        \
+        value_print_err(value);            \
         return RES_RUN_ERR;                \
     } while (0)
 
@@ -102,7 +102,7 @@ static Result vm_dump_opcode_1_operand(Vm* vm, Chunk* chunk) {
     RETURN_IF_ERR(vm_read_constant_in_next_byte(vm, chunk, &value));
 
     printf("%zu:%s:", line, opcode_str[opcode]);
-    value_print(stdout, value);
+    value_print(value);
     puts("");
 
     return RES_OK;
@@ -302,7 +302,7 @@ Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
             case OP_PRINT: {
                 Value value = {0};
                 RETURN_IF_ERR(vm_stack_pop(vm, chunk, &value));
-                value_print(stdout, value);
+                value_print(value);
                 puts("");
             } break;
             case OP_POP: {
