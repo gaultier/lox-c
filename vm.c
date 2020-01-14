@@ -287,12 +287,12 @@ Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
                 Value rhs = {0};
                 RETURN_IF_ERR(vm_stack_pop(vm, chunk, &rhs));
                 if (!IS_NUMBER(rhs))
-                    VM_ERROR(line, "Comparison:Expected a number, got:", rhs);
+                    VM_ERROR(line, "Comparison:expected a number, got:", rhs);
 
                 Value lhs = {0};
                 RETURN_IF_ERR(vm_stack_pop(vm, chunk, &lhs));
                 if (!IS_NUMBER(lhs))
-                    VM_ERROR(line, "Comparison:Expected a number, got:", lhs);
+                    VM_ERROR(line, "Comparison:expected a number, got:", lhs);
 
                 // TODO: Check for 0
                 RETURN_IF_ERR(vm_stack_push(
