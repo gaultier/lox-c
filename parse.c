@@ -49,16 +49,17 @@ static const ParseRule rules[TOKEN_COUNT] = {
     [TOKEN_IDENTIFIER] = {.prefix = parse_variable},
 };
 
-static void parse_error(Parser* parser, const char* err, size_t err_len) {
+static void parse_error(Parser* parser, const Token* token, const char* err,
+                        size_t err_len) {
     switch (parser->state) {
         case PARSER_STATE_OK:
             LOG("new parser error, entering error mode err=`%.*s`\n",
                 (int)err_len, err);
             parser->state = PARSER_STATE_ERROR;
 
-            fprintf(stderr, "%zu:%zu:%.*s, got:`%.*s`\n", parser->previous.line,
-                    parser->previous.column, (int)err_len, err,
-                    (int)parser->previous.source_len, parser->previous.source);
+            fprintf(stderr, "%zu:%zu:%.*s, got:`%.*s`\n", token->line,
+                    token->column, (int)err_len, err, (int)token->source_len,
+                    token->source);
             return;
         case PARSER_STATE_ERROR:
             LOG("new parser error, entering panic mode err=`%.*s`\n",
@@ -95,12 +96,17 @@ static void parse_advance(Parser* parser) {
         lex_scan_token(&parser->lex, &parser->current);
         if (parser->current.type != TOKEN_ERROR) return;
 
-        parse_error(parser, parser->current.source, parser->current.source_len);
+        parse_error(parser, &parser->current, parser->current.source,
+                    parser->current.source_len);
     }
 }
 
+static bool parse_peek(Parser* parser, TokenType type) {
+    return (parser->current.type == type);
+}
+
 static bool parse_match(Parser* parser, TokenType type) {
-    if (parser->current.type != type) return false;
+    if (!parse_peek(parser, type)) return false;
 
     parse_advance(parser);
     return true;
@@ -132,7 +138,7 @@ static void parse_precedence(Parser* parser, Precedence precedence, Vm* vm) {
 
     const ParseFn prefix_rule = rules[parser->previous.type].prefix;
     if (!prefix_rule) {
-        parse_error(parser, "Expected expression", 19);
+        parse_error(parser, &parser->previous, "Expected expression", 19);
         return;
     }
 
@@ -149,8 +155,9 @@ static void parse_precedence(Parser* parser, Precedence precedence, Vm* vm) {
         infix_rule(parser, vm, canAssign);
     }
 
-    if (canAssign && parse_match(parser, TOKEN_EQUAL)) {
-        parse_error(parser, "Expression cannot be assigned", 29);
+    if (canAssign && parse_peek(parser, TOKEN_EQUAL)) {
+        parse_error(parser, &parser->previous, "Expression cannot be assigned",
+                    29);
         return;
     }
 }
@@ -161,7 +168,7 @@ static void parse_expect(Parser* parser, TokenType type, const char err[]) {
         return;
     }
 
-    parse_error(parser, err, strlen(err));
+    parse_error(parser, &parser->current, err, strlen(err));
 }
 
 static void parse_number(Parser* parser, Vm* vm, bool canAssign) {
