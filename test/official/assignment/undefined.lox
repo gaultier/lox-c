@@ -1,0 +1,1 @@
+unknown = "what"; // expect: Assigning unbound variable unknown
