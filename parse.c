@@ -24,6 +24,7 @@ static void parse_literal(Parser*, Vm*, bool);
 static void parse_string(Parser*, Vm*, bool);
 static void parse_variable(Parser*, Vm*, bool);
 static void parse_expression(Parser* parser, Vm* vm);
+static void parse_declaration(Parser* parser, Vm* vm);
 
 static const ParseRule rules[TOKEN_COUNT] = {
     [TOKEN_LEFT_PAREN] = {.prefix = parse_grouping},
@@ -319,9 +320,29 @@ static void parse_expr_stmt(Parser* parser, Vm* vm) {
     parse_emit_byte(parser, OP_POP);
 }
 
+static void parse_begin_scope(Parser* parser) {
+    parser->compiler->scope_depth += 1;
+}
+static void parse_block(Parser* parser, Vm* vm) {
+    while (!parse_peek(parser, TOKEN_EOF) &&
+           !parse_peek(parser, TOKEN_RIGHT_BRACE)) {
+        parse_declaration(parser, vm);
+    }
+
+    parse_expect(parser, TOKEN_RIGHT_BRACE, "Expected block closing `}`");
+}
+
+static void parse_end_scope(Parser* parser) {
+    parser->compiler->scope_depth -= 1;
+}
+
 static void parse_statement(Parser* parser, Vm* vm) {
     if (parse_match(parser, TOKEN_PRINT)) {
         parse_print_stmt(parser, vm);
+    } else if (parse_match(parser, TOKEN_LEFT_BRACE)) {
+        parse_begin_scope(parser);
+        parse_block(parser, vm);
+        parse_end_scope(parser);
     } else {
         parse_expr_stmt(parser, vm);
     }
