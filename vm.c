@@ -349,7 +349,7 @@ Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
                 LOG_VALUE_LN(*value);
 
                 if (!value) {
-                    fprintf(stderr, "%zu:Undefined variable %.*s\n", line,
+                    fprintf(stderr, "%zu:Undefined variable `%.*s`\n", line,
                             (int)s_len, s);
                     return RES_RUN_ERR;
                 }
@@ -365,7 +365,7 @@ Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
                 const size_t s_len = AS_STRING(name)->len;
                 Value* const value = ht_search(vm->globals, s, s_len);
                 if (!value) {
-                    fprintf(stderr, "%zu:Undefined variable %.*s\n", line,
+                    fprintf(stderr, "%zu:Undefined variable `%.*s`\n", line,
                             (int)s_len, s);
                     return RES_RUN_ERR;
                 }

@@ -8,6 +8,3 @@ print !0;        // expect: false
 print !nil;     // expect: true
 
 print !"";       // expect: false
-
-fun foo() {}
-print !foo;      // expect: false
