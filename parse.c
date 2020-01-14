@@ -388,9 +388,27 @@ static void compiler_add_local(Parser* parser, const Token* name) {
 }
 
 static void parse_declare_variable(Parser* parser) {
-    if (parser->compiler->scope_depth > 0) return;
+    if (parser->compiler->scope_depth == 0) return;
 
     const Token* const name = &parser->previous;
+
+    // Prevent shadowing in the same scope
+    for (int i = parser->compiler->locals_len - 1; i >= 0; i--) {
+        Local* const local = &parser->compiler->locals[i];
+        LOG("local %.*s", (int)name->source_len, name->source);
+
+        if (local->depth != -1 && local->depth < parser->compiler->scope_depth)
+            break;
+
+        if (str_eq(local->name.source, local->name.source_len, name->source,
+                   name->source_len)) {
+            parse_error(
+                parser, name,
+                "Variable shadowing: existing variable in the same scope", 56);
+            return;
+        }
+    }
+
     compiler_add_local(parser, name);
 }
 
