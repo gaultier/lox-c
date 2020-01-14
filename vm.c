@@ -189,11 +189,11 @@ Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
                         "Addition: cannot concatenate a non-string type, got:",
                         lhs);
 
-                if (!IS_NUMBER(rhs))
-                    VM_ERROR(line, "Addition: expected a number, got:", rhs);
-
                 if (!IS_NUMBER(lhs))
                     VM_ERROR(line, "Addition: expected a number, got:", lhs);
+
+                if (!IS_NUMBER(rhs))
+                    VM_ERROR(line, "Addition: expected a number, got:", rhs);
 
                 // TODO: Check for underflow/overflow
                 RETURN_IF_ERR(vm_stack_push(

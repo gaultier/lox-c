@@ -1,2 +1,1 @@
-// expect: Invalid binary expression: (Binary (Literal Nil 1) Plus (Literal Nil 2) 3)
-nil + nil;
+nil + nil; // expect: 1:Addition: expected a number, got:nil
