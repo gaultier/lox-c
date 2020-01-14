@@ -36,6 +36,20 @@ static const char precedence_str[PREC_COUNT][16] = {
     [PREC_PRIMARY] = "PREC_PRIMARY",
 };
 #endif
+
+#define LOCALS_MAX (UINT8_MAX + 1)
+
+typedef struct {
+    Token name;
+    size_t depth;
+} Local;
+
+typedef struct {
+    Local locals[LOCALS_MAX];
+    uint8_t locals_len;
+    size_t scope_depth;
+} Compiler;
+
 typedef enum {
     PARSER_STATE_OK = 0,
     PARSER_STATE_ERROR,
@@ -49,6 +63,7 @@ typedef struct {
     Token current;
     Token previous;
     Chunk* chunk;
+    Compiler* compiler;
 } Parser;
 
 Result parse_compile(const char* source, size_t source_len, Chunk* chunk,

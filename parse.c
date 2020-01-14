@@ -390,6 +390,7 @@ Result parse_compile(const char* source, size_t source_len, Chunk* chunk,
                      Vm* vm) {
     LOG("source_len=%zu source=`%.*s`\n", source_len, (int)source_len, source);
 
+    Compiler compiler = {.locals_len = 0, .scope_depth = 0};
     Parser parser = {.lex =
                          {
                              .source = source,
@@ -398,7 +399,8 @@ Result parse_compile(const char* source, size_t source_len, Chunk* chunk,
                              .column = 1,
                              .pos = 0,
                          },
-                     .chunk = chunk};
+                     .chunk = chunk,
+                     .compiler = &compiler};
 
     parse_advance(&parser);
 
