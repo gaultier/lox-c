@@ -1,2 +1,2 @@
-// expect: 2:4:Expected terminating semicolon after expression
+// expect: 2:4:Expected terminating semicolon after expression, got: `.`
 123.;

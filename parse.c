@@ -57,7 +57,7 @@ static void parse_error(Parser* parser, const Token* token, const char* err,
                 (int)err_len, err);
             parser->state = PARSER_STATE_ERROR;
 
-            fprintf(stderr, "%zu:%zu:%.*s, got:`%.*s`\n", token->line,
+            fprintf(stderr, "%zu:%zu:%.*s, got: `%.*s`\n", token->line,
                     token->column, (int)err_len, err, (int)token->source_len,
                     token->source);
             return;

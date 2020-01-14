@@ -1,2 +1,2 @@
-// expect: 2:2:Expected expression
+// expect: 2:1:Expected expression, got: `.`
 .123;
