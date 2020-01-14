@@ -177,6 +177,18 @@ Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
                     break;
                 }
 
+                if ((IS_STRING(lhs) && !IS_STRING(rhs)))
+                    VM_ERROR(
+                        line,
+                        "Addition: cannot concatenate a non-string type, got:",
+                        rhs);
+
+                if ((IS_STRING(rhs) && !IS_STRING(lhs)))
+                    VM_ERROR(
+                        line,
+                        "Addition: cannot concatenate a non-string type, got:",
+                        lhs);
+
                 if (!IS_NUMBER(rhs))
                     VM_ERROR(line, "Addition: expected a number, got:", rhs);
 
