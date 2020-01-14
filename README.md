@@ -28,7 +28,7 @@ $ ./build/lox dump hello.lox
 
 ```sh
 # The last option will only work with clang
-$ meson build -Dwith_logs=true -Db_sanitize=address 
+$ meson build -Db_sanitize=address 
 $ ninja -C build
 # Run
 $ ./lox

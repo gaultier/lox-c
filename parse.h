@@ -1,5 +1,6 @@
 #pragma once
 
+#include "config.h"
 #include "lex.h"
 #include "result.h"
 #include "value.h"

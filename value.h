@@ -4,6 +4,8 @@
 #include <stdbool.h>
 #include <stdio.h>
 
+#include "config.h"
+
 typedef enum {
     VAL_BOOL,
     VAL_NIL,

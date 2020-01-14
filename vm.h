@@ -2,6 +2,7 @@
 
 #include <stdint.h>
 
+#include "config.h"
 #include "hashtab.h"
 #include "result.h"
 #include "value.h"
