@@ -334,6 +334,13 @@ static void parse_block(Parser* parser, Vm* vm) {
 
 static void parse_end_scope(Parser* parser) {
     parser->compiler->scope_depth -= 1;
+
+    while (parser->compiler->locals_len > 0 &&
+           parser->compiler->locals[parser->compiler->locals_len - 1].depth >
+               parser->compiler->scope_depth) {
+        parse_emit_byte(parser, OP_POP);
+        parser->compiler->locals_len -= 1;
+    }
 }
 
 static void parse_statement(Parser* parser, Vm* vm) {
@@ -422,6 +429,7 @@ static uint8_t parse_variable_name(Parser* parser, Vm* vm, const char err[]) {
 }
 
 static void parse_define_variable(Parser* parser, uint8_t global_i) {
+    if (parser->compiler->scope_depth > 0) return;
     parse_emit_byte2(parser, OP_DEFINE_GLOBAL, global_i);
 }
 
