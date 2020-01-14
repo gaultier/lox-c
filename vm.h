@@ -13,9 +13,9 @@
         if (_e != RES_OK) return _e; \
     } while (0);
 
-#define VALUES_MAX 256
+#define VALUES_MAX (UINT8_MAX + 1)
 
-#define STACK_MAX 256
+#define STACK_MAX (UINT8_MAX + 1)
 
 typedef enum {
     OP_RETURN = 0,
