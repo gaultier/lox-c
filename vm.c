@@ -32,6 +32,7 @@ static void vm_str_cat(Vm* vm, Value lhs, Value rhs, Value* res) {
     do {                                   \
         fprintf(stderr, "%zu:" fmt, line); \
         value_print_err(value);            \
+        fprintf(stderr, "\n");             \
         return RES_RUN_ERR;                \
     } while (0)
 
