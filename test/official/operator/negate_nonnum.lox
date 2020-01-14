@@ -1,2 +1,1 @@
-// expect: Invalid assignment: (Unary Minus (Literal (String s) 1) 2)
--"s"; 
+-"s";// expect: 2:Negation: expected a number, got:"s" 
