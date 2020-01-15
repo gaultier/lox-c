@@ -25,7 +25,7 @@ $ ./lox-release dump test/hello_world.lox
 
 
 ```sh
-# With Adress Sanitizer:
+# With Address Sanitizer:
 $ make debug
 # Or without:
 $ make debug SANITIZER=""
