@@ -41,13 +41,13 @@ static const char precedence_str[PREC_COUNT][16] = {
 
 typedef struct {
     Token name;
-    int64_t depth;
+    intmax_t depth;
 } Local;
 
 typedef struct {
     Local locals[LOCALS_MAX];
     uint8_t locals_len;
-    int64_t scope_depth;
+    intmax_t scope_depth;
 } Compiler;
 
 typedef enum {
