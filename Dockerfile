@@ -1,19 +1,18 @@
 FROM alpine as builder
 
-RUN apk update && apk add meson gcc ninja build-base
+RUN apk update && apk add make gcc build-base
 
 WORKDIR /lox-c
 
-COPY meson.build ./
+COPY Makefile ./
 COPY *.h ./
 COPY *.c ./
 # Ensure no logs
-RUN echo "" > config.h
+RUN sed -i 's/WITH_LOGS 1/WITH_LOGS 0/' config.h
 
-RUN meson build --buildtype=release
-RUN ninja -C build
+RUN make release
 
 FROM alpine as runner
-COPY --from=builder /lox-c/build/lox /usr/bin/lox
+COPY --from=builder /lox-c/lox-release /usr/bin/lox
 
 CMD ["lox", "repl"]
