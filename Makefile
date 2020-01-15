@@ -1,3 +1,6 @@
+.POSIX:
+.SUFFIX:
+
 CFLAGS= -std=c99 -Wall -Wextra -Wpedantic
 SANITIZER= -fsanitize=address
 
@@ -14,3 +17,5 @@ docker:
 
 clean:
 	rm -rf lox-release lox-debug lox-debug.dSYM
+
+.PHONY: clean docker
