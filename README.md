@@ -9,7 +9,6 @@ A compiler and bytecode vm for the programming language lox.
 Prerequisites:
 - A C99 compiler
 - POSIX Make
-- GNU parallel (optional, only to run the tests)
 
 ```sh
 $ make release
@@ -23,6 +22,9 @@ $ ./lox-release dump test/hello_world.lox
 
 **Recommended setup**
 
+Additional prerequisites:
+
+- GNU parallel (optional, only to run the tests)
 
 ```sh
 # With Address Sanitizer:
