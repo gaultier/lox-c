@@ -1,4 +1,5 @@
 #!/bin/sh
+set -aue
 
 if command -v patdiff
 then
@@ -7,10 +8,9 @@ else
     export DIFFTOOL="diff"
 fi
 
-if [ -z "$LOXBIN" ]
-then
-    LOXBIN='./lox'
-fi
+make
+
+LOXBIN="${LOXBIN:-./lox-release}"
 
 find test -name '*.lox' -type f | sort | parallel --bar -k --timeout 4 " \
     awk -F '// expect: ' '/expect/{print \$2}' < {} > $TMPDIR/{/}.expected; \

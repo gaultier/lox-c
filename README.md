@@ -13,9 +13,9 @@ Prerequisites:
 
 ```sh
 $ make release
-$ ./lox-release run hello.lox
+$ ./lox-release run test/hello_world.lox
 $ printf "(12 + 2) * 3" | ./lox-release run -
-$ ./lox-release dump hello.lox
+$ ./lox-release dump test/hello_world.lox
 ```
 
 
