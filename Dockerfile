@@ -1,6 +1,12 @@
 FROM alpine as builder
 
-RUN apk update && apk add meson gcc ninja build-base
+RUN apk update && apk add gcc build-base git readline-dev curl bash
+
+RUN adduser -D xmake
+
+USER xmake
+
+RUN curl -fsSL https://raw.githubusercontent.com/tboox/xmake/master/scripts/get.sh | bash
 
 WORKDIR /lox-c
 

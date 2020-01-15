@@ -28,10 +28,12 @@ $ ./build/lox dump hello.lox
 
 ```sh
 # The last option will only work with clang
-$ meson build -Db_sanitize=address 
-$ ninja -C build
+$ xmake config -m debug
+$ xmake build
 # Run
-$ ./lox
+$ xmake run main repl
+# Or
+$ ./lox-release repl
 # Test
 $ ./test.sh
 ```
