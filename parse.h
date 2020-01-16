@@ -46,7 +46,7 @@ typedef struct {
 
 typedef struct {
     Local locals[LOCALS_MAX];
-    uint8_t locals_len;
+    int locals_len;
     intmax_t scope_depth;
 } Compiler;
 

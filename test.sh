@@ -8,7 +8,7 @@ else
     export DIFFTOOL="diff"
 fi
 
-make
+make release
 
 LOXBIN="${LOXBIN:-./lox-release}"
 

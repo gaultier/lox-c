@@ -90,6 +90,7 @@ static void parse_emit_byte2(Parser* parser, uint8_t byte1, uint8_t byte2) {
     buf_push(parser->chunk->lines, parser->current.line);
     buf_push(parser->chunk->opcodes, byte2);
 }
+
 static void parse_advance(Parser* parser) {
     parser->previous = parser->current;
 
@@ -144,11 +145,14 @@ static void parse_precedence(Parser* parser, Precedence precedence, Vm* vm) {
     }
 
     const bool canAssign = precedence <= PREC_ASSIGNMENT;
-    LOG("precedence=%d PREC_ASSIGNMENT=%d canAssign=%d\n", precedence,
-        PREC_ASSIGNMENT, canAssign);
+    LOG("precedence=%d canAssign=%d previous_type=%d\n", precedence, canAssign,
+        parser->previous.type);
     prefix_rule(parser, vm, canAssign);
+    LOG("precedence=%d canAssign=%d\n", precedence, canAssign);
 
-    while (precedence <= rules[parser->current.type].precedence) {
+    while (!parse_peek(parser, TOKEN_EOF) &&
+           (precedence <= rules[parser->current.type].precedence)) {
+        LOG("precedence=%d\n", precedence);
         parse_advance(parser);
 
         const ParseFn infix_rule = rules[parser->previous.type].infix;
@@ -198,7 +202,7 @@ static void parse_string(Parser* parser, Vm* vm, bool canAssign) {
 }
 
 static int compiler_resolve_local(const Compiler* compiler, const Token* name) {
-    for (uint8_t i = compiler->locals_len - 1; i >= 0; i--) {
+    for (int i = compiler->locals_len - 1; i >= 0; i--) {
         const Local* const l = &compiler->locals[i];
         if (str_eq(name->source, name->source_len, l->name.source,
                    l->name.source_len))
@@ -209,9 +213,11 @@ static int compiler_resolve_local(const Compiler* compiler, const Token* name) {
 
 static void parse_named_variable(Parser* parser, Vm* vm, bool canAssign) {
     const Token* const name = &parser->previous;
-    LOG_VALUE_LN(name);
+
     int arg = compiler_resolve_local(parser->compiler, name);
     const bool is_local = arg >= 0;
+    LOG("arg=%d is_local=%d name=`%.*s`\n", arg, is_local,
+        (int)name->source_len, name->source);
 
     if (!is_local) arg = parse_make_identifier_constant(parser, vm);
 
@@ -336,6 +342,7 @@ static void parse_expr_stmt(Parser* parser, Vm* vm) {
 static void parse_begin_scope(Parser* parser) {
     parser->compiler->scope_depth += 1;
 }
+
 static void parse_block(Parser* parser, Vm* vm) {
     while (!parse_peek(parser, TOKEN_EOF) &&
            !parse_peek(parser, TOKEN_RIGHT_BRACE)) {
