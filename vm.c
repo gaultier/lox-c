@@ -51,15 +51,22 @@ static Result vm_stack_push(Vm* vm, Chunk* chunk, Value v) {
     return RES_OK;
 }
 
-static Result vm_stack_peek(const Vm* vm, const Chunk* chunk, Value* v) {
-    if (vm->stack_len == 0) {
-        fprintf(stderr, "%zu:Cannot peek from an empty stack\n",
-                chunk->lines[vm->ip]);
+static Result vm_stack_peek(const Vm* vm, const Chunk* chunk, Value* v,
+                            uint8_t i) {
+    if (vm->stack_len == 0 || !(i < vm->stack_len)) {
+        fprintf(stderr,
+                "%zu:Cannot peek in the stack at this location: stack_len=%d "
+                "i=%d\n",
+                chunk->lines[vm->ip], vm->stack_len, i);
         return RES_RUN_ERR;
     }
 
-    *v = vm->stack[vm->stack_len - 1];
+    *v = vm->stack[vm->stack_len - i - 1];
     return RES_OK;
+}
+
+static Result vm_stack_peek_top(const Vm* vm, const Chunk* chunk, Value* v) {
+    return vm_stack_peek(vm, chunk, v, 0);
 }
 
 static Result vm_stack_pop(Vm* vm, Chunk* chunk, Value* v) {
@@ -78,7 +85,7 @@ static Result vm_stack_pop(Vm* vm, Chunk* chunk, Value* v) {
     return RES_OK;
 }
 
-static Result vm_read_constant_in_next_byte(Vm* vm, Chunk* chunk, Value* v) {
+static Result vm_read_next_byte(Vm* vm, Chunk* chunk, uint8_t* byte) {
     const uint8_t opcode = chunk->opcodes[vm->ip];
     const size_t line = chunk->lines[vm->ip];
 
@@ -89,7 +96,14 @@ static Result vm_read_constant_in_next_byte(Vm* vm, Chunk* chunk, Value* v) {
                 opcode_str[opcode]);
         return RES_RUN_ERR;
     }
-    const uint8_t value_index = chunk->opcodes[vm->ip];
+    *byte = chunk->opcodes[vm->ip];
+
+    return RES_OK;
+}
+
+static Result vm_read_constant_in_next_byte(Vm* vm, Chunk* chunk, Value* v) {
+    uint8_t value_index = 0;
+    RETURN_IF_ERR(vm_read_next_byte(vm, chunk, &value_index));
     *v = chunk->constants[value_index];
     LOG("constant index=%d\n", value_index);
 
@@ -136,6 +150,8 @@ Result vm_dump(Vm* vm, Chunk* chunk) {
             case OP_DEFINE_GLOBAL:
             case OP_GET_GLOBAL:
             case OP_SET_GLOBAL:
+            case OP_GET_LOCAL:
+            case OP_SET_LOCAL:
                 RETURN_IF_ERR(vm_dump_opcode_1_operand(vm, chunk));
                 break;
             default:
@@ -370,9 +386,20 @@ Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
                     return RES_RUN_ERR;
                 }
 
-                RETURN_IF_ERR(vm_stack_peek(vm, chunk, value));
+                RETURN_IF_ERR(vm_stack_peek_top(vm, chunk, value));
                 LOG("set global name=%.*s value=", (int)s_len, s);
                 LOG_VALUE_LN(*value);
+
+                break;
+            }
+            case OP_GET_LOCAL: {
+                uint8_t local_index = 0;
+
+                RETURN_IF_ERR(vm_read_next_byte(vm, chunk, &local_index));
+
+                Value v = {0};
+                RETURN_IF_ERR(vm_stack_peek(vm, chunk, &v, local_index));
+                RETURN_IF_ERR(vm_stack_push(vm, chunk, v));
 
                 break;
             }

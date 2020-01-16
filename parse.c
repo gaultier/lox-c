@@ -197,14 +197,29 @@ static void parse_string(Parser* parser, Vm* vm, bool canAssign) {
                      buf_size(parser->chunk->constants) - 1);
 }
 
+static int compiler_resolve_local(const Compiler* compiler, const Token* name) {
+    for (uint8_t i = compiler->locals_len - 1; i >= 0; i--) {
+        const Local* const l = &compiler->locals[i];
+        if (str_eq(name->source, name->source_len, l->name.source,
+                   l->name.source_len))
+            return i;
+    }
+    return -1;
+}
+
 static void parse_named_variable(Parser* parser, Vm* vm, bool canAssign) {
-    uint8_t arg = parse_make_identifier_constant(parser, vm);
+    const Token* const name = &parser->previous;
+    LOG_VALUE_LN(name);
+    int arg = compiler_resolve_local(parser->compiler, name);
+    const bool is_local = arg >= 0;
+
+    if (!is_local) arg = parse_make_identifier_constant(parser, vm);
 
     if (canAssign && parse_match(parser, TOKEN_EQUAL)) {
         parse_expression(parser, vm);
-        parse_emit_byte2(parser, OP_SET_GLOBAL, arg);
+        parse_emit_byte2(parser, is_local ? OP_SET_LOCAL : OP_SET_GLOBAL, arg);
     } else
-        parse_emit_byte2(parser, OP_GET_GLOBAL, arg);
+        parse_emit_byte2(parser, is_local ? OP_GET_LOCAL : OP_GET_GLOBAL, arg);
 }
 
 static void parse_variable(Parser* parser, Vm* vm, bool canAssign) {

@@ -37,6 +37,8 @@ typedef enum {
     OP_DEFINE_GLOBAL,
     OP_GET_GLOBAL,
     OP_SET_GLOBAL,
+    OP_GET_LOCAL,
+    OP_SET_LOCAL,
     OP_COUNT,
 } OpCode;
 
@@ -60,6 +62,8 @@ static const char opcode_str[OP_COUNT][17] = {
     [OP_DEFINE_GLOBAL] = "OP_DEFINE_GLOBAL",
     [OP_GET_GLOBAL] = "OP_GET_GLOBAL",
     [OP_SET_GLOBAL] = "OP_SET_GLOBAL",
+    [OP_GET_LOCAL] = "OP_GET_LOCAL",
+    [OP_SET_LOCAL] = "OP_SET_LOCAL",
 };
 
 typedef struct {
