@@ -215,12 +215,18 @@ static void parse_string(Parser* parser, Vm* vm, bool canAssign) {
                      buf_size(parser->chunk->constants) - 1);
 }
 
-static int compiler_resolve_local(const Compiler* compiler, const Token* name) {
-    for (int i = compiler->locals_len - 1; i >= 0; i--) {
-        const Local* const l = &compiler->locals[i];
+static int parse_resolve_local(Parser* parser, const Token* name) {
+    for (int i = parser->compiler->locals_len - 1; i >= 0; i--) {
+        const Local* const l = &parser->compiler->locals[i];
         if (str_eq(name->source, name->source_len, l->name.source,
-                   l->name.source_len))
+                   l->name.source_len)) {
+            if (l->depth == -1)
+                parse_error(parser, &parser->previous,
+                            "Cannot read local variable in its own initializer",
+                            50);
+
             return i;
+        }
     }
     return -1;
 }
@@ -228,7 +234,7 @@ static int compiler_resolve_local(const Compiler* compiler, const Token* name) {
 static void parse_named_variable(Parser* parser, Vm* vm, bool canAssign) {
     const Token* const name = &parser->previous;
 
-    int arg = compiler_resolve_local(parser->compiler, name);
+    int arg = parse_resolve_local(parser, name);
     const bool is_local = arg >= 0;
     LOG("arg=%d is_local=%d name=`%.*s`\n", arg, is_local,
         (int)name->source_len, name->source);
@@ -414,6 +420,10 @@ static void parse_sync(Parser* parser) {
     }
 }
 
+static void compiler_local_mark_initialized(Compiler* compiler) {
+    compiler->locals[compiler->locals_len - 1].depth = compiler->scope_depth;
+}
+
 static void compiler_add_local(Parser* parser, const Token* name) {
     Compiler* const compiler = parser->compiler;
 
@@ -425,7 +435,7 @@ static void compiler_add_local(Parser* parser, const Token* name) {
 
     Local* const local = &compiler->locals[compiler->locals_len++];
     local->name = *name;
-    local->depth = compiler->scope_depth;
+    local->depth = -1;
 }
 
 static void parse_declare_variable(Parser* parser) {
@@ -464,7 +474,11 @@ static uint8_t parse_variable_name(Parser* parser, Vm* vm, const char err[]) {
 }
 
 static void parse_define_variable(Parser* parser, uint8_t global_i) {
-    if (parser->compiler->scope_depth > 0) return;
+    // Skip locals
+    if (parser->compiler->scope_depth > 0) {
+        compiler_local_mark_initialized(parser->compiler);
+        return;
+    }
     parse_emit_byte2(parser, OP_DEFINE_GLOBAL, global_i);
 }
 
