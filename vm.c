@@ -60,6 +60,13 @@ static void vm_str_cat(Vm* vm, Value lhs, Value rhs, Value* res) {
         return RES_RUN_ERR;                \
     } while (0)
 
+static void vm_stack_log(Vm* vm) {
+    for (intmax_t i = 0; i < vm->stack_len; i++) {
+        LOG("stack[%jd]=", i);
+        LOG_VALUE_LN(vm->stack[i]);
+    }
+}
+
 static Result vm_stack_push(Vm* vm, Chunk* chunk, Value v) {
     if (vm->stack_len == (STACK_MAX - 1)) {
         fprintf(stderr, "%zu:Maximum stack size reached: %d\n",
@@ -75,22 +82,27 @@ static Result vm_stack_push(Vm* vm, Chunk* chunk, Value v) {
     return RES_OK;
 }
 
-static Result vm_stack_peek(const Vm* vm, const Chunk* chunk, Value* v,
-                            uint8_t i) {
+static Result vm_stack_peek_from_bottom_at(const Vm* vm, const Chunk* chunk,
+                                           Value* v, intmax_t i) {
     if (vm->stack_len == 0 || !(i < vm->stack_len)) {
         fprintf(stderr,
                 "%zu:Cannot peek in the stack at this location: stack_len=%d "
-                "i=%d\n",
+                "i=%jd\n",
                 chunk->lines[vm->ip], vm->stack_len, i);
         return RES_RUN_ERR;
     }
 
-    *v = vm->stack[vm->stack_len - i - 1];
+    *v = vm->stack[i];
+
+    LOG("i=%jd v=", i);
+    LOG_VALUE_LN(*v);
+
     return RES_OK;
 }
 
-static Result vm_stack_peek_top(const Vm* vm, const Chunk* chunk, Value* v) {
-    return vm_stack_peek(vm, chunk, v, 0);
+static Result vm_stack_peek_from_top_at(const Vm* vm, const Chunk* chunk,
+                                        Value* v, intmax_t i) {
+    return vm_stack_peek_from_bottom_at(vm, chunk, v, vm->stack_len - i - 1);
 }
 
 static Result vm_stack_pop(Vm* vm, Chunk* chunk, Value* v) {
@@ -137,12 +149,11 @@ static Result vm_read_constant_in_next_byte(Vm* vm, Chunk* chunk, Value* v) {
 static Result vm_dump_opcode_1_operand(Vm* vm, Chunk* chunk) {
     const uint8_t opcode = chunk->opcodes[vm->ip];
     const size_t line = chunk->lines[vm->ip];
-    Value value = {0};
-    RETURN_IF_ERR(vm_read_constant_in_next_byte(vm, chunk, &value));
 
-    printf("%zu:%s:", line, opcode_str[opcode]);
-    value_print(value);
-    puts("");
+    uint8_t b = 0;
+    RETURN_IF_ERR(vm_read_next_byte(vm, chunk, &b));
+
+    printf("%zu:%s:%d\n", line, opcode_str[opcode], b);
 
     return RES_OK;
 }
@@ -410,7 +421,7 @@ Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
                     return RES_RUN_ERR;
                 }
 
-                RETURN_IF_ERR(vm_stack_peek_top(vm, chunk, value));
+                RETURN_IF_ERR(vm_stack_peek_from_top_at(vm, chunk, value, 0));
                 LOG("set global name=%.*s value=", (int)s_len, s);
                 LOG_VALUE_LN(*value);
 
@@ -418,23 +429,26 @@ Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
             }
             case OP_GET_LOCAL: {
                 uint8_t local_index = 0;
-
                 RETURN_IF_ERR(vm_read_next_byte(vm, chunk, &local_index));
 
                 Value v = {0};
-                RETURN_IF_ERR(vm_stack_peek(vm, chunk, &v, local_index));
+                RETURN_IF_ERR(
+                    vm_stack_peek_from_bottom_at(vm, chunk, &v, local_index));
                 RETURN_IF_ERR(vm_stack_push(vm, chunk, v));
+                LOG("OP_GET_LOCAL local_index=%d v=", local_index);
+                LOG_VALUE_LN(v);
 
+                vm_stack_log(vm);
                 break;
             }
             case OP_SET_LOCAL: {
                 uint8_t local_index = 0;
-
                 RETURN_IF_ERR(vm_read_next_byte(vm, chunk, &local_index));
 
                 Value v = {0};
-                RETURN_IF_ERR(vm_stack_peek(vm, chunk, &v, local_index));
+                RETURN_IF_ERR(vm_stack_peek_from_top_at(vm, chunk, &v, 0));
                 vm->stack[local_index] = v;
+                vm_stack_log(vm);
 
                 break;
             }
