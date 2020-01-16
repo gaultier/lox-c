@@ -39,6 +39,7 @@ static void string(Parser*, Vm*, bool);
 static void variable(Parser*, Vm*, bool);
 static void expression(Parser* parser, Vm* vm);
 static void declaration(Parser* parser, Vm* vm);
+static void statement(Parser* parser, Vm* vm);
 
 static const ParseRule rules[TOKEN_COUNT] = {
     [TOKEN_LEFT_PAREN] = {.prefix = grouping},
@@ -374,6 +375,39 @@ static void end_scope(Parser* parser) {
     }
 }
 
+static intmax_t jump_emit(Parser* parser, uint8_t op) {
+    emit_byte(parser, op);
+    emit_byte(parser, 0xff);
+    emit_byte(parser, 0xff);
+
+    return buf_size(parser->chunk->opcodes) - 2;
+}
+
+static void jump_patch(Parser* parser, intmax_t offset) {
+    const intmax_t jump = buf_size(parser->chunk->opcodes) - offset - 2;
+    if (jump > UINT16_MAX)
+        error(parser, &parser->previous, "Reached jump limit", 19);
+
+    const uint16_t u16_jump = (uint16_t)jump;
+    const uint8_t b1 = (u16_jump >> 8) & 0xff;
+    const uint8_t b2 = u16_jump & 0xff;
+
+    parser->chunk->opcodes[offset] = b1;
+    parser->chunk->opcodes[offset + 1] = b2;
+}
+
+static void if_stmt(Parser* parser, Vm* vm) {
+    expect(parser, TOKEN_LEFT_PAREN, "Expect `(` after `if`");
+    expression(parser, vm);
+    expect(parser, TOKEN_RIGHT_PAREN, "Expect `)` after `if`");
+
+    const intmax_t then_jump = jump_emit(parser, OP_JUMP_IF_FALSE);
+
+    statement(parser, vm);
+
+    jump_patch(parser, then_jump);
+}
+
 static void statement(Parser* parser, Vm* vm) {
     if (match(parser, TOKEN_PRINT)) {
         print_stmt(parser, vm);
@@ -381,6 +415,8 @@ static void statement(Parser* parser, Vm* vm) {
         begin_scope(parser);
         block(parser, vm);
         end_scope(parser);
+    } else if (match(parser, TOKEN_IF)) {
+        if_stmt(parser, vm);
     } else {
         expr_stmt(parser, vm);
     }

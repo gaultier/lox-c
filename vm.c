@@ -33,6 +33,7 @@ const char opcode_str[OP_COUNT][17] = {
     [OP_SET_GLOBAL] = "OP_SET_GLOBAL",
     [OP_GET_LOCAL] = "OP_GET_LOCAL",
     [OP_SET_LOCAL] = "OP_SET_LOCAL",
+    [OP_JUMP_IF_FALSE] = "OP_JUMP_IF_FALSE",
 };
 
 static void str_cat(Vm* vm, Value lhs, Value rhs, Value* res) {
@@ -146,7 +147,18 @@ static Result read_constant_in_next_byte(Vm* vm, Chunk* chunk, Value* v) {
     return RES_OK;
 }
 
-static Result dump_opcode_1_operand(Vm* vm, Chunk* chunk) {
+static Result read_u16(Vm* vm, Chunk* chunk, uint16_t* u16) {
+    uint8_t b1 = 0;
+    RETURN_IF_ERR(read_next_byte(vm, chunk, &b1));
+
+    uint8_t b2 = 0;
+    RETURN_IF_ERR(read_next_byte(vm, chunk, &b2));
+
+    *u16 = (b1 << 8) | b2;
+    return RES_OK;
+}
+
+static Result dump_opcode_u8_operand(Vm* vm, Chunk* chunk) {
     const uint8_t opcode = chunk->opcodes[vm->ip];
     const size_t line = chunk->lines[vm->ip];
 
@@ -154,6 +166,17 @@ static Result dump_opcode_1_operand(Vm* vm, Chunk* chunk) {
     RETURN_IF_ERR(read_next_byte(vm, chunk, &b));
 
     printf("%zu:%s:%d\n", line, opcode_str[opcode], b);
+
+    return RES_OK;
+}
+
+static Result dump_opcode_u16_operand(Vm* vm, Chunk* chunk) {
+    const uint8_t opcode = chunk->opcodes[vm->ip];
+    const size_t line = chunk->lines[vm->ip];
+
+    uint16_t u16 = 0;
+    RETURN_IF_ERR(read_u16(vm, chunk, &u16));
+    printf("%zu:%s:%d\n", line, opcode_str[opcode], u16);
 
     return RES_OK;
 }
@@ -187,7 +210,10 @@ Result vm_dump(Vm* vm, Chunk* chunk) {
             case OP_SET_GLOBAL:
             case OP_GET_LOCAL:
             case OP_SET_LOCAL:
-                RETURN_IF_ERR(dump_opcode_1_operand(vm, chunk));
+                RETURN_IF_ERR(dump_opcode_u8_operand(vm, chunk));
+                break;
+            case OP_JUMP_IF_FALSE:
+                RETURN_IF_ERR(dump_opcode_u16_operand(vm, chunk));
                 break;
             default:
                 fprintf(stderr, "%zu:Unknown opcode %hhu\n", line, opcode);
@@ -452,6 +478,14 @@ Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
 
                 break;
             }
+            case OP_JUMP_IF_FALSE: {
+                uint16_t jump = 0;
+                RETURN_IF_ERR(read_u16(vm, chunk, &jump));
+
+                Value v = {0};
+                RETURN_IF_ERR(stack_peek_from_top_at(vm, chunk, &v, 0));
+                vm->ip += jump * value_is_falsy(&v);
+            } break;
             default:
                 fprintf(stderr, "%zu:Unknown opcode %s\n", line,
                         opcode_str[opcode]);
