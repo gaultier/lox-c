@@ -1,0 +1,97 @@
+// Simple global
+var c = 0;
+print c; // expect: 0
+
+// One local var
+{
+    var a = 1;
+    print a; // expect: 1
+}
+
+// Shadowing
+{
+    var a = 1;
+    a; // avoid unused variable error
+    {
+        var a = 2;
+        print a; // expect: 2
+    }
+}
+
+// Separate vars in enclosed scopes
+{
+    var a = 1;
+    a; // avoid unused variable error
+    {
+        var b = 3;
+        print b; // expect: 3
+    }
+}
+
+// Multiple enclosed scopes
+{
+    {
+        {
+            var a = 4;
+            print a; // expect: 4
+        }
+    }
+}
+
+
+// Unused var
+{
+    var a = 1;
+    a;  // avoid unused variable error
+}
+{
+    var a = 5;
+    print a; // expect: 5
+}
+
+
+// Enclosed scopes with inner mutation
+{
+    var a = 1;
+    a;  // avoid unused variable error
+    {
+        a = 6;
+        print a; // expect: 6
+    }
+}
+
+// Enclosed scopes with same level mutation
+{
+    var a = 1;
+    {
+        var b= 99;
+        b;  // avoid unused variable error
+    }
+    a = 7;
+    print a; // expect: 7
+}
+
+// Enclosed scopes with shadowing + mutation
+{
+    var a = 1;
+    {
+        var a = 99;
+        a = a + 1;
+    }
+    a = a + 7;
+    print a; // expect: 8
+}
+
+// Global
+var a = 1;
+{
+    {
+        var a = 8;
+        a = a + 1;
+        print a; // expect: 9
+    }
+    a = a + 9;
+    print a; // expect: 10
+    a = a + 1;
+}
+print a; // expect: 11
