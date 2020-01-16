@@ -403,6 +403,17 @@ Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
 
                 break;
             }
+            case OP_SET_LOCAL: {
+                uint8_t local_index = 0;
+
+                RETURN_IF_ERR(vm_read_next_byte(vm, chunk, &local_index));
+
+                Value v = {0};
+                RETURN_IF_ERR(vm_stack_peek(vm, chunk, &v, local_index));
+                vm->stack[local_index] = v;
+
+                break;
+            }
             default:
                 fprintf(stderr, "%zu:Unknown opcode %s\n", line,
                         opcode_str[opcode]);
