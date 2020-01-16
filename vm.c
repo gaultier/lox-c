@@ -477,7 +477,7 @@ Result vm_interpret(const char* source, size_t source_len,
     Chunk chunk = {0};
     Result result = RES_OK;
 
-    if ((result = parse_compile(source, source_len, &chunk, &vm)) != RES_OK)
+    if ((result = parser_compile(source, source_len, &chunk, &vm)) != RES_OK)
         goto cleanup;
 
     LOG("parsing successful%s\n", "");
@@ -518,7 +518,8 @@ void vm_repl() {
         Chunk chunk = {0};
         Result result = RES_OK;
 
-        if ((result = parse_compile(source, source_len, &chunk, &vm)) != RES_OK)
+        if ((result = parser_compile(source, source_len, &chunk, &vm)) !=
+            RES_OK)
             continue;
 
         LOG("parsing successful%s\n", "");
