@@ -402,12 +402,14 @@ static void if_stmt(Parser* parser, Vm* vm) {
     expect(parser, TOKEN_RIGHT_PAREN, "Expect `)` after `if`");
 
     const intmax_t then_jump = jump_emit(parser, OP_JUMP_IF_FALSE);
+    emit_byte(parser, OP_POP);
 
     statement(parser, vm);
     const intmax_t else_jump = jump_emit(parser, OP_JUMP);
 
     jump_patch(parser, then_jump);
 
+    emit_byte(parser, OP_POP);
     if (match(parser, TOKEN_ELSE)) statement(parser, vm);
 
     jump_patch(parser, else_jump);
