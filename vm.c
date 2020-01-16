@@ -35,7 +35,7 @@ const char opcode_str[OP_COUNT][17] = {
     [OP_SET_LOCAL] = "OP_SET_LOCAL",
 };
 
-static void vm_str_cat(Vm* vm, Value lhs, Value rhs, Value* res) {
+static void str_cat(Vm* vm, Value lhs, Value rhs, Value* res) {
     assert(IS_STRING(lhs));
     assert(IS_STRING(rhs));
 
@@ -60,14 +60,14 @@ static void vm_str_cat(Vm* vm, Value lhs, Value rhs, Value* res) {
         return RES_RUN_ERR;                \
     } while (0)
 
-static void vm_stack_log(Vm* vm) {
+static void stack_log(Vm* vm) {
     for (intmax_t i = 0; i < vm->stack_len; i++) {
         LOG("stack[%jd]=", i);
         LOG_VALUE_LN(vm->stack[i]);
     }
 }
 
-static Result vm_stack_push(Vm* vm, Chunk* chunk, Value v) {
+static Result stack_push(Vm* vm, Chunk* chunk, Value v) {
     if (vm->stack_len == (STACK_MAX - 1)) {
         fprintf(stderr, "%zu:Maximum stack size reached: %d\n",
                 chunk->lines[vm->ip], STACK_MAX);
@@ -82,8 +82,8 @@ static Result vm_stack_push(Vm* vm, Chunk* chunk, Value v) {
     return RES_OK;
 }
 
-static Result vm_stack_peek_from_bottom_at(const Vm* vm, const Chunk* chunk,
-                                           Value* v, intmax_t i) {
+static Result stack_peek_from_bottom_at(const Vm* vm, const Chunk* chunk,
+                                        Value* v, intmax_t i) {
     if (vm->stack_len == 0 || !(i < vm->stack_len)) {
         fprintf(stderr,
                 "%zu:Cannot peek in the stack at this location: stack_len=%d "
@@ -100,12 +100,12 @@ static Result vm_stack_peek_from_bottom_at(const Vm* vm, const Chunk* chunk,
     return RES_OK;
 }
 
-static Result vm_stack_peek_from_top_at(const Vm* vm, const Chunk* chunk,
-                                        Value* v, intmax_t i) {
-    return vm_stack_peek_from_bottom_at(vm, chunk, v, vm->stack_len - i - 1);
+static Result stack_peek_from_top_at(const Vm* vm, const Chunk* chunk, Value* v,
+                                     intmax_t i) {
+    return stack_peek_from_bottom_at(vm, chunk, v, vm->stack_len - i - 1);
 }
 
-static Result vm_stack_pop(Vm* vm, Chunk* chunk, Value* v) {
+static Result stack_pop(Vm* vm, Chunk* chunk, Value* v) {
     if (vm->stack_len == 0) {
         fprintf(stderr, "%zu:Cannot pop from an empty stack\n",
                 chunk->lines[vm->ip]);
@@ -121,7 +121,7 @@ static Result vm_stack_pop(Vm* vm, Chunk* chunk, Value* v) {
     return RES_OK;
 }
 
-static Result vm_read_next_byte(Vm* vm, Chunk* chunk, uint8_t* byte) {
+static Result read_next_byte(Vm* vm, Chunk* chunk, uint8_t* byte) {
     const uint8_t opcode = chunk->opcodes[vm->ip];
     const size_t line = chunk->lines[vm->ip];
 
@@ -137,21 +137,21 @@ static Result vm_read_next_byte(Vm* vm, Chunk* chunk, uint8_t* byte) {
     return RES_OK;
 }
 
-static Result vm_read_constant_in_next_byte(Vm* vm, Chunk* chunk, Value* v) {
+static Result read_constant_in_next_byte(Vm* vm, Chunk* chunk, Value* v) {
     uint8_t value_index = 0;
-    RETURN_IF_ERR(vm_read_next_byte(vm, chunk, &value_index));
+    RETURN_IF_ERR(read_next_byte(vm, chunk, &value_index));
     *v = chunk->constants[value_index];
     LOG("constant index=%d\n", value_index);
 
     return RES_OK;
 }
 
-static Result vm_dump_opcode_1_operand(Vm* vm, Chunk* chunk) {
+static Result dump_opcode_1_operand(Vm* vm, Chunk* chunk) {
     const uint8_t opcode = chunk->opcodes[vm->ip];
     const size_t line = chunk->lines[vm->ip];
 
     uint8_t b = 0;
-    RETURN_IF_ERR(vm_read_next_byte(vm, chunk, &b));
+    RETURN_IF_ERR(read_next_byte(vm, chunk, &b));
 
     printf("%zu:%s:%d\n", line, opcode_str[opcode], b);
 
@@ -187,7 +187,7 @@ Result vm_dump(Vm* vm, Chunk* chunk) {
             case OP_SET_GLOBAL:
             case OP_GET_LOCAL:
             case OP_SET_LOCAL:
-                RETURN_IF_ERR(vm_dump_opcode_1_operand(vm, chunk));
+                RETURN_IF_ERR(dump_opcode_1_operand(vm, chunk));
                 break;
             default:
                 fprintf(stderr, "%zu:Unknown opcode %hhu\n", line, opcode);
@@ -206,26 +206,26 @@ Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
         switch (opcode) {
             case OP_NEGATE: {
                 Value value = {0};
-                RETURN_IF_ERR(vm_stack_pop(vm, chunk, &value));
+                RETURN_IF_ERR(stack_pop(vm, chunk, &value));
 
                 if (!IS_NUMBER(value))
                     VM_ERROR(line, "Negation: expected a number, got:", value);
 
                 RETURN_IF_ERR(
-                    vm_stack_push(vm, chunk, NUMBER_VAL(-AS_NUMBER(value))));
+                    stack_push(vm, chunk, NUMBER_VAL(-AS_NUMBER(value))));
                 break;
             }
             case OP_ADD: {
                 Value rhs = {0};
-                RETURN_IF_ERR(vm_stack_pop(vm, chunk, &rhs));
+                RETURN_IF_ERR(stack_pop(vm, chunk, &rhs));
                 Value lhs = {0};
-                RETURN_IF_ERR(vm_stack_pop(vm, chunk, &lhs));
+                RETURN_IF_ERR(stack_pop(vm, chunk, &lhs));
 
                 if (IS_STRING(lhs) && IS_STRING(rhs)) {
                     Value v = {0};
-                    vm_str_cat(vm, lhs, rhs, &v);
+                    str_cat(vm, lhs, rhs, &v);
 
-                    RETURN_IF_ERR(vm_stack_push(vm, chunk, v));
+                    RETURN_IF_ERR(stack_push(vm, chunk, v));
                     break;
                 }
 
@@ -248,137 +248,137 @@ Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
                     VM_ERROR(line, "Addition: expected a number, got:", rhs);
 
                 // TODO: Check for underflow/overflow
-                RETURN_IF_ERR(vm_stack_push(
+                RETURN_IF_ERR(stack_push(
                     vm, chunk, NUMBER_VAL(AS_NUMBER(lhs) + AS_NUMBER(rhs))));
                 break;
             }
             case OP_SUBTRACT: {
                 Value rhs = {0};
-                RETURN_IF_ERR(vm_stack_pop(vm, chunk, &rhs));
+                RETURN_IF_ERR(stack_pop(vm, chunk, &rhs));
                 if (!IS_NUMBER(rhs))
                     VM_ERROR(line, "Subtraction: expected a number, got:", rhs);
 
                 Value lhs = {0};
-                RETURN_IF_ERR(vm_stack_pop(vm, chunk, &lhs));
+                RETURN_IF_ERR(stack_pop(vm, chunk, &lhs));
                 if (!IS_NUMBER(lhs))
                     VM_ERROR(line, "Subtraction: expected a number, got:", lhs);
 
                 // TODO: Check for underflow/overflow
-                RETURN_IF_ERR(vm_stack_push(
+                RETURN_IF_ERR(stack_push(
                     vm, chunk, NUMBER_VAL(AS_NUMBER(lhs) - AS_NUMBER(rhs))));
                 break;
             }
             case OP_MULTIPLY: {
                 Value rhs = {0};
-                RETURN_IF_ERR(vm_stack_pop(vm, chunk, &rhs));
+                RETURN_IF_ERR(stack_pop(vm, chunk, &rhs));
                 if (!IS_NUMBER(rhs))
                     VM_ERROR(line,
                              "Multiplication: expected a number, got:", rhs);
 
                 Value lhs = {0};
-                RETURN_IF_ERR(vm_stack_pop(vm, chunk, &lhs));
+                RETURN_IF_ERR(stack_pop(vm, chunk, &lhs));
                 if (!IS_NUMBER(lhs))
                     VM_ERROR(line,
                              "Multiplication: expected a number, got:", lhs);
 
                 // TODO: Check for underflow/overflow
-                RETURN_IF_ERR(vm_stack_push(
+                RETURN_IF_ERR(stack_push(
                     vm, chunk, NUMBER_VAL(AS_NUMBER(lhs) * AS_NUMBER(rhs))));
                 break;
             }
             case OP_DIVIDE: {
                 Value rhs = {0};
-                RETURN_IF_ERR(vm_stack_pop(vm, chunk, &rhs));
+                RETURN_IF_ERR(stack_pop(vm, chunk, &rhs));
                 if (!IS_NUMBER(rhs))
                     VM_ERROR(line, "Division: expected a number, got:", rhs);
 
                 Value lhs = {0};
-                RETURN_IF_ERR(vm_stack_pop(vm, chunk, &lhs));
+                RETURN_IF_ERR(stack_pop(vm, chunk, &lhs));
                 if (!IS_NUMBER(lhs))
                     VM_ERROR(line, "Division: expected a number, got:", lhs);
 
-                RETURN_IF_ERR(vm_stack_push(
+                RETURN_IF_ERR(stack_push(
                     vm, chunk, NUMBER_VAL(AS_NUMBER(lhs) / AS_NUMBER(rhs))));
                 break;
             }
             case OP_CONSTANT: {
                 Value v = {0};
-                RETURN_IF_ERR(vm_read_constant_in_next_byte(vm, chunk, &v));
-                RETURN_IF_ERR(vm_stack_push(vm, chunk, v));
+                RETURN_IF_ERR(read_constant_in_next_byte(vm, chunk, &v));
+                RETURN_IF_ERR(stack_push(vm, chunk, v));
             } break;
             case OP_NIL:
-                RETURN_IF_ERR(vm_stack_push(vm, chunk, NIL_VAL));
+                RETURN_IF_ERR(stack_push(vm, chunk, NIL_VAL));
                 break;
             case OP_TRUE:
-                RETURN_IF_ERR(vm_stack_push(vm, chunk, BOOL_VAL(true)));
+                RETURN_IF_ERR(stack_push(vm, chunk, BOOL_VAL(true)));
                 break;
             case OP_FALSE:
-                RETURN_IF_ERR(vm_stack_push(vm, chunk, BOOL_VAL(false)));
+                RETURN_IF_ERR(stack_push(vm, chunk, BOOL_VAL(false)));
                 break;
             case OP_NOT: {
                 Value v = {0};
-                RETURN_IF_ERR(vm_stack_pop(vm, chunk, &v));
+                RETURN_IF_ERR(stack_pop(vm, chunk, &v));
                 RETURN_IF_ERR(
-                    vm_stack_push(vm, chunk, BOOL_VAL(value_is_falsy(&v))));
+                    stack_push(vm, chunk, BOOL_VAL(value_is_falsy(&v))));
                 break;
             }
             case OP_EQUAL: {
                 Value rhs = {0};
-                RETURN_IF_ERR(vm_stack_pop(vm, chunk, &rhs));
+                RETURN_IF_ERR(stack_pop(vm, chunk, &rhs));
                 Value lhs = {0};
-                RETURN_IF_ERR(vm_stack_pop(vm, chunk, &lhs));
+                RETURN_IF_ERR(stack_pop(vm, chunk, &lhs));
                 RETURN_IF_ERR(
-                    vm_stack_push(vm, chunk, BOOL_VAL(value_eq(lhs, rhs))));
+                    stack_push(vm, chunk, BOOL_VAL(value_eq(lhs, rhs))));
                 break;
             }
             case OP_LESS: {
                 Value rhs = {0};
-                RETURN_IF_ERR(vm_stack_pop(vm, chunk, &rhs));
+                RETURN_IF_ERR(stack_pop(vm, chunk, &rhs));
                 if (!IS_NUMBER(rhs))
                     VM_ERROR(line, "Comparison:expected a number, got:", rhs);
 
                 Value lhs = {0};
-                RETURN_IF_ERR(vm_stack_pop(vm, chunk, &lhs));
+                RETURN_IF_ERR(stack_pop(vm, chunk, &lhs));
                 if (!IS_NUMBER(lhs))
                     VM_ERROR(line, "Comparison:expected a number, got:", lhs);
 
                 // TODO: Check for 0
-                RETURN_IF_ERR(vm_stack_push(
+                RETURN_IF_ERR(stack_push(
                     vm, chunk, BOOL_VAL(AS_NUMBER(lhs) < AS_NUMBER(rhs))));
                 break;
             }
             case OP_GREATER: {
                 Value rhs = {0};
-                RETURN_IF_ERR(vm_stack_pop(vm, chunk, &rhs));
+                RETURN_IF_ERR(stack_pop(vm, chunk, &rhs));
                 if (!IS_NUMBER(rhs))
                     VM_ERROR(line, "Comparison:expected a number, got:", rhs);
 
                 Value lhs = {0};
-                RETURN_IF_ERR(vm_stack_pop(vm, chunk, &lhs));
+                RETURN_IF_ERR(stack_pop(vm, chunk, &lhs));
                 if (!IS_NUMBER(lhs))
                     VM_ERROR(line, "Comparison:expected a number, got:", lhs);
 
                 // TODO: Check for 0
-                RETURN_IF_ERR(vm_stack_push(
+                RETURN_IF_ERR(stack_push(
                     vm, chunk, BOOL_VAL(AS_NUMBER(lhs) > AS_NUMBER(rhs))));
                 break;
             }
             case OP_PRINT: {
                 Value value = {0};
-                RETURN_IF_ERR(vm_stack_pop(vm, chunk, &value));
+                RETURN_IF_ERR(stack_pop(vm, chunk, &value));
                 value_print(value);
                 puts("");
             } break;
             case OP_POP: {
                 Value value = {0};
-                RETURN_IF_ERR(vm_stack_pop(vm, chunk, &value));
+                RETURN_IF_ERR(stack_pop(vm, chunk, &value));
             } break;
             case OP_DEFINE_GLOBAL: {
                 Value name = {0};
-                RETURN_IF_ERR(vm_read_constant_in_next_byte(vm, chunk, &name));
+                RETURN_IF_ERR(read_constant_in_next_byte(vm, chunk, &name));
 
                 Value value = {0};
-                RETURN_IF_ERR(vm_stack_pop(vm, chunk, &value));
+                RETURN_IF_ERR(stack_pop(vm, chunk, &value));
 
                 ht_insert(vm->globals, AS_CSTRING(name), AS_STRING(name)->len,
                           &value, sizeof(value));
@@ -391,7 +391,7 @@ Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
             }
             case OP_GET_GLOBAL: {
                 Value name = {0};
-                RETURN_IF_ERR(vm_read_constant_in_next_byte(vm, chunk, &name));
+                RETURN_IF_ERR(read_constant_in_next_byte(vm, chunk, &name));
 
                 char* const s = AS_CSTRING(name);
                 const size_t s_len = AS_STRING(name)->len;
@@ -405,12 +405,12 @@ Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
                     return RES_RUN_ERR;
                 }
 
-                RETURN_IF_ERR(vm_stack_push(vm, chunk, *value));
+                RETURN_IF_ERR(stack_push(vm, chunk, *value));
                 break;
             }
             case OP_SET_GLOBAL: {
                 Value name = {0};
-                RETURN_IF_ERR(vm_read_constant_in_next_byte(vm, chunk, &name));
+                RETURN_IF_ERR(read_constant_in_next_byte(vm, chunk, &name));
 
                 char* const s = AS_CSTRING(name);
                 const size_t s_len = AS_STRING(name)->len;
@@ -421,7 +421,7 @@ Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
                     return RES_RUN_ERR;
                 }
 
-                RETURN_IF_ERR(vm_stack_peek_from_top_at(vm, chunk, value, 0));
+                RETURN_IF_ERR(stack_peek_from_top_at(vm, chunk, value, 0));
                 LOG("set global name=%.*s value=", (int)s_len, s);
                 LOG_VALUE_LN(*value);
 
@@ -429,26 +429,26 @@ Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
             }
             case OP_GET_LOCAL: {
                 uint8_t local_index = 0;
-                RETURN_IF_ERR(vm_read_next_byte(vm, chunk, &local_index));
+                RETURN_IF_ERR(read_next_byte(vm, chunk, &local_index));
 
                 Value v = {0};
                 RETURN_IF_ERR(
-                    vm_stack_peek_from_bottom_at(vm, chunk, &v, local_index));
-                RETURN_IF_ERR(vm_stack_push(vm, chunk, v));
+                    stack_peek_from_bottom_at(vm, chunk, &v, local_index));
+                RETURN_IF_ERR(stack_push(vm, chunk, v));
                 LOG("OP_GET_LOCAL local_index=%d v=", local_index);
                 LOG_VALUE_LN(v);
 
-                vm_stack_log(vm);
+                stack_log(vm);
                 break;
             }
             case OP_SET_LOCAL: {
                 uint8_t local_index = 0;
-                RETURN_IF_ERR(vm_read_next_byte(vm, chunk, &local_index));
+                RETURN_IF_ERR(read_next_byte(vm, chunk, &local_index));
 
                 Value v = {0};
-                RETURN_IF_ERR(vm_stack_peek_from_top_at(vm, chunk, &v, 0));
+                RETURN_IF_ERR(stack_peek_from_top_at(vm, chunk, &v, 0));
                 vm->stack[local_index] = v;
-                vm_stack_log(vm);
+                stack_log(vm);
 
                 break;
             }
@@ -490,13 +490,13 @@ cleanup:
     return result;
 }
 
-static void vm_repl_sig_quit(int signal) {
+static void repl_sig_quit(int signal) {
     printf("\nBye!\n");
     exit(signal);
 }
 
 void vm_repl() {
-    signal(SIGINT, vm_repl_sig_quit);
+    signal(SIGINT, repl_sig_quit);
 
     Vm vm = {.globals = ht_init(100, NULL)};
     setvbuf(stdout, (char*)NULL, _IONBF, 0);
