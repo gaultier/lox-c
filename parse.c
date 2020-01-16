@@ -8,6 +8,20 @@
 #include "lex.h"
 #include "utils.h"
 
+const char precedence_str[PREC_COUNT][16] = {
+    [PREC_NONE] = "PREC_NONE",
+    [PREC_ASSIGNMENT] = "PREC_ASSIGNMENT",
+    [PREC_OR] = "PREC_OR",
+    [PREC_AND] = "PREC_AND",
+    [PREC_EQUALITY] = "PREC_EQUALITY",
+    [PREC_COMPARISON] = "PREC_COMPARISON",
+    [PREC_TERM] = "PREC_TERM",
+    [PREC_FACTOR] = "PREC_FACTOR",
+    [PREC_UNARY] = "PREC_UNARY",
+    [PREC_CALL] = "PREC_CALL",
+    [PREC_PRIMARY] = "PREC_PRIMARY",
+};
+
 typedef void (*ParseFn)(Parser*, Vm*, bool);
 
 typedef struct {

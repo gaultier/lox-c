@@ -11,6 +11,30 @@
 #include "parse.h"
 #include "utils.h"
 
+const char opcode_str[OP_COUNT][17] = {
+    [OP_RETURN] = "OP_RETURN",
+    [OP_CONSTANT] = "OP_CONSTANT",
+    [OP_NEGATE] = "OP_NEGATE",
+    [OP_ADD] = "OP_ADD",
+    [OP_SUBTRACT] = "OP_SUBTRACT",
+    [OP_MULTIPLY] = "OP_MULTIPLY",
+    [OP_DIVIDE] = "OP_DIVIDE",
+    [OP_NIL] = "OP_NIL",
+    [OP_TRUE] = "OP_TRUE",
+    [OP_FALSE] = "OP_FALSE",
+    [OP_NOT] = "OP_NOT",
+    [OP_EQUAL] = "OP_EQUAL",
+    [OP_GREATER] = "OP_GREATER",
+    [OP_LESS] = "OP_LESS",
+    [OP_PRINT] = "OP_PRINT",
+    [OP_POP] = "OP_POP",
+    [OP_DEFINE_GLOBAL] = "OP_DEFINE_GLOBAL",
+    [OP_GET_GLOBAL] = "OP_GET_GLOBAL",
+    [OP_SET_GLOBAL] = "OP_SET_GLOBAL",
+    [OP_GET_LOCAL] = "OP_GET_LOCAL",
+    [OP_SET_LOCAL] = "OP_SET_LOCAL",
+};
+
 static void vm_str_cat(Vm* vm, Value lhs, Value rhs, Value* res) {
     assert(IS_STRING(lhs));
     assert(IS_STRING(rhs));
