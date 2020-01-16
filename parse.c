@@ -404,8 +404,13 @@ static void if_stmt(Parser* parser, Vm* vm) {
     const intmax_t then_jump = jump_emit(parser, OP_JUMP_IF_FALSE);
 
     statement(parser, vm);
+    const intmax_t else_jump = jump_emit(parser, OP_JUMP);
 
     jump_patch(parser, then_jump);
+
+    if (match(parser, TOKEN_ELSE)) statement(parser, vm);
+
+    jump_patch(parser, else_jump);
 }
 
 static void statement(Parser* parser, Vm* vm) {
