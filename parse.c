@@ -200,10 +200,8 @@ static void parse_string(Parser* parser, Vm* vm, bool canAssign) {
 static void parse_named_variable(Parser* parser, Vm* vm, bool canAssign) {
     uint8_t arg = parse_make_identifier_constant(parser, vm);
 
-    LOG("canAssign=%d\n", canAssign);
     if (canAssign && parse_match(parser, TOKEN_EQUAL)) {
         parse_expression(parser, vm);
-        LOG("set global%s\n", "");
         parse_emit_byte2(parser, OP_SET_GLOBAL, arg);
     } else
         parse_emit_byte2(parser, OP_GET_GLOBAL, arg);
@@ -423,6 +421,7 @@ static uint8_t parse_variable_name(Parser* parser, Vm* vm, const char err[]) {
     parse_expect(parser, TOKEN_IDENTIFIER, err);
 
     parse_declare_variable(parser);
+    // Globals are resolved at runtime
     if (parser->compiler->scope_depth > 0) return 0;
 
     return parse_make_identifier_constant(parser, vm);
