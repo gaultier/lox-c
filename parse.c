@@ -419,6 +419,11 @@ static void if_stmt(Parser* parser, Vm* vm) {
 
 static void and (Parser * parser, Vm* vm, bool canAssign) {
     const intmax_t end_jump = jump_emit(parser, OP_JUMP_IF_FALSE);
+    emit_byte(parser, OP_POP);
+
+    precedence(parser, PREC_AND, vm);
+
+    jump_patch(parser, end_jump);
 }
 
 static void statement(Parser* parser, Vm* vm) {
