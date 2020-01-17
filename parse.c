@@ -219,7 +219,7 @@ static void string(Parser* parser, Vm* vm, bool canAssign) {
 
     buf_push(parser->chunk->constants, v);
     emit_byte2(parser, OP_CONSTANT,
-               (intmax_t)buf_size(parser->chunk->constants) - 1);
+               (uint8_t)((intmax_t)buf_size(parser->chunk->constants) - 1));
 }
 
 static int resolve_local(Parser* parser, const Token* name) {
