@@ -488,6 +488,26 @@ static void while_stmt(Parser* parser, Vm* vm) {
     emit_byte(parser, OP_POP);
 }
 
+static void for_stmt(Parser* parser, Vm* vm) {
+    expect(parser, TOKEN_LEFT_PAREN, "Expect `(` after `for`");
+
+    /* if (!peek(parser, TOKEN_SEMICOLON)) expr_stmt(parser, vm); */
+
+    expect(parser, TOKEN_SEMICOLON,
+           "Expect `;` after for-loop initializer clause");
+
+    const size_t loop_start = buf_size(parser->chunk->opcodes);
+
+    expect(parser, TOKEN_SEMICOLON,
+           "Expect `;` after for-loop stop condition clause");
+
+    expect(parser, TOKEN_RIGHT_PAREN, "Expect `)` after `for`");
+
+    statement(parser, vm);
+
+    emit_loop(parser, loop_start);
+}
+
 static void statement(Parser* parser, Vm* vm) {
     if (match(parser, TOKEN_PRINT)) {
         print_stmt(parser, vm);
@@ -499,6 +519,8 @@ static void statement(Parser* parser, Vm* vm) {
         if_stmt(parser, vm);
     } else if (match(parser, TOKEN_WHILE)) {
         while_stmt(parser, vm);
+    } else if (match(parser, TOKEN_FOR)) {
+        for_stmt(parser, vm);
     } else {
         expr_stmt(parser, vm);
     }
