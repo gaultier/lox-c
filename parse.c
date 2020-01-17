@@ -392,7 +392,8 @@ static void jump_patch(Parser* parser, intmax_t offset) {
     assert(jump >= 0);
 
     if (jump > UINT16_MAX)
-        error(parser, &parser->previous, "Reached jump limit", 19);
+        error(parser, &parser->previous, "Reached jump limit for the `if` body",
+              50);
 
     const uint16_t u16_jump = (uint16_t)jump;
     const uint8_t b1 = (u16_jump >> 8);
@@ -445,6 +446,42 @@ static void or (Parser * parser, Vm* vm, bool canAssign) {
     jump_patch(parser, end_jump);
 }
 
+static void emit_loop(Parser* parser, size_t loop_start) {
+    emit_byte(parser, OP_LOOP);
+
+    const intmax_t jump = buf_size(parser->chunk->opcodes) - loop_start + 2;
+    assert(jump >= 0);
+
+    if (jump > UINT16_MAX)
+        error(parser, &parser->previous,
+              "Reached jump limit for the for-loop body", 50);
+
+    const uint16_t u16_jump = (uint16_t)jump;
+    const uint8_t b1 = (u16_jump >> 8);
+    const uint8_t b2 = (uint8_t)u16_jump;
+
+    emit_byte(parser, b1);
+    emit_byte(parser, b2);
+}
+
+static void while_stmt(Parser* parser, Vm* vm) {
+    const size_t loop_start = buf_size(parser->chunk->opcodes);
+
+    expect(parser, TOKEN_LEFT_PAREN, "Expect `(` after `while`");
+    expression(parser, vm);
+    expect(parser, TOKEN_RIGHT_PAREN, "Expect `)` after `while`");
+
+    const intmax_t exit_jump = jump_emit(parser, OP_JUMP_IF_FALSE);
+    emit_byte(parser, OP_POP);
+
+    statement(parser, vm);
+
+    emit_loop(parser, loop_start);
+
+    jump_patch(parser, exit_jump);
+    emit_byte(parser, OP_POP);
+}
+
 static void statement(Parser* parser, Vm* vm) {
     if (match(parser, TOKEN_PRINT)) {
         print_stmt(parser, vm);
@@ -454,6 +491,8 @@ static void statement(Parser* parser, Vm* vm) {
         end_scope(parser);
     } else if (match(parser, TOKEN_IF)) {
         if_stmt(parser, vm);
+    } else if (match(parser, TOKEN_WHILE)) {
+        while_stmt(parser, vm);
     } else {
         expr_stmt(parser, vm);
     }

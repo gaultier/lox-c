@@ -35,6 +35,7 @@ const char opcode_str[OP_COUNT][17] = {
     [OP_SET_LOCAL] = "OP_SET_LOCAL",
     [OP_JUMP_IF_FALSE] = "OP_JUMP_IF_FALSE",
     [OP_JUMP] = "OP_JUMP",
+    [OP_LOOP] = "OP_LOOP",
 };
 
 static void str_cat(Vm* vm, Value lhs, Value rhs, Value* res) {
@@ -215,6 +216,7 @@ Result vm_dump(Vm* vm, Chunk* chunk) {
                 break;
             case OP_JUMP_IF_FALSE:
             case OP_JUMP:
+            case OP_LOOP:
                 RETURN_IF_ERR(dump_opcode_u16_operand(vm, chunk));
                 break;
             default:
@@ -492,6 +494,11 @@ Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
                 uint16_t jump = 0;
                 RETURN_IF_ERR(read_u16(vm, chunk, &jump));
                 vm->ip += jump;
+            } break;
+            case OP_LOOP: {
+                uint16_t jump = 0;
+                RETURN_IF_ERR(read_u16(vm, chunk, &jump));
+                vm->ip -= jump;
             } break;
             default:
                 fprintf(stderr, "%zu:Unknown opcode %s\n", line,
