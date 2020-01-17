@@ -37,6 +37,7 @@ static void number(Parser*, Vm*, bool);
 static void literal(Parser*, Vm*, bool);
 static void string(Parser*, Vm*, bool);
 static void variable(Parser*, Vm*, bool);
+static void and (Parser*, Vm*, bool);
 static void expression(Parser* parser, Vm* vm);
 static void declaration(Parser* parser, Vm* vm);
 static void statement(Parser* parser, Vm* vm);
@@ -60,6 +61,7 @@ static const ParseRule rules[TOKEN_COUNT] = {
     [TOKEN_LESS_EQUAL] = {.infix = binary, .precedence = PREC_COMPARISON},
     [TOKEN_STRING] = {.prefix = string},
     [TOKEN_IDENTIFIER] = {.prefix = variable},
+    [TOKEN_AND] = {.infix = and, .precedence = PREC_AND},
 };
 
 static void error(Parser* parser, const Token* token, const char* err,
@@ -389,8 +391,8 @@ static void jump_patch(Parser* parser, intmax_t offset) {
         error(parser, &parser->previous, "Reached jump limit", 19);
 
     const uint16_t u16_jump = (uint16_t)jump;
-    const uint8_t b1 = (u16_jump >> 8) & 0xff;
-    const uint8_t b2 = u16_jump & 0xff;
+    const uint8_t b1 = (u16_jump >> 8);
+    const uint8_t b2 = (uint8_t)u16_jump;
 
     parser->chunk->opcodes[offset] = b1;
     parser->chunk->opcodes[offset + 1] = b2;
@@ -413,6 +415,10 @@ static void if_stmt(Parser* parser, Vm* vm) {
     if (match(parser, TOKEN_ELSE)) statement(parser, vm);
 
     jump_patch(parser, else_jump);
+}
+
+static void and (Parser * parser, Vm* vm, bool canAssign) {
+    const intmax_t end_jump = jump_emit(parser, OP_JUMP_IF_FALSE);
 }
 
 static void statement(Parser* parser, Vm* vm) {
