@@ -499,8 +499,11 @@ static void for_stmt(Parser* parser, Vm* vm) {
 
     const size_t loop_start = buf_size(parser->chunk->opcodes);
 
-    expect(parser, TOKEN_SEMICOLON,
-           "Expect `;` after for-loop stop condition clause");
+    if (!peek(parser, TOKEN_SEMICOLON))
+        expr_stmt(parser, vm);
+    else
+        expect(parser, TOKEN_SEMICOLON,
+               "Expect `;` after for-loop stop condition clause");
 
     expect(parser, TOKEN_RIGHT_PAREN, "Expect `)` after `for`");
 
