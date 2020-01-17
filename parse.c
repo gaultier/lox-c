@@ -93,6 +93,10 @@ static void error(Parser* parser, const Token* token, const char* err,
     }
 }
 
+static void error_str_nul(Parser* parser, const Token* token, const char* err) {
+    error(parser, token, err, strlen(err));
+}
+
 static void emit_byte(Parser* parser, uint8_t byte) {
     LOG("byte=%d opcode=%s\n", byte, opcode_str[byte]);
     buf_push(parser->chunk->lines, parser->current.line);
@@ -156,7 +160,7 @@ static void precedence(Parser* parser, Precedence precedence, Vm* vm) {
 
     const ParseFn prefix_rule = rules[parser->previous.type].prefix;
     if (!prefix_rule) {
-        error(parser, &parser->previous, "Expected expression", 19);
+        error_str_nul(parser, &parser->previous, "Expected expression");
         return;
     }
 
@@ -177,7 +181,8 @@ static void precedence(Parser* parser, Precedence precedence, Vm* vm) {
     }
 
     if (canAssign && peek(parser, TOKEN_EQUAL)) {
-        error(parser, &parser->previous, "Expression cannot be assigned", 29);
+        error_str_nul(parser, &parser->previous,
+                      "Expression cannot be assigned");
         return;
     }
 }
@@ -188,7 +193,7 @@ static void expect(Parser* parser, TokenType type, const char err[]) {
         return;
     }
 
-    error(parser, &parser->current, err, strlen(err));
+    error_str_nul(parser, &parser->current, err);
 }
 
 static void number(Parser* parser, Vm* vm, bool canAssign) {
@@ -221,8 +226,9 @@ static int resolve_local(Parser* parser, const Token* name) {
         if (str_eq(name->source, name->source_len, l->name.source,
                    l->name.source_len)) {
             if (l->depth == -1)
-                error(parser, &parser->previous,
-                      "Cannot read local variable in its own initializer", 50);
+                error_str_nul(
+                    parser, &parser->previous,
+                    "Cannot read local variable in its own initializer");
 
             return i;
         }
@@ -392,8 +398,8 @@ static void jump_patch(Parser* parser, intmax_t offset) {
     assert(jump >= 0);
 
     if (jump > UINT16_MAX)
-        error(parser, &parser->previous, "Reached jump limit for the `if` body",
-              50);
+        error_str_nul(parser, &parser->previous,
+                      "Reached jump limit for the `if` body");
 
     const uint16_t u16_jump = (uint16_t)jump;
     const uint8_t b1 = (u16_jump >> 8);
@@ -453,8 +459,8 @@ static void emit_loop(Parser* parser, size_t loop_start) {
     assert(jump >= 0);
 
     if (jump > UINT16_MAX)
-        error(parser, &parser->previous,
-              "Reached jump limit for the for-loop body", 50);
+        error_str_nul(parser, &parser->previous,
+                      "Reached jump limit for the for-loop body");
 
     const uint16_t u16_jump = (uint16_t)jump;
     const uint8_t b1 = (u16_jump >> 8);
@@ -531,7 +537,8 @@ static void compiler_add_local(Parser* parser, const Token* name) {
     Compiler* const compiler = parser->compiler;
 
     if (compiler->locals_len == LOCALS_MAX - 1) {
-        error(parser, name, "Reached the maximum number of locals: 256", 42);
+        error_str_nul(parser, name,
+                      "Reached the maximum number of locals: 256");
         return;
     }
 
@@ -555,9 +562,9 @@ static void declare_variable(Parser* parser) {
 
         if (str_eq(local->name.source, local->name.source_len, name->source,
                    name->source_len)) {
-            error(parser, name,
-                  "Variable shadowing: existing variable in the same scope",
-                  56);
+            error_str_nul(
+                parser, name,
+                "Variable shadowing: existing variable in the same scope");
             return;
         }
     }
