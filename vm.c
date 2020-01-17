@@ -488,7 +488,7 @@ Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
 
                 Value v = {0};
                 RETURN_IF_ERR(stack_peek_from_top_at(vm, chunk, &v, 0));
-                vm->ip += jump * (size_t)value_is_falsy(&v);
+                vm->ip += jump * value_is_falsy(&v);
             } break;
             case OP_JUMP: {
                 uint16_t jump = 0;
