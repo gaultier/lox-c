@@ -491,10 +491,11 @@ static void while_stmt(Parser* parser, Vm* vm) {
 static void for_stmt(Parser* parser, Vm* vm) {
     expect(parser, TOKEN_LEFT_PAREN, "Expect `(` after `for`");
 
-    /* if (!peek(parser, TOKEN_SEMICOLON)) expr_stmt(parser, vm); */
-
-    expect(parser, TOKEN_SEMICOLON,
-           "Expect `;` after for-loop initializer clause");
+    if (!peek(parser, TOKEN_SEMICOLON))
+        expr_stmt(parser, vm);
+    else
+        expect(parser, TOKEN_SEMICOLON,
+               "Expect `;` after for-loop initializer clause");
 
     const size_t loop_start = buf_size(parser->chunk->opcodes);
 
