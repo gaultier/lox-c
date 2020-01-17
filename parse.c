@@ -387,6 +387,8 @@ static intmax_t jump_emit(Parser* parser, uint8_t op) {
 
 static void jump_patch(Parser* parser, intmax_t offset) {
     const intmax_t jump = buf_size(parser->chunk->opcodes) - offset - 2;
+    assert(jump >= 0);
+
     if (jump > UINT16_MAX)
         error(parser, &parser->previous, "Reached jump limit", 19);
 
@@ -418,6 +420,8 @@ static void if_stmt(Parser* parser, Vm* vm) {
 }
 
 static void and (Parser * parser, Vm* vm, bool canAssign) {
+    (void)canAssign;
+
     const intmax_t end_jump = jump_emit(parser, OP_JUMP_IF_FALSE);
     emit_byte(parser, OP_POP);
 
