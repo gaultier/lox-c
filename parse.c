@@ -200,7 +200,7 @@ static void expect(Parser* parser, TokenType type, const char err[]) {
 static void number(Parser* parser, Vm* vm, bool canAssign) {
     (void)canAssign;
     (void)vm;
-    assert(parser->previous.type = TOKEN_NUMBER);
+    assert(parser->previous.type == TOKEN_NUMBER);
 
     const double number = strtod(parser->previous.source, NULL);
     const Value v = NUMBER_VAL(number);
@@ -388,8 +388,8 @@ static void end_scope(Parser* parser) {
 
 static intmax_t jump_emit(Parser* parser, uint8_t op) {
     emit_byte(parser, op);
-    emit_byte(parser, 0xff);
-    emit_byte(parser, 0xff);
+    emit_byte(parser, UINT8_MAX);
+    emit_byte(parser, UINT8_MAX);
 
     return buf_size(parser->chunk->opcodes) - 2;
 }
