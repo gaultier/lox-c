@@ -24,7 +24,7 @@ void read_stdin(char** content, size_t* content_len) {
         REALLOC_SAFE(content, *content_len);
 
         memcpy(*content + *content_len - effectivily_read, buf,
-               effectivily_read);
+               (size_t)effectivily_read);
     }
     if (effectivily_read == -1) {
         fprintf(stderr, "Error reading from stdin: errno=%s error=%d\n",

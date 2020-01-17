@@ -139,7 +139,7 @@ static uint8_t make_constant(Parser* parser, Value v) {
     buf_push(parser->chunk->constants, v);
     const size_t constant_i = buf_size(parser->chunk->constants) - 1;
 
-    return constant_i;
+    return (uint8_t)constant_i;
 }
 
 static uint8_t make_identifier_constant(Parser* parser, Vm* vm) {
@@ -218,7 +218,8 @@ static void string(Parser* parser, Vm* vm, bool canAssign) {
     const Value v = OBJ_VAL(os);
 
     buf_push(parser->chunk->constants, v);
-    emit_byte2(parser, OP_CONSTANT, buf_size(parser->chunk->constants) - 1);
+    emit_byte2(parser, OP_CONSTANT,
+               (intmax_t)buf_size(parser->chunk->constants) - 1);
 }
 
 static int resolve_local(Parser* parser, const Token* name) {
@@ -393,11 +394,12 @@ static intmax_t jump_emit(Parser* parser, uint8_t op) {
     emit_byte(parser, UINT8_MAX);
     emit_byte(parser, UINT8_MAX);
 
-    return buf_size(parser->chunk->opcodes) - 2;
+    return (intmax_t)(buf_size(parser->chunk->opcodes) - 2);
 }
 
 static void jump_patch(Parser* parser, intmax_t offset) {
-    const intmax_t jump = buf_size(parser->chunk->opcodes) - offset - 2;
+    const intmax_t jump =
+        (intmax_t)buf_size(parser->chunk->opcodes) - offset - 2;
     assert(jump >= 0);
 
     if (jump > UINT16_MAX)
@@ -458,7 +460,8 @@ static void or (Parser * parser, Vm* vm, bool canAssign) {
 static void emit_loop(Parser* parser, size_t loop_start) {
     emit_byte(parser, OP_LOOP);
 
-    const intmax_t jump = buf_size(parser->chunk->opcodes) - loop_start + 2;
+    const intmax_t jump =
+        (intmax_t)(buf_size(parser->chunk->opcodes) - loop_start + 2);
     assert(jump >= 0);
 
     if (jump > UINT16_MAX)
@@ -646,7 +649,7 @@ static void declaration(Parser* parser, Vm* vm) {
     if (parser->state == PARSER_STATE_PANIC_MODE) sync(parser);
 }
 
-Result parser_compile(const char* source, ssize_t source_len, Chunk* chunk,
+Result parser_compile(const char* source, size_t source_len, Chunk* chunk,
                       Vm* vm) {
     LOG("source_len=%zu source=`%.*s`\n", source_len, (int)source_len, source);
 
