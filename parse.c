@@ -504,7 +504,7 @@ static void for_stmt(Parser* parser, Vm* vm) {
     } else
         expr_stmt(parser, vm);
 
-    const size_t loop_start = buf_size(parser->chunk->opcodes);
+    size_t loop_start = buf_size(parser->chunk->opcodes);
 
     intmax_t exit_jump = -1;
     if (!match(parser, TOKEN_SEMICOLON)) {
@@ -516,7 +516,21 @@ static void for_stmt(Parser* parser, Vm* vm) {
         emit_byte(parser, OP_POP);
     }
 
-    expect(parser, TOKEN_RIGHT_PAREN, "Expect `)` after `for`");
+    if (!match(parser, TOKEN_RIGHT_PAREN)) {
+        const intmax_t body_jump = jump_emit(parser, OP_JUMP);
+
+        const size_t increment_start = buf_size(parser->chunk->opcodes);
+
+        expression(parser, vm);
+        emit_byte(parser, OP_POP);
+
+        expect(parser, TOKEN_RIGHT_PAREN,
+               "Expect `)` after for-loop stop condition");
+
+        emit_loop(parser, loop_start);
+        loop_start = increment_start;
+        jump_patch(parser, body_jump);
+    }
 
     statement(parser, vm);
 
