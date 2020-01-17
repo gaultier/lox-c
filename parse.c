@@ -506,17 +506,27 @@ static void for_stmt(Parser* parser, Vm* vm) {
 
     const size_t loop_start = buf_size(parser->chunk->opcodes);
 
-    if (!peek(parser, TOKEN_SEMICOLON))
-        expr_stmt(parser, vm);
-    else
+    intmax_t exit_jump = -1;
+    if (!match(parser, TOKEN_SEMICOLON)) {
+        expression(parser, vm);
         expect(parser, TOKEN_SEMICOLON,
-               "Expect `;` after for-loop stop condition clause");
+               "Expect `;` after for-loop stop condition");
+
+        exit_jump = jump_emit(parser, OP_JUMP_IF_FALSE);
+        emit_byte(parser, OP_POP);
+    }
 
     expect(parser, TOKEN_RIGHT_PAREN, "Expect `)` after `for`");
 
     statement(parser, vm);
 
     emit_loop(parser, loop_start);
+
+    if (exit_jump != -1) {
+        jump_patch(parser, exit_jump);
+        emit_byte(parser, OP_POP);
+    }
+
     end_scope(parser);
 }
 
