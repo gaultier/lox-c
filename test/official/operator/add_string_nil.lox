@@ -1,1 +1,1 @@
-"s" + nil; // expect: 1:Addition: cannot concatenate a non-string type, got:nil
+"s" + nil; // expect: 1:7:Addition: cannot concatenate a non-string type, got:nil

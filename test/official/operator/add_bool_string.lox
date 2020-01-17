@@ -1,1 +1,1 @@
-true + "s"; // expect: 1:Addition: cannot concatenate a non-string type, got:true
+true + "s"; // expect: 1:9:Addition: cannot concatenate a non-string type, got:true
