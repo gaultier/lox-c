@@ -48,8 +48,13 @@ typedef enum {
 extern const char opcode_str[OP_COUNT][17];
 
 typedef struct {
+    size_t line;
+    size_t column;
+} Location;
+
+typedef struct {
     uint8_t* opcodes;
-    size_t* lines;
+    Location* locations;
     Value* constants;
 } Chunk;
 

@@ -55,12 +55,12 @@ static void str_cat(Vm* vm, Value lhs, Value rhs, Value* res) {
     *res = OBJ_VAL(os);
 }
 
-#define VM_ERROR(line, fmt, value)         \
-    do {                                   \
-        fprintf(stderr, "%zu:" fmt, line); \
-        value_print_err(value);            \
-        fprintf(stderr, "\n");             \
-        return RES_RUN_ERR;                \
+#define VM_ERROR(loc, fmt, value)                                \
+    do {                                                         \
+        fprintf(stderr, "%zu:%zu:" fmt, loc->line, loc->column); \
+        value_print_err(value);                                  \
+        fprintf(stderr, "\n");                                   \
+        return RES_RUN_ERR;                                      \
     } while (0)
 
 static void stack_log(Vm* vm) {
@@ -72,8 +72,9 @@ static void stack_log(Vm* vm) {
 
 static Result stack_push(Vm* vm, Chunk* chunk, Value v) {
     if (vm->stack_len == (STACK_MAX - 1)) {
-        fprintf(stderr, "%zu:Maximum stack size reached: %d\n",
-                chunk->lines[vm->ip], STACK_MAX);
+        const Location* const loc = &chunk->locations[vm->ip];
+        fprintf(stderr, "%zu:%zu:Maximum stack size reached: %d\n", loc->line,
+                loc->column, STACK_MAX);
         return RES_RUN_ERR;
     }
     vm->stack_len += 1;
@@ -88,10 +89,12 @@ static Result stack_push(Vm* vm, Chunk* chunk, Value v) {
 static Result stack_peek_from_bottom_at(const Vm* vm, const Chunk* chunk,
                                         Value* v, intmax_t i) {
     if (vm->stack_len == 0 || !(i < vm->stack_len)) {
-        fprintf(stderr,
-                "%zu:Cannot peek in the stack at this location: stack_len=%d "
-                "i=%jd\n",
-                chunk->lines[vm->ip], vm->stack_len, i);
+        const Location* const loc = &chunk->locations[vm->ip];
+        fprintf(
+            stderr,
+            "%zu:%zu:Cannot peek in the stack at this location: stack_len=%d "
+            "i=%jd\n",
+            loc->line, loc->column, vm->stack_len, i);
         return RES_RUN_ERR;
     }
 
@@ -110,8 +113,9 @@ static Result stack_peek_from_top_at(const Vm* vm, const Chunk* chunk, Value* v,
 
 static Result stack_pop(Vm* vm, Chunk* chunk, Value* v) {
     if (vm->stack_len == 0) {
-        fprintf(stderr, "%zu:Cannot pop from an empty stack\n",
-                chunk->lines[vm->ip]);
+        const Location* const loc = &chunk->locations[vm->ip];
+        fprintf(stderr, "%zu:%zu:Cannot pop from an empty stack\n", loc->line,
+                loc->column);
         return RES_RUN_ERR;
     }
 
@@ -126,13 +130,13 @@ static Result stack_pop(Vm* vm, Chunk* chunk, Value* v) {
 
 static Result read_next_byte(Vm* vm, Chunk* chunk, uint8_t* byte) {
     const uint8_t opcode = chunk->opcodes[vm->ip];
-    const size_t line = chunk->lines[vm->ip];
+    const Location* const loc = &chunk->locations[vm->ip];
 
     vm->ip += 1;
 
     if (!(vm->ip < buf_size(chunk->opcodes))) {
-        fprintf(stderr, "%zu:Malformed opcode: missing operand for %s\n", line,
-                opcode_str[opcode]);
+        fprintf(stderr, "%zu:%zu:Malformed opcode: missing operand for %s\n",
+                loc->line, loc->column, opcode_str[opcode]);
         return RES_RUN_ERR;
     }
     *byte = chunk->opcodes[vm->ip];
@@ -162,23 +166,23 @@ static Result read_u16(Vm* vm, Chunk* chunk, uint16_t* u16) {
 
 static Result dump_opcode_u8_operand(Vm* vm, Chunk* chunk) {
     const uint8_t opcode = chunk->opcodes[vm->ip];
-    const size_t line = chunk->lines[vm->ip];
+    const Location* const loc = &chunk->locations[vm->ip];
 
     uint8_t b = 0;
     RETURN_IF_ERR(read_next_byte(vm, chunk, &b));
 
-    printf("%zu:%s:%d\n", line, opcode_str[opcode], b);
+    printf("%zu:%zu:%s:%d\n", loc->line, loc->column, opcode_str[opcode], b);
 
     return RES_OK;
 }
 
 static Result dump_opcode_u16_operand(Vm* vm, Chunk* chunk) {
     const uint8_t opcode = chunk->opcodes[vm->ip];
-    const size_t line = chunk->lines[vm->ip];
+    const Location* const loc = &chunk->locations[vm->ip];
 
     uint16_t u16 = 0;
     RETURN_IF_ERR(read_u16(vm, chunk, &u16));
-    printf("%zu:%s:%d\n", line, opcode_str[opcode], u16);
+    printf("%zu:%zu:%s:%d\n", loc->line, loc->column, opcode_str[opcode], u16);
 
     return RES_OK;
 }
@@ -186,7 +190,7 @@ static Result dump_opcode_u16_operand(Vm* vm, Chunk* chunk) {
 Result vm_dump(Vm* vm, Chunk* chunk) {
     while (vm->ip < buf_size(chunk->opcodes)) {
         const uint8_t opcode = chunk->opcodes[vm->ip];
-        const size_t line = chunk->lines[vm->ip];
+        const Location* const loc = &chunk->locations[vm->ip];
 
         switch (opcode) {
             case OP_RETURN:
@@ -204,7 +208,8 @@ Result vm_dump(Vm* vm, Chunk* chunk) {
             case OP_GREATER:
             case OP_PRINT:
             case OP_POP:
-                printf("%zu:%s\n", line, opcode_str[opcode]);
+                printf("%zu:%zu:%s\n", loc->line, loc->column,
+                       opcode_str[opcode]);
                 break;
             case OP_CONSTANT:
             case OP_DEFINE_GLOBAL:
@@ -220,7 +225,8 @@ Result vm_dump(Vm* vm, Chunk* chunk) {
                 RETURN_IF_ERR(dump_opcode_u16_operand(vm, chunk));
                 break;
             default:
-                fprintf(stderr, "%zu:Unknown opcode %hhu\n", line, opcode);
+                fprintf(stderr, "%zu:%zu:Unknown opcode %hhu\n", loc->line,
+                        loc->column, opcode);
                 return RES_RUN_ERR;
         }
         vm->ip += 1;
@@ -231,7 +237,7 @@ Result vm_dump(Vm* vm, Chunk* chunk) {
 Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
     while (vm->ip < buf_size(chunk->opcodes)) {
         const uint8_t opcode = chunk->opcodes[vm->ip];
-        const size_t line = chunk->lines[vm->ip];
+        const Location* const loc = &chunk->locations[vm->ip];
 
         switch (opcode) {
             case OP_NEGATE: {
@@ -239,7 +245,7 @@ Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
                 RETURN_IF_ERR(stack_pop(vm, chunk, &value));
 
                 if (!IS_NUMBER(value))
-                    VM_ERROR(line, "Negation: expected a number, got:", value);
+                    VM_ERROR(loc, "Negation: expected a number, got:", value);
 
                 RETURN_IF_ERR(
                     stack_push(vm, chunk, NUMBER_VAL(-AS_NUMBER(value))));
@@ -261,21 +267,21 @@ Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
 
                 if ((IS_STRING(lhs) && !IS_STRING(rhs)))
                     VM_ERROR(
-                        line,
+                        loc,
                         "Addition: cannot concatenate a non-string type, got:",
                         rhs);
 
                 if ((IS_STRING(rhs) && !IS_STRING(lhs)))
                     VM_ERROR(
-                        line,
+                        loc,
                         "Addition: cannot concatenate a non-string type, got:",
                         lhs);
 
                 if (!IS_NUMBER(lhs))
-                    VM_ERROR(line, "Addition: expected a number, got:", lhs);
+                    VM_ERROR(loc, "Addition: expected a number, got:", lhs);
 
                 if (!IS_NUMBER(rhs))
-                    VM_ERROR(line, "Addition: expected a number, got:", rhs);
+                    VM_ERROR(loc, "Addition: expected a number, got:", rhs);
 
                 // TODO: Check for underflow/overflow
                 RETURN_IF_ERR(stack_push(
@@ -286,12 +292,12 @@ Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
                 Value rhs = {0};
                 RETURN_IF_ERR(stack_pop(vm, chunk, &rhs));
                 if (!IS_NUMBER(rhs))
-                    VM_ERROR(line, "Subtraction: expected a number, got:", rhs);
+                    VM_ERROR(loc, "Subtraction: expected a number, got:", rhs);
 
                 Value lhs = {0};
                 RETURN_IF_ERR(stack_pop(vm, chunk, &lhs));
                 if (!IS_NUMBER(lhs))
-                    VM_ERROR(line, "Subtraction: expected a number, got:", lhs);
+                    VM_ERROR(loc, "Subtraction: expected a number, got:", lhs);
 
                 // TODO: Check for underflow/overflow
                 RETURN_IF_ERR(stack_push(
@@ -302,13 +308,13 @@ Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
                 Value rhs = {0};
                 RETURN_IF_ERR(stack_pop(vm, chunk, &rhs));
                 if (!IS_NUMBER(rhs))
-                    VM_ERROR(line,
+                    VM_ERROR(loc,
                              "Multiplication: expected a number, got:", rhs);
 
                 Value lhs = {0};
                 RETURN_IF_ERR(stack_pop(vm, chunk, &lhs));
                 if (!IS_NUMBER(lhs))
-                    VM_ERROR(line,
+                    VM_ERROR(loc,
                              "Multiplication: expected a number, got:", lhs);
 
                 // TODO: Check for underflow/overflow
@@ -320,12 +326,12 @@ Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
                 Value rhs = {0};
                 RETURN_IF_ERR(stack_pop(vm, chunk, &rhs));
                 if (!IS_NUMBER(rhs))
-                    VM_ERROR(line, "Division: expected a number, got:", rhs);
+                    VM_ERROR(loc, "Division: expected a number, got:", rhs);
 
                 Value lhs = {0};
                 RETURN_IF_ERR(stack_pop(vm, chunk, &lhs));
                 if (!IS_NUMBER(lhs))
-                    VM_ERROR(line, "Division: expected a number, got:", lhs);
+                    VM_ERROR(loc, "Division: expected a number, got:", lhs);
 
                 RETURN_IF_ERR(stack_push(
                     vm, chunk, NUMBER_VAL(AS_NUMBER(lhs) / AS_NUMBER(rhs))));
@@ -365,12 +371,12 @@ Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
                 Value rhs = {0};
                 RETURN_IF_ERR(stack_pop(vm, chunk, &rhs));
                 if (!IS_NUMBER(rhs))
-                    VM_ERROR(line, "Comparison:expected a number, got:", rhs);
+                    VM_ERROR(loc, "Comparison:expected a number, got:", rhs);
 
                 Value lhs = {0};
                 RETURN_IF_ERR(stack_pop(vm, chunk, &lhs));
                 if (!IS_NUMBER(lhs))
-                    VM_ERROR(line, "Comparison:expected a number, got:", lhs);
+                    VM_ERROR(loc, "Comparison:expected a number, got:", lhs);
 
                 // TODO: Check for 0
                 RETURN_IF_ERR(stack_push(
@@ -381,12 +387,12 @@ Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
                 Value rhs = {0};
                 RETURN_IF_ERR(stack_pop(vm, chunk, &rhs));
                 if (!IS_NUMBER(rhs))
-                    VM_ERROR(line, "Comparison:expected a number, got:", rhs);
+                    VM_ERROR(loc, "Comparison:expected a number, got:", rhs);
 
                 Value lhs = {0};
                 RETURN_IF_ERR(stack_pop(vm, chunk, &lhs));
                 if (!IS_NUMBER(lhs))
-                    VM_ERROR(line, "Comparison:expected a number, got:", lhs);
+                    VM_ERROR(loc, "Comparison:expected a number, got:", lhs);
 
                 // TODO: Check for 0
                 RETURN_IF_ERR(stack_push(
@@ -430,8 +436,8 @@ Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
                 LOG_VALUE_LN(*value);
 
                 if (!value) {
-                    fprintf(stderr, "%zu:Undefined variable `%.*s`\n", line,
-                            (int)s_len, s);
+                    fprintf(stderr, "%zu:%zu:Undefined variable `%.*s`\n",
+                            loc->line, loc->column, (int)s_len, s);
                     return RES_RUN_ERR;
                 }
 
@@ -446,8 +452,8 @@ Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
                 const size_t s_len = AS_STRING(name)->len;
                 Value* const value = ht_search(vm->globals, s, s_len);
                 if (!value) {
-                    fprintf(stderr, "%zu:Undefined variable `%.*s`\n", line,
-                            (int)s_len, s);
+                    fprintf(stderr, "%zu:%zu:Undefined variable `%.*s`\n",
+                            loc->line, loc->column, (int)s_len, s);
                     return RES_RUN_ERR;
                 }
 
@@ -501,8 +507,8 @@ Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
                 vm->ip -= jump;
             } break;
             default:
-                fprintf(stderr, "%zu:Unknown opcode %s\n", line,
-                        opcode_str[opcode]);
+                fprintf(stderr, "%zu:%zu:Unknown opcode %s\n", loc->line,
+                        loc->column, opcode_str[opcode]);
                 return RES_RUN_ERR;
         }
         vm->ip += 1;
