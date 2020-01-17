@@ -156,7 +156,7 @@ static Result read_u16(Vm* vm, Chunk* chunk, uint16_t* u16) {
     uint8_t b2 = 0;
     RETURN_IF_ERR(read_next_byte(vm, chunk, &b2));
 
-    *u16 = (b1 << 8) | b2;
+    *u16 = (uint16_t)(b1 << 8) | b2;
     return RES_OK;
 }
 
@@ -519,7 +519,7 @@ static void value_obj_free(Vm* vm) {
     }
 }
 
-Result vm_interpret(const char* source, size_t source_len,
+Result vm_interpret(char* source, ssize_t source_len,
                     Result (*bytecode_fn)(Vm*, Chunk*)) {
     Vm vm = {.globals = ht_init(100, NULL)};
     Chunk chunk = {0};
@@ -533,7 +533,7 @@ Result vm_interpret(const char* source, size_t source_len,
 
 cleanup:
     value_obj_free(&vm);
-    free((char*)source);
+    free(source);
 
     return result;
 }
@@ -543,7 +543,7 @@ static void repl_sig_quit(int signal) {
     exit(signal);
 }
 
-void vm_repl() {
+void vm_repl(void) {
     signal(SIGINT, repl_sig_quit);
 
     Vm vm = {.globals = ht_init(100, NULL)};
@@ -553,7 +553,7 @@ void vm_repl() {
         vm.ip = 0;
 
         char* source = NULL;
-        size_t source_len = 0;
+        ssize_t source_len = 0;
         size_t line_cap = 255;
 
         printf("> ");

@@ -644,7 +644,7 @@ static void declaration(Parser* parser, Vm* vm) {
     if (parser->state == PARSER_STATE_PANIC_MODE) sync(parser);
 }
 
-Result parser_compile(const char* source, size_t source_len, Chunk* chunk,
+Result parser_compile(const char* source, ssize_t source_len, Chunk* chunk,
                       Vm* vm) {
     LOG("source_len=%zu source=`%.*s`\n", source_len, (int)source_len, source);
 

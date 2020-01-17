@@ -61,8 +61,8 @@ typedef struct {
     hashtab_t* globals;
 } Vm;
 
-void vm_repl();
+void vm_repl(void);
 Result vm_dump(Vm* vm, Chunk* chunk);
-Result vm_interpret(const char* source, size_t source_len,
+Result vm_interpret(char* source, ssize_t source_len,
                     Result (*bytecode_fn)(Vm*, Chunk*));
 Result vm_run_bytecode(Vm* vm, Chunk* chunk);
