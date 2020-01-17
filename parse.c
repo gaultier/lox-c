@@ -38,6 +38,7 @@ static void literal(Parser*, Vm*, bool);
 static void string(Parser*, Vm*, bool);
 static void variable(Parser*, Vm*, bool);
 static void and (Parser*, Vm*, bool);
+static void or (Parser*, Vm*, bool);
 static void expression(Parser* parser, Vm* vm);
 static void declaration(Parser* parser, Vm* vm);
 static void statement(Parser* parser, Vm* vm);
@@ -62,6 +63,7 @@ static const ParseRule rules[TOKEN_COUNT] = {
     [TOKEN_STRING] = {.prefix = string},
     [TOKEN_IDENTIFIER] = {.prefix = variable},
     [TOKEN_AND] = {.infix = and, .precedence = PREC_AND},
+    [TOKEN_OR] = {.infix = or, .precedence = PREC_OR},
 };
 
 static void error(Parser* parser, const Token* token, const char* err,
@@ -427,6 +429,19 @@ static void and (Parser * parser, Vm* vm, bool canAssign) {
 
     precedence(parser, PREC_AND, vm);
 
+    jump_patch(parser, end_jump);
+}
+
+static void or (Parser * parser, Vm* vm, bool canAssign) {
+    (void)canAssign;
+
+    const intmax_t else_jump = jump_emit(parser, OP_JUMP_IF_FALSE);
+    const intmax_t end_jump = jump_emit(parser, OP_JUMP);
+    jump_patch(parser, else_jump);
+
+    emit_byte(parser, OP_POP);
+
+    precedence(parser, PREC_OR, vm);
     jump_patch(parser, end_jump);
 }
 
