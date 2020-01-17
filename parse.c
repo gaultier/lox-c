@@ -249,9 +249,11 @@ static void named_variable(Parser* parser, Vm* vm, bool canAssign) {
 
     if (canAssign && match(parser, TOKEN_EQUAL)) {
         expression(parser, vm);
-        emit_byte2(parser, is_local ? OP_SET_LOCAL : OP_SET_GLOBAL, arg);
+        emit_byte2(parser, is_local ? OP_SET_LOCAL : OP_SET_GLOBAL,
+                   (uint8_t)arg);
     } else
-        emit_byte2(parser, is_local ? OP_GET_LOCAL : OP_GET_GLOBAL, arg);
+        emit_byte2(parser, is_local ? OP_GET_LOCAL : OP_GET_GLOBAL,
+                   (uint8_t)arg);
 }
 
 static void variable(Parser* parser, Vm* vm, bool canAssign) {

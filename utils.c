@@ -20,7 +20,7 @@ void read_stdin(char** content, size_t* content_len) {
 
     ssize_t effectivily_read = 0;
     while ((effectivily_read = read(0, buf, BUF_LEN)) > 0) {
-        *content_len += effectivily_read;
+        *content_len += (size_t)effectivily_read;
         REALLOC_SAFE(content, *content_len);
 
         memcpy(*content + *content_len - effectivily_read, buf,

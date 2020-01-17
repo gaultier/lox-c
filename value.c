@@ -1,5 +1,7 @@
 #include "value.h"
 
+#include <float.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -72,7 +74,7 @@ bool value_eq(Value lhs, Value rhs) {
         case VAL_NIL:
             return true;
         case VAL_NUMBER:
-            return AS_NUMBER(lhs) == AS_NUMBER(rhs);
+            return fabs(AS_NUMBER(lhs) - AS_NUMBER(rhs)) < DBL_EPSILON;
         case VAL_OBJ:
             if (AS_STRING(lhs)->len != AS_STRING(rhs)->len) return false;
             return memcmp(AS_STRING(lhs)->s, AS_STRING(rhs)->s,
