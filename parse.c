@@ -42,6 +42,7 @@ static void or (Parser*, Vm*, bool);
 static void expression(Parser* parser, Vm* vm);
 static void declaration(Parser* parser, Vm* vm);
 static void statement(Parser* parser, Vm* vm);
+static void var_declaration(Parser* parser, Vm* vm);
 
 static const ParseRule rules[TOKEN_COUNT] = {
     [TOKEN_LEFT_PAREN] = {.prefix = grouping},
@@ -489,13 +490,14 @@ static void while_stmt(Parser* parser, Vm* vm) {
 }
 
 static void for_stmt(Parser* parser, Vm* vm) {
+    begin_scope(parser);
     expect(parser, TOKEN_LEFT_PAREN, "Expect `(` after `for`");
 
-    if (!peek(parser, TOKEN_SEMICOLON))
+    if (match(parser, TOKEN_VAR))
+        var_declaration(parser, vm);
+    else if (match(parser, TOKEN_SEMICOLON)) {
+    } else
         expr_stmt(parser, vm);
-    else
-        expect(parser, TOKEN_SEMICOLON,
-               "Expect `;` after for-loop initializer clause");
 
     const size_t loop_start = buf_size(parser->chunk->opcodes);
 
@@ -510,6 +512,7 @@ static void for_stmt(Parser* parser, Vm* vm) {
     statement(parser, vm);
 
     emit_loop(parser, loop_start);
+    end_scope(parser);
 }
 
 static void statement(Parser* parser, Vm* vm) {
