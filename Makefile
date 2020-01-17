@@ -6,10 +6,10 @@ SANITIZER= -fsanitize=address
 
 SRC= hashtab.c lex.c main.c parse.c utils.c value.c vm.c
 
-release: 
+release: $(SRC)
 	$(CC) $(CFLAGS) $(LDFLAGS) $(SRC) -O3 -o lox-release
 
-debug: 
+debug: $(SRC)
 	$(CC) $(CFLAGS) $(LDFLAGS) $(SRC) $(SANITIZER) -O0 -g -o lox-debug
 
 docker:

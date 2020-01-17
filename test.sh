@@ -8,8 +8,6 @@ else
     export DIFFTOOL="diff"
 fi
 
-make release
-
 LOXBIN="${LOXBIN:-./lox-release}"
 
 find test -name '*.lox' -type f | sort | parallel --bar -k --timeout 4 " \
