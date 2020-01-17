@@ -100,16 +100,16 @@ static void error_str_nul(Parser* parser, const Token* token, const char* err) {
 
 static void emit_byte(Parser* parser, uint8_t byte) {
     LOG("byte=%d opcode=%s\n", byte, opcode_str[byte]);
-    Location loc = {.line = parser->current.line,
-                    .column = parser->current.column};
+    Location loc = {.line = parser->previous.line,
+                    .column = parser->previous.column};
     buf_push(parser->chunk->locations, loc);
     buf_push(parser->chunk->opcodes, byte);
 }
 
 static void emit_byte2(Parser* parser, uint8_t byte1, uint8_t byte2) {
     LOG("opcode1=%s byte2=%d\n", opcode_str[byte1], byte2);
-    Location loc = {.line = parser->current.line,
-                    .column = parser->current.column};
+    Location loc = {.line = parser->previous.line,
+                    .column = parser->previous.column};
     buf_push(parser->chunk->locations, loc);
     buf_push(parser->chunk->opcodes, byte1);
     buf_push(parser->chunk->locations, loc);

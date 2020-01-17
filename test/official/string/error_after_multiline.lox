@@ -4,4 +4,4 @@ var a = "1
 3
 ";
 
-err; // expect: 7:Undefined variable `err`
+err; // expect: 7:1:Undefined variable `err`

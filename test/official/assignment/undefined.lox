@@ -1,1 +1,1 @@
-unknown = "what"; // expect: 1:Undefined variable `unknown`
+unknown = "what"; // expect: 1:12:Undefined variable `unknown`
