@@ -743,6 +743,10 @@ Result fmt(const char* source, size_t source_len) {
             case TOKEN_AND:
             case TOKEN_EQUAL:
             case TOKEN_IDENTIFIER:
+            case TOKEN_MINUS:
+            case TOKEN_PLUS:
+            case TOKEN_SLASH:
+            case TOKEN_STAR:
                 fputs(" ", stdout);
                 break;
             case TOKEN_NUMBER:
@@ -758,6 +762,9 @@ Result fmt(const char* source, size_t source_len) {
                 return RES_OK;
             case TOKEN_VAR:
             case TOKEN_SEMICOLON:
+            case TOKEN_COMMA:
+            case TOKEN_PRINT:
+            case TOKEN_DOT:
                 break;
             default:
                 UNREACHABLE();
