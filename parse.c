@@ -722,6 +722,7 @@ Result fmt(const char* source, size_t source_len) {
         if (current.type == TOKEN_ERROR) return RES_PARSE_ERR;
 
         switch (current.type) {
+            // Sometimes one space
             case TOKEN_LEFT_PAREN:
                 switch (previous.type) {
                     case TOKEN_IF:
@@ -739,17 +740,30 @@ Result fmt(const char* source, size_t source_len) {
                     default:;
                 }
                 break;
+            case TOKEN_RIGHT_PAREN:
+                switch (previous.type) {
+                    case TOKEN_NUMBER:
+                    case TOKEN_IDENTIFIER:
+                    case TOKEN_STRING:
+                        break;
+                    default:
+                        fputs(" ", stdout);
+                }
+                break;
+                // One space
             case TOKEN_OR:
             case TOKEN_AND:
             case TOKEN_EQUAL:
-            case TOKEN_IDENTIFIER:
             case TOKEN_MINUS:
             case TOKEN_PLUS:
             case TOKEN_SLASH:
             case TOKEN_STAR:
                 fputs(" ", stdout);
                 break;
+            // Sometimes one space
             case TOKEN_NUMBER:
+            case TOKEN_IDENTIFIER:
+            case TOKEN_STRING:
                 switch (previous.type) {
                     case TOKEN_LEFT_PAREN:
                         break;
@@ -757,16 +771,21 @@ Result fmt(const char* source, size_t source_len) {
                         fputs(" ", stdout);
                 }
                 break;
+                // The end
             case TOKEN_EOF:
                 fflush(out);
                 return RES_OK;
+                // No space
             case TOKEN_VAR:
             case TOKEN_SEMICOLON:
             case TOKEN_COMMA:
             case TOKEN_PRINT:
             case TOKEN_DOT:
+            case TOKEN_BANG:
                 break;
             default:
+                fprintf(stderr, "Unknown token %s\n",
+                        token_type_str[current.type]);
                 UNREACHABLE();
         }
 
