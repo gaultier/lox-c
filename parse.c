@@ -726,7 +726,8 @@ Result fmt(const char* source, size_t source_len) {
     while (true) {
         previous = current;
         lex_scan_token(&lex, &current);
-        if (current.type == TOKEN_ERROR) return RES_PARSE_ERR;
+        if (previous.type == TOKEN_LEFT_BRACE) fputs("\n", out);
+        if (previous.type == TOKEN_RIGHT_BRACE) fputs("\n", out);
 
         switch (current.type) {
             // Sometimes one space
@@ -803,6 +804,15 @@ Result fmt(const char* source, size_t source_len) {
             case TOKEN_SEMICOLON:
             case TOKEN_CLASS:
                 break;
+            case TOKEN_LEFT_BRACE:
+                scope_depth += 1;
+                break;
+            case TOKEN_RIGHT_BRACE:
+                scope_depth -= 1;
+                fputs("\n", out);
+                break;
+            case TOKEN_ERROR:
+                return RES_PARSE_ERR;
             default:
                 fprintf(stderr, "Unknown token %s\n",
                         token_type_str[current.type]);
