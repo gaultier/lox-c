@@ -708,11 +708,18 @@ static void tok_dump(FILE* out, const Token* t) {
     fprintf(out, "%.*s", (int)t->source_len, t->source);
 }
 
+void file_write_spaces(FILE* out, size_t n) {
+    for (size_t i = 0; i < n; i++) {
+        fputs(" ", stdout);
+    }
+}
+
 Result fmt(const char* source, size_t source_len) {
     Lex lex = {
         .line = 1, .column = 1, .source = source, .source_len = source_len};
     Token previous = {0};
     Token current = {0};
+    size_t scope_depth = 1;
 
     FILE* const out = stdout;  // TODO: in-place
 
@@ -735,7 +742,7 @@ Result fmt(const char* source, size_t source_len) {
                     case TOKEN_LESS_EQUAL:
                     case TOKEN_GREATER:
                     case TOKEN_GREATER_EQUAL:
-                        fputs(" ", stdout);
+                        file_write_spaces(stdout, 1);
                         break;
                     default:;
                 }
@@ -750,7 +757,7 @@ Result fmt(const char* source, size_t source_len) {
                     case TOKEN_NIL:
                         break;
                     default:
-                        fputs(" ", stdout);
+                        file_write_spaces(stdout, 1);
                 }
                 break;
                 // One space
@@ -767,7 +774,7 @@ Result fmt(const char* source, size_t source_len) {
             case TOKEN_THIS:
             case TOKEN_WHILE:
             case TOKEN_FOR:
-                fputs(" ", stdout);
+                file_write_spaces(stdout, 1);
                 break;
             // Sometimes one space
             case TOKEN_NUMBER:
@@ -780,7 +787,7 @@ Result fmt(const char* source, size_t source_len) {
                     case TOKEN_LEFT_PAREN:
                         break;
                     default:
-                        fputs(" ", stdout);
+                        file_write_spaces(stdout, 1);
                 }
                 break;
                 // The end
@@ -795,8 +802,6 @@ Result fmt(const char* source, size_t source_len) {
             case TOKEN_BANG:
             case TOKEN_SEMICOLON:
             case TOKEN_CLASS:
-                break;
-                // Newline
                 break;
             default:
                 fprintf(stderr, "Unknown token %s\n",
