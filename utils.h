@@ -11,7 +11,7 @@
                 "bug in the compiler.\n",                                   \
                 __FILE__, __LINE__, __func__);                              \
         abort();                                                            \
-    } while (0);
+    } while (0)
 
 #ifdef WITH_LOGS
 #define LOG(fmt, ...)                                          \

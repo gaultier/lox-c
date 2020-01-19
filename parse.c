@@ -704,3 +704,65 @@ Result parser_compile(const char* source, size_t source_len, Chunk* chunk,
     return RES_OK;
 }
 
+static void tok_dump(FILE* out, const Token* t) {
+    fprintf(out, "%.*s", (int)t->source_len, t->source);
+}
+
+Result fmt(const char* source, size_t source_len) {
+    Lex lex = {
+        .line = 1, .column = 1, .source = source, .source_len = source_len};
+    Token previous = {0};
+    Token current = {0};
+
+    FILE* const out = stdout;  // TODO: in-place
+
+    while (true) {
+        previous = current;
+        lex_scan_token(&lex, &current);
+        if (current.type == TOKEN_ERROR) return RES_PARSE_ERR;
+
+        switch (current.type) {
+            case TOKEN_LEFT_PAREN:
+                switch (previous.type) {
+                    case TOKEN_IF:
+                    case TOKEN_WHILE:
+                    case TOKEN_FOR:
+                    case TOKEN_EQUAL:
+                    case TOKEN_EQUAL_EQUAL:
+                    case TOKEN_BANG_EQUAL:
+                    case TOKEN_LESS:
+                    case TOKEN_LESS_EQUAL:
+                    case TOKEN_GREATER:
+                    case TOKEN_GREATER_EQUAL:
+                        fputs(" ", stdout);
+                        break;
+                    default:;
+                }
+                break;
+            case TOKEN_OR:
+            case TOKEN_AND:
+            case TOKEN_EQUAL:
+            case TOKEN_IDENTIFIER:
+                fputs(" ", stdout);
+                break;
+            case TOKEN_NUMBER:
+                switch (previous.type) {
+                    case TOKEN_LEFT_PAREN:
+                        break;
+                    default:
+                        fputs(" ", stdout);
+                }
+                break;
+            case TOKEN_EOF:
+                fflush(out);
+                return RES_OK;
+            case TOKEN_VAR:
+            case TOKEN_SEMICOLON:
+                break;
+            default:
+                UNREACHABLE();
+        }
+
+        tok_dump(out, &current);
+    }
+}

@@ -54,3 +54,4 @@ typedef struct {
 
 Result parser_compile(const char* source, size_t source_len, Chunk* chunk,
                       Vm* vm);
+Result fmt(const char* source, size_t source_len);

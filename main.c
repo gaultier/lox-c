@@ -2,8 +2,8 @@
 #include "utils.h"
 #include "vm.h"
 
-void cli_help(const char* argv[]);
-void cli_help(const char* argv[]) {
+static void cli_help(const char* argv[]);
+static void cli_help(const char* argv[]) {
     printf("Usage: %s dump|run|repl [filename]\n", argv[0]);
     exit(0);
 }
@@ -23,6 +23,8 @@ int main(int argc, const char* argv[]) {
             return (int)vm_interpret(source, source_len, vm_dump);
         else if (strcmp(argv[1], "run") == 0)
             return (int)vm_interpret(source, source_len, vm_run_bytecode);
+        else if (strcmp(argv[1], "fmt") == 0)
+            return (int)fmt(source, source_len);
     } else
         cli_help(argv);
 }
