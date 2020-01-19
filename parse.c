@@ -745,6 +745,9 @@ Result fmt(const char* source, size_t source_len) {
                     case TOKEN_NUMBER:
                     case TOKEN_IDENTIFIER:
                     case TOKEN_STRING:
+                    case TOKEN_TRUE:
+                    case TOKEN_FALSE:
+                    case TOKEN_NIL:
                         break;
                     default:
                         fputs(" ", stdout);
@@ -758,12 +761,16 @@ Result fmt(const char* source, size_t source_len) {
             case TOKEN_PLUS:
             case TOKEN_SLASH:
             case TOKEN_STAR:
+            case TOKEN_ELSE:
                 fputs(" ", stdout);
                 break;
             // Sometimes one space
             case TOKEN_NUMBER:
             case TOKEN_IDENTIFIER:
             case TOKEN_STRING:
+            case TOKEN_TRUE:
+            case TOKEN_FALSE:
+            case TOKEN_NIL:
                 switch (previous.type) {
                     case TOKEN_LEFT_PAREN:
                         break;
@@ -777,11 +784,14 @@ Result fmt(const char* source, size_t source_len) {
                 return RES_OK;
                 // No space
             case TOKEN_VAR:
-            case TOKEN_SEMICOLON:
             case TOKEN_COMMA:
             case TOKEN_PRINT:
             case TOKEN_DOT:
             case TOKEN_BANG:
+            case TOKEN_SEMICOLON:
+            case TOKEN_CLASS:
+                break;
+                // Newline
                 break;
             default:
                 fprintf(stderr, "Unknown token %s\n",
