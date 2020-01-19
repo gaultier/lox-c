@@ -762,6 +762,11 @@ Result fmt(const char* source, size_t source_len) {
             case TOKEN_SLASH:
             case TOKEN_STAR:
             case TOKEN_ELSE:
+            case TOKEN_RETURN:
+            case TOKEN_SUPER:
+            case TOKEN_THIS:
+            case TOKEN_WHILE:
+            case TOKEN_FOR:
                 fputs(" ", stdout);
                 break;
             // Sometimes one space
