@@ -2,6 +2,7 @@
 
 #include <stdint.h>
 
+#include "chunk.h"
 #include "config.h"
 #include "hashtab.h"
 #include "result.h"
@@ -46,17 +47,6 @@ typedef enum {
 } OpCode;
 
 extern const char opcode_str[OP_COUNT][17];
-
-typedef struct {
-    size_t line;
-    size_t column;
-} Location;
-
-typedef struct {
-    uint8_t* opcodes;
-    Location* locations;
-    Value* constants;
-} Chunk;
 
 typedef struct {
     size_t ip;

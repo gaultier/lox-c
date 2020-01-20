@@ -6,6 +6,11 @@
 
 #include "config.h"
 
+typedef struct {
+    size_t line;
+    size_t column;
+} Location;
+
 typedef enum {
     VAL_BOOL,
     VAL_NIL,
