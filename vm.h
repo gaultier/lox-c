@@ -17,6 +17,8 @@
 
 #define STACK_MAX (UINT8_MAX + 1)
 
+#define FRAME_MAX 64
+
 typedef enum {
     OP_RETURN = 0,
     OP_CONSTANT,
@@ -48,11 +50,20 @@ typedef enum {
 extern const char opcode_str[OP_COUNT][17];
 
 typedef struct {
+    ObjFunction* fn;
+    uint8_t* ip;
+    Value* slots;
+} CallFrame;
+
+typedef struct {
     size_t ip;
     Value stack[STACK_MAX];
     uint8_t stack_len;
     Obj* objects;
     hashtab_t* globals;
+
+    CallFrame frames[FRAME_MAX];
+    int8_t frame_count;
 } Vm;
 
 void vm_repl(void);
