@@ -30,13 +30,15 @@ typedef struct {
     intmax_t depth;
 } Local;
 
-typedef struct {
+struct Compiler {
     Local locals[LOCALS_MAX];
     int locals_len;
     intmax_t scope_depth;
     ObjFunction* fn;
     FunctionType fn_type;
-} Compiler;
+    struct Compiler* enclosing;
+};
+typedef struct Compiler Compiler;
 
 typedef enum {
     PARSER_STATE_OK = 0,
@@ -56,4 +58,4 @@ typedef struct {
 Result parser_compile(const char* source, size_t source_len, ObjFunction** fn,
                       Vm* vm);
 Result fmt(const char* source, size_t source_len);
-void compiler_init(Compiler* c, FunctionType type);
+void compiler_init(Compiler* c, FunctionType type, Compiler* enclosing);

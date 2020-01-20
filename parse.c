@@ -69,11 +69,12 @@ static const ParseRule rules[TOKEN_COUNT] = {
     [TOKEN_OR] = {.infix = or, .precedence = PREC_OR},
 };
 
-void compiler_init(Compiler* c, FunctionType type) {
+void compiler_init(Compiler* c, FunctionType type, Compiler* enclosing) {
     c->locals_len = 0;
     c->scope_depth = 0;
     c->fn = NULL;
     c->fn_type = type;
+    c->enclosing = enclosing;
 }
 
 static ObjFunction* compiler_end(Compiler* compiler, Parser* parser) {
@@ -688,7 +689,7 @@ static void var_declaration(Parser* parser, Vm* vm) {
 
 static void function(Parser* parser, Vm* vm) {
     Compiler compiler;
-    compiler_init(&compiler, TYPE_FUNCTION);
+    compiler_init(&compiler, TYPE_FUNCTION, parser->compiler);
     begin_scope(&compiler);
 
     expect(parser, TOKEN_LEFT_PAREN, "Missing `(` after function name");
@@ -732,7 +733,7 @@ Result parser_compile(const char* source, size_t source_len, ObjFunction** fn,
     memcpy((*fn)->name, top_fn_name, top_fn_name_len);
 
     Compiler compiler;
-    compiler_init(&compiler, TYPE_SCRIPT);
+    compiler_init(&compiler, TYPE_SCRIPT, NULL);
     compiler.fn = *fn;
 
     Local* const local = &compiler.locals[compiler.locals_len++];
