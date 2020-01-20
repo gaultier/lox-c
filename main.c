@@ -1,8 +1,8 @@
 #include "config.h"
+#include "parse.h"
 #include "utils.h"
 #include "vm.h"
 
-static void cli_help(const char* argv[]);
 static void cli_help(const char* argv[]) {
     printf("Usage: %s dump|run|repl [filename]\n", argv[0]);
     exit(0);

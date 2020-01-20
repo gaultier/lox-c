@@ -708,9 +708,9 @@ static void tok_dump(FILE* out, const Token* t) {
     fprintf(out, "%.*s", (int)t->source_len, t->source);
 }
 
-void file_write_spaces(FILE* out, size_t n) {
+static void file_write_spaces(FILE* out, size_t n) {
     for (size_t i = 0; i < n; i++) {
-        fputs(" ", stdout);
+        fputs(" ", out);
     }
 }
 
@@ -769,13 +769,15 @@ Result fmt(const char* source, size_t source_len) {
             case TOKEN_PLUS:
             case TOKEN_SLASH:
             case TOKEN_STAR:
+                file_write_spaces(stdout, 1);
+                break;
             case TOKEN_ELSE:
             case TOKEN_RETURN:
             case TOKEN_SUPER:
             case TOKEN_THIS:
             case TOKEN_WHILE:
             case TOKEN_FOR:
-                file_write_spaces(stdout, 1);
+                file_write_spaces(stdout, 2 * scope_depth);
                 break;
             // Sometimes one space
             case TOKEN_NUMBER:
