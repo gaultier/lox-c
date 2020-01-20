@@ -564,9 +564,13 @@ void vm_repl(void) {
 
         printf("> ");
         if ((source_len = getline(&source, &line_cap, stdin)) <= 0) {
-            fprintf(stderr, "Could not read from stdin: errno=%s error=%d\n",
-                    strerror(errno), errno);
-            exit(errno);
+            if (errno) {
+                fprintf(stderr,
+                        "Could not read from stdin: errno=%s error=%d\n",
+                        strerror(errno), errno);
+                exit(errno);
+            } else
+                exit(0);
         }
 
         Result result = RES_OK;
@@ -578,5 +582,7 @@ void vm_repl(void) {
 
         LOG("parsing successful%s\n", "");
         vm_run_bytecode(&vm, &fn->chunk);
+
+        if (fn) free(fn);
     }
 }
