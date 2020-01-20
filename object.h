@@ -9,3 +9,5 @@ typedef struct {
     size_t name_len;
     char name[];
 } ObjFunction;
+
+ObjFunction* obj_function_new(size_t name_len);

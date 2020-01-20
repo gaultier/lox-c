@@ -43,7 +43,7 @@
 
 #define BUF_LEN 100
 
-void realloc_safe(void** ptr, size_t new_size, const char* func, int line);
+void* realloc_safe(void** ptr, size_t new_size, const char* func, int line);
 void read_file(const char path[], char** content, size_t* content_len);
 void read_stdin(char** content, size_t* content_len);
 bool str_eq(const char* restrict a, size_t a_len, const char* restrict b,

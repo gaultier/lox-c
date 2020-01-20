@@ -6,13 +6,15 @@
 #include <string.h>
 #include <unistd.h>
 
-void realloc_safe(void** ptr, size_t new_size, const char* func, int line) {
+void* realloc_safe(void** ptr, size_t new_size, const char* func, int line) {
     if ((*ptr = realloc(*ptr, new_size)) == NULL) {
         fprintf(stderr, "%s:%d: Could not allocate %zu bytes of memory\n", func,
                 line, new_size);
         exit(ENOMEM);
     }
     LOG("func=%s line=%d allocated=%zu\n", func, line, new_size);
+
+    return *ptr;
 }
 
 void read_stdin(char** content, size_t* content_len) {
