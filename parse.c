@@ -691,7 +691,6 @@ Result parser_compile(const char* source, size_t source_len, ObjFunction** fn,
     (*fn)->arity = 0;
     (*fn)->chunk = (Chunk){0};
     memcpy((*fn)->name, top_fn_name, top_fn_name_len);
-    (*fn)->name_len = top_fn_name_len;
 
     Compiler compiler = {
         .locals_len = 0, .scope_depth = 0, .fn = (*fn), .fn_type = TYPE_SCRIPT};

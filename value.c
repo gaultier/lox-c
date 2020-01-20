@@ -34,7 +34,6 @@ void value_print(Value v) {
                 default:
                     UNREACHABLE();
             }
-
             break;
         default:
             UNREACHABLE();
@@ -120,5 +119,7 @@ bool value_obj_is_type(Value v, ObjType type) {
 ObjFunction* obj_function_new(size_t name_len) {
     ObjFunction* fn = NULL;
     REALLOC_SAFE(&fn, sizeof(ObjFunction) + name_len);
+    fn->obj.type = OBJ_FUNCTION;
+    fn->name_len = name_len;
     return fn;
 }
