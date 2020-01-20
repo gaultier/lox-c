@@ -133,7 +133,7 @@ static Result stack_pop(Vm* vm, Value* v) {
 
 static Result read_next_byte(Vm* vm, uint8_t* byte) {
     assert(vm->frame_len > 0);
-    CallFrame* frame = &vm->frames[vm->frame_len - 1];
+    CallFrame* const frame = &vm->frames[vm->frame_len - 1];
 
     const uint8_t opcode = *frame->ip;
 
@@ -153,7 +153,7 @@ static Result read_next_byte(Vm* vm, uint8_t* byte) {
 
 static Result read_constant_in_next_byte(Vm* vm, Value* v) {
     assert(vm->frame_len > 0);
-    CallFrame* frame = &vm->frames[vm->frame_len - 1];
+    const CallFrame* const frame = &vm->frames[vm->frame_len - 1];
 
     uint8_t value_index = 0;
     RETURN_IF_ERR(read_next_byte(vm, &value_index));
@@ -176,7 +176,7 @@ static Result read_u16(Vm* vm, uint16_t* u16) {
 
 static Result dump_opcode_u8_operand(Vm* vm) {
     assert(vm->frame_len > 0);
-    CallFrame* frame = &vm->frames[vm->frame_len - 1];
+    const CallFrame* const frame = &vm->frames[vm->frame_len - 1];
 
     const uint8_t opcode = *frame->ip;
     const Location* const loc = get_location(vm);
@@ -191,7 +191,7 @@ static Result dump_opcode_u8_operand(Vm* vm) {
 
 static Result dump_opcode_u16_operand(Vm* vm) {
     assert(vm->frame_len > 0);
-    CallFrame* frame = &vm->frames[vm->frame_len - 1];
+    const CallFrame* const frame = &vm->frames[vm->frame_len - 1];
 
     const uint8_t opcode = *frame->ip;
     const Location* const loc = get_location(vm);
@@ -205,7 +205,7 @@ static Result dump_opcode_u16_operand(Vm* vm) {
 
 Result vm_dump(Vm* vm) {
     assert(vm->frame_len > 0);
-    CallFrame* frame = &vm->frames[vm->frame_len - 1];
+    CallFrame* const frame = &vm->frames[vm->frame_len - 1];
     const size_t opcodes_len = buf_size(frame->fn->chunk.opcodes);
 
     while (frame->ip < frame->fn->chunk.opcodes + opcodes_len) {
@@ -258,7 +258,7 @@ Result vm_dump(Vm* vm) {
 
 Result vm_run_bytecode(Vm* vm) {
     assert(vm->frame_len > 0);
-    CallFrame* frame = &vm->frames[vm->frame_len - 1];
+    CallFrame* const frame = &vm->frames[vm->frame_len - 1];
     const size_t opcodes_len = buf_size(frame->fn->chunk.opcodes);
 
     while (frame->ip < frame->fn->chunk.opcodes + opcodes_len) {
@@ -560,7 +560,7 @@ Result vm_interpret(char* source, size_t source_len,
 
     stack_push(&vm, OBJ_VAL(fn));
 
-    CallFrame* frame = &vm.frames[vm.frame_len++];
+    CallFrame* const frame = &vm.frames[vm.frame_len++];
     frame->fn = fn;
     LOG("frame opcodes len = %zu\n", buf_size(fn->chunk.opcodes));
     frame->ip = fn->chunk.opcodes;
