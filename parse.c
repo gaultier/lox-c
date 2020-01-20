@@ -102,18 +102,18 @@ static void emit_byte(Parser* parser, uint8_t byte) {
     LOG("byte=%d opcode=%s\n", byte, opcode_str[byte]);
     Location loc = {.line = parser->previous.line,
                     .column = parser->previous.column};
-    buf_push(parser->chunk->locations, loc);
-    buf_push(parser->chunk->opcodes, byte);
+    buf_push(parser->compiler->fn->chunk.locations, loc);
+    buf_push(parser->compiler->fn->chunk.opcodes, byte);
 }
 
 static void emit_byte2(Parser* parser, uint8_t byte1, uint8_t byte2) {
     LOG("opcode1=%s byte2=%d\n", opcode_str[byte1], byte2);
     Location loc = {.line = parser->previous.line,
                     .column = parser->previous.column};
-    buf_push(parser->chunk->locations, loc);
-    buf_push(parser->chunk->opcodes, byte1);
-    buf_push(parser->chunk->locations, loc);
-    buf_push(parser->chunk->opcodes, byte2);
+    buf_push(parser->compiler->fn->chunk.locations, loc);
+    buf_push(parser->compiler->fn->chunk.opcodes, byte1);
+    buf_push(parser->compiler->fn->chunk.locations, loc);
+    buf_push(parser->compiler->fn->chunk.opcodes, byte2);
 }
 
 static void advance(Parser* parser) {
@@ -140,8 +140,9 @@ static bool match(Parser* parser, TokenType type) {
 }
 
 static uint8_t make_constant(Parser* parser, Value v) {
-    buf_push(parser->chunk->constants, v);
-    const size_t constant_i = buf_size(parser->chunk->constants) - 1;
+    buf_push(parser->compiler->fn->chunk.constants, v);
+    const size_t constant_i =
+        buf_size(parser->compiler->fn->chunk.constants) - 1;
 
     return (uint8_t)constant_i;
 }
@@ -221,9 +222,11 @@ static void string(Parser* parser, Vm* vm, bool canAssign) {
     memcpy(os->s, parser->previous.source, os->len);
     const Value v = OBJ_VAL(os);
 
-    buf_push(parser->chunk->constants, v);
-    emit_byte2(parser, OP_CONSTANT,
-               (uint8_t)((intmax_t)buf_size(parser->chunk->constants) - 1));
+    buf_push(parser->compiler->fn->chunk.constants, v);
+    emit_byte2(
+        parser, OP_CONSTANT,
+        (uint8_t)((intmax_t)buf_size(parser->compiler->fn->chunk.constants) -
+                  1));
 }
 
 static int resolve_local(Parser* parser, const Token* name) {
@@ -398,12 +401,12 @@ static intmax_t jump_emit(Parser* parser, uint8_t op) {
     emit_byte(parser, UINT8_MAX);
     emit_byte(parser, UINT8_MAX);
 
-    return (intmax_t)(buf_size(parser->chunk->opcodes) - 2);
+    return (intmax_t)(buf_size(parser->compiler->fn->chunk.opcodes) - 2);
 }
 
 static void jump_patch(Parser* parser, intmax_t offset) {
     const intmax_t jump =
-        (intmax_t)buf_size(parser->chunk->opcodes) - offset - 2;
+        (intmax_t)buf_size(parser->compiler->fn->chunk.opcodes) - offset - 2;
     assert(jump >= 0);
 
     if (jump > UINT16_MAX)
@@ -414,8 +417,8 @@ static void jump_patch(Parser* parser, intmax_t offset) {
     const uint8_t b1 = (u16_jump >> 8);
     const uint8_t b2 = (uint8_t)u16_jump;
 
-    parser->chunk->opcodes[offset] = b1;
-    parser->chunk->opcodes[offset + 1] = b2;
+    parser->compiler->fn->chunk.opcodes[offset] = b1;
+    parser->compiler->fn->chunk.opcodes[offset + 1] = b2;
 }
 
 static void if_stmt(Parser* parser, Vm* vm) {
@@ -464,8 +467,8 @@ static void or (Parser * parser, Vm* vm, bool canAssign) {
 static void emit_loop(Parser* parser, size_t loop_start) {
     emit_byte(parser, OP_LOOP);
 
-    const intmax_t jump =
-        (intmax_t)(buf_size(parser->chunk->opcodes) - loop_start + 2);
+    const intmax_t jump = (intmax_t)(
+        buf_size(parser->compiler->fn->chunk.opcodes) - loop_start + 2);
     assert(jump >= 0);
 
     if (jump > UINT16_MAX)
@@ -481,7 +484,7 @@ static void emit_loop(Parser* parser, size_t loop_start) {
 }
 
 static void while_stmt(Parser* parser, Vm* vm) {
-    const size_t loop_start = buf_size(parser->chunk->opcodes);
+    const size_t loop_start = buf_size(parser->compiler->fn->chunk.opcodes);
 
     expect(parser, TOKEN_LEFT_PAREN, "Expect `(` after `while`");
     expression(parser, vm);
@@ -508,7 +511,7 @@ static void for_stmt(Parser* parser, Vm* vm) {
     } else
         expr_stmt(parser, vm);
 
-    size_t loop_start = buf_size(parser->chunk->opcodes);
+    size_t loop_start = buf_size(parser->compiler->fn->chunk.opcodes);
 
     intmax_t exit_jump = -1;
     if (!match(parser, TOKEN_SEMICOLON)) {
@@ -523,7 +526,8 @@ static void for_stmt(Parser* parser, Vm* vm) {
     if (!match(parser, TOKEN_RIGHT_PAREN)) {
         const intmax_t body_jump = jump_emit(parser, OP_JUMP);
 
-        const size_t increment_start = buf_size(parser->chunk->opcodes);
+        const size_t increment_start =
+            buf_size(parser->compiler->fn->chunk.opcodes);
 
         expression(parser, vm);
         emit_byte(parser, OP_POP);

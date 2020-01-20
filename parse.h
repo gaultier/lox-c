@@ -34,6 +34,8 @@ typedef struct {
     Local locals[LOCALS_MAX];
     int locals_len;
     intmax_t scope_depth;
+    ObjFunction* fn;
+    FunctionType fn_type;
 } Compiler;
 
 typedef enum {

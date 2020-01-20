@@ -13,6 +13,11 @@ typedef struct {
 } Location;
 
 typedef enum {
+    TYPE_FUNCTION,
+    TYPE_SCRIPT,
+} FunctionType;
+
+typedef enum {
     VAL_BOOL,
     VAL_NIL,
     VAL_NUMBER,
