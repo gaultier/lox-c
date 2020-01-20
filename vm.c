@@ -71,17 +71,13 @@ static void stack_log(Vm* vm) {
 }
 
 static Result stack_push(Vm* vm, Value v) {
-    assert(vm->frame_len > 0);
-    CallFrame* frame = &vm->frames[vm->frame_len - 1];
-    const size_t frame_slot_size = buf_size(frame->slots);
-
-    if (frame_slot_size == (STACK_MAX - 1)) {
-        const Location* const loc = &frame->fn->chunk.locations[*(frame->ip)];
-        fprintf(stderr, "%zu:%zu:Maximum stack size reached: %d\n", loc->line,
-                loc->column, STACK_MAX);
+    if (vm->stack_len == (STACK_MAX - 1)) {
+        fprintf(stderr, "Maximum stack size reached: %d\n", STACK_MAX);
         return RES_RUN_ERR;
     }
-    buf_push(frame->slots, v);
+
+    vm->stack[vm->stack_len] = v;
+    vm->stack_len += 1;
 
     LOG("pushed %s", "");
     LOG_VALUE_LN(v);
@@ -560,11 +556,14 @@ Result vm_interpret(char* source, size_t source_len,
         goto cleanup;
 
     LOG("parsing successful%s\n", "");
+
+    stack_push(&vm, OBJ_VAL(fn));
     result = bytecode_fn(&vm);
 
 cleanup:
     value_obj_free(&vm);
     free(source);
+    if (fn) free(fn);
 
     return result;
 }
