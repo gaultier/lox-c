@@ -43,6 +43,7 @@ static void expression(Parser* parser, Vm* vm);
 static void declaration(Parser* parser, Vm* vm);
 static void statement(Parser* parser, Vm* vm);
 static void var_declaration(Parser* parser, Vm* vm);
+static void fn_declaration(Parser*, Vm*);
 
 static const ParseRule rules[TOKEN_COUNT] = {
     [TOKEN_LEFT_PAREN] = {.prefix = grouping},
@@ -658,8 +659,7 @@ static void define_variable(Parser* parser, uint8_t global_i) {
 }
 
 static void var_declaration(Parser* parser, Vm* vm) {
-    const uint8_t global_i =
-        variable_name(parser, vm, "Expected variable name");
+    const uint8_t arg = variable_name(parser, vm, "Expected variable name");
 
     if (match(parser, TOKEN_EQUAL))
         expression(parser, vm);
@@ -669,13 +669,24 @@ static void var_declaration(Parser* parser, Vm* vm) {
     expect(parser, TOKEN_SEMICOLON,
            "Expected semicolon after variable declaration");
 
-    define_variable(parser, global_i);
+    define_variable(parser, arg);
+}
+
+static void fn_declaration(Parser* parser, Vm* vm) {
+    const uint8_t arg = variable_name(parser, vm, "Expected function name");
+    expect(parser, TOKEN_LEFT_PAREN, "Missing `)` after function name");
+    expect(parser, TOKEN_RIGHT_PAREN, "Missing `)` after function parameters");
+
+    statement(parser, vm);
+    define_variable(parser, arg);
 }
 
 static void declaration(Parser* parser, Vm* vm) {
     if (match(parser, TOKEN_VAR))
         var_declaration(parser, vm);
-    else
+    else if (match(parser, TOKEN_FUN)) {
+        fn_declaration(parser, vm);
+    } else
         statement(parser, vm);
 
     if (parser->state == PARSER_STATE_PANIC_MODE) sync(parser);
