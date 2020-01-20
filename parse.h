@@ -50,7 +50,6 @@ typedef struct {
     Lex lex;
     Token current;
     Token previous;
-    Chunk* chunk;
     Compiler* compiler;
 } Parser;
 

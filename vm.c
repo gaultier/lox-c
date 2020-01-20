@@ -528,9 +528,9 @@ static void value_obj_free(Vm* vm) {
 Result vm_interpret(char* source, size_t source_len,
                     Result (*bytecode_fn)(Vm*, Chunk*)) {
     Vm vm = {.globals = ht_init(100, NULL)};
-    Chunk chunk = {0};
     Result result = RES_OK;
 
+    Chunk chunk = {0};
     if ((result = parser_compile(source, source_len, &chunk, &vm)) != RES_OK)
         goto cleanup;
 
@@ -569,9 +569,9 @@ void vm_repl(void) {
             exit(errno);
         }
 
-        Chunk chunk = {0};
         Result result = RES_OK;
 
+        Chunk chunk = {0};
         if ((result = parser_compile(source, (size_t)source_len, &chunk,
                                      &vm)) != RES_OK)
             continue;
