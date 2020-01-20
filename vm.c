@@ -142,7 +142,7 @@ static Result read_next_byte(Vm* vm, uint8_t* byte) {
     const uint8_t opcode = frame->fn->chunk.opcodes[*(frame->ip)];
     const Location* const loc = &frame->fn->chunk.locations[*(frame->ip)];
 
-    *(frame->ip) += 1;
+    frame->ip += 1;
 
     if (!(*(frame->ip) < buf_size(frame->fn->chunk.opcodes))) {
         fprintf(stderr, "%zu:%zu:Malformed opcode: missing operand for %s\n",
@@ -209,9 +209,13 @@ static Result dump_opcode_u16_operand(Vm* vm) {
 Result vm_dump(Vm* vm) {
     assert(vm->frame_len > 0);
     CallFrame* frame = &vm->frames[vm->frame_len - 1];
+    const size_t opcodes_len = buf_size(frame->fn->chunk.opcodes);
+    const Location* loc = frame->fn->chunk.locations;
 
-    while (*(frame->ip) < buf_size(frame->fn->chunk.opcodes)) {
-        const uint8_t opcode = frame->fn->chunk.opcodes[*(frame->ip)];
+    while (frame->ip < frame->fn->chunk.opcodes + opcodes_len) {
+        LOG("frame ip=%d opcodes_len=%zu\n", *(frame->ip),
+            buf_size(frame->fn->chunk.opcodes));
+        const uint8_t opcode = *frame->ip;
         const Location* const loc = &frame->fn->chunk.locations[*(frame->ip)];
 
         switch (opcode) {
@@ -251,7 +255,7 @@ Result vm_dump(Vm* vm) {
                         loc->column, opcode);
                 return RES_RUN_ERR;
         }
-        *(frame->ip) += 1;
+        frame->ip += 1;
     }
     return RES_OK;
 }
@@ -532,7 +536,7 @@ Result vm_run_bytecode(Vm* vm) {
                         loc->column, opcode_str[opcode]);
                 return RES_RUN_ERR;
         }
-        *(frame->ip) += 1;
+        frame->ip += 1;
     }
     return RES_OK;
 }
@@ -561,6 +565,7 @@ Result vm_interpret(char* source, size_t source_len,
 
     CallFrame* frame = &vm.frames[vm.frame_len++];
     frame->fn = fn;
+    LOG("frame opcodes len = %zu\n", buf_size(fn->chunk.opcodes));
     frame->ip = fn->chunk.opcodes;
     frame->slots = vm.stack;
 
