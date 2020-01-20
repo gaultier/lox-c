@@ -597,6 +597,7 @@ static void sync(Parser* parser) {
 }
 
 static void compiler_local_mark_initialized(Compiler* compiler) {
+    if (compiler->scope_depth == 0) return;
     compiler->locals[compiler->locals_len - 1].depth = compiler->scope_depth;
 }
 
@@ -672,12 +673,18 @@ static void var_declaration(Parser* parser, Vm* vm) {
     define_variable(parser, arg);
 }
 
-static void fn_declaration(Parser* parser, Vm* vm) {
-    const uint8_t arg = variable_name(parser, vm, "Expected function name");
-    expect(parser, TOKEN_LEFT_PAREN, "Missing `)` after function name");
+static void function(Parser* parser, Vm* vm) {
+    expect(parser, TOKEN_LEFT_PAREN, "Missing `(` after function name");
     expect(parser, TOKEN_RIGHT_PAREN, "Missing `)` after function parameters");
 
     statement(parser, vm);
+}
+
+static void fn_declaration(Parser* parser, Vm* vm) {
+    const uint8_t arg = variable_name(parser, vm, "Expected function name");
+    compiler_local_mark_initialized(parser->compiler);
+
+    function(parser, vm);
     define_variable(parser, arg);
 }
 
