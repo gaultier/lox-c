@@ -76,7 +76,7 @@ void compiler_init(Compiler* c, FunctionType type) {
     c->fn_type = type;
 }
 
-ObjFunction* compiler_end(Compiler* compiler, Parser* parser) {
+static ObjFunction* compiler_end(Compiler* compiler, Parser* parser) {
     emit_byte(parser, OP_RETURN);
     return compiler->fn;
 }
