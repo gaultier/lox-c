@@ -38,6 +38,14 @@ const char opcode_str[OP_COUNT][17] = {
     [OP_LOOP] = "OP_LOOP",
 };
 
+static const Location* get_location(const Vm* vm) {
+    assert(vm->frame_len > 0);
+    const CallFrame* const frame = &vm->frames[vm->frame_len - 1];
+    const size_t loc_i = (size_t)(frame->ip - frame->fn->chunk.opcodes);
+
+    return &frame->fn->chunk.locations[loc_i];
+}
+
 static void str_cat(Vm* vm, Value lhs, Value rhs, Value* res) {
     assert(IS_STRING(lhs));
     assert(IS_STRING(rhs));
@@ -86,11 +94,8 @@ static Result stack_push(Vm* vm, Value v) {
 }
 
 static Result stack_peek_from_bottom_at(const Vm* vm, Value* v, intmax_t i) {
-    assert(vm->frame_len > 0);
-    const CallFrame* frame = &vm->frames[vm->frame_len - 1];
-
     if (vm->stack_len == 0 || !((size_t)i < vm->stack_len)) {
-        const Location* const loc = &frame->fn->chunk.locations[0];
+        const Location* const loc = get_location(vm);
         fprintf(
             stderr,
             "%zu:%zu:Cannot peek in the stack at this location: stack_len=%d "
@@ -112,11 +117,8 @@ static Result stack_peek_from_top_at(const Vm* vm, Value* v, intmax_t i) {
 }
 
 static Result stack_pop(Vm* vm, Value* v) {
-    assert(vm->stack_len > 0);
-    CallFrame* frame = &vm->frames[vm->frame_len - 1];
-
     if (vm->stack_len == 0) {
-        const Location* const loc = &frame->fn->chunk.locations[0];
+        const Location* const loc = get_location(vm);
         fprintf(stderr, "%zu:%zu:Cannot pop from an empty stack\n", loc->line,
                 loc->column);
         return RES_RUN_ERR;
@@ -134,8 +136,8 @@ static Result read_next_byte(Vm* vm, uint8_t* byte) {
     CallFrame* frame = &vm->frames[vm->frame_len - 1];
 
     const uint8_t opcode = *frame->ip;
-    const Location* const loc = &frame->fn->chunk.locations[0];
 
+    const Location* const loc = get_location(vm);
     frame->ip += 1;
 
     if (!(frame->ip <
@@ -177,7 +179,7 @@ static Result dump_opcode_u8_operand(Vm* vm) {
     CallFrame* frame = &vm->frames[vm->frame_len - 1];
 
     const uint8_t opcode = *frame->ip;
-    const Location* const loc = &frame->fn->chunk.locations[0];
+    const Location* const loc = get_location(vm);
 
     uint8_t b = 0;
     RETURN_IF_ERR(read_next_byte(vm, &b));
@@ -192,7 +194,7 @@ static Result dump_opcode_u16_operand(Vm* vm) {
     CallFrame* frame = &vm->frames[vm->frame_len - 1];
 
     const uint8_t opcode = *frame->ip;
-    const Location* const loc = &frame->fn->chunk.locations[0];
+    const Location* const loc = get_location(vm);
 
     uint16_t u16 = 0;
     RETURN_IF_ERR(read_u16(vm, &u16));
@@ -210,7 +212,7 @@ Result vm_dump(Vm* vm) {
         LOG("frame ip=%d opcodes_len=%zu\n", *frame->ip,
             buf_size(frame->fn->chunk.opcodes));
         const uint8_t opcode = *frame->ip;
-        const Location* const loc = &frame->fn->chunk.locations[0];
+        const Location* const loc = get_location(vm);
 
         switch (opcode) {
             case OP_RETURN:
@@ -261,7 +263,7 @@ Result vm_run_bytecode(Vm* vm) {
 
     while (frame->ip < frame->fn->chunk.opcodes + opcodes_len) {
         const uint8_t opcode = *frame->ip;
-        const Location* const loc = &frame->fn->chunk.locations[0];
+        const Location* const loc = get_location(vm);
 
         switch (opcode) {
             case OP_NEGATE: {
