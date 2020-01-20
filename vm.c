@@ -266,6 +266,8 @@ Result vm_run_bytecode(Vm* vm) {
         const Location* const loc = get_location(vm);
 
         switch (opcode) {
+            case OP_RETURN:
+                break;
             case OP_NEGATE: {
                 Value value = {0};
                 RETURN_IF_ERR(stack_pop(vm, &value));

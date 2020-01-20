@@ -758,6 +758,8 @@ Result parser_compile(const char* source, size_t source_len, ObjFunction** fn,
 
     if (parser.state != PARSER_STATE_OK) return RES_PARSE_ERR;
 
+    *fn = compiler_end(&compiler, &parser);
+
     return RES_OK;
 }
 
