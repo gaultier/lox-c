@@ -530,12 +530,12 @@ Result vm_interpret(char* source, size_t source_len,
     Vm vm = {.globals = ht_init(100, NULL)};
     Result result = RES_OK;
 
-    Chunk chunk = {0};
-    if ((result = parser_compile(source, source_len, &chunk, &vm)) != RES_OK)
+    ObjFunction* fn = NULL;
+    if ((result = parser_compile(source, source_len, &fn, &vm)) != RES_OK)
         goto cleanup;
 
     LOG("parsing successful%s\n", "");
-    result = bytecode_fn(&vm, &chunk);
+    result = bytecode_fn(&vm, &fn->chunk);
 
 cleanup:
     value_obj_free(&vm);
@@ -571,12 +571,12 @@ void vm_repl(void) {
 
         Result result = RES_OK;
 
-        Chunk chunk = {0};
-        if ((result = parser_compile(source, (size_t)source_len, &chunk,
-                                     &vm)) != RES_OK)
+        ObjFunction* fn = NULL;
+        if ((result = parser_compile(source, (size_t)source_len, &fn, &vm)) !=
+            RES_OK)
             continue;
 
         LOG("parsing successful%s\n", "");
-        vm_run_bytecode(&vm, &chunk);
+        vm_run_bytecode(&vm, &fn->chunk);
     }
 }

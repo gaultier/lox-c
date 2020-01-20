@@ -681,20 +681,20 @@ static void declaration(Parser* parser, Vm* vm) {
     if (parser->state == PARSER_STATE_PANIC_MODE) sync(parser);
 }
 
-Result parser_compile(const char* source, size_t source_len, Chunk* chunk,
+Result parser_compile(const char* source, size_t source_len, ObjFunction** fn,
                       Vm* vm) {
     LOG("source_len=%zu source=`%.*s`\n", source_len, (int)source_len, source);
 
     const char top_fn_name[] = "<script>";
     const size_t top_fn_name_len = sizeof(top_fn_name);
-    ObjFunction* fn = obj_function_new(top_fn_name_len);
-    fn->arity = 0;
-    fn->chunk = (Chunk){0};
-    memcpy(fn->name, top_fn_name, top_fn_name_len);
-    fn->name_len = top_fn_name_len;
+    *fn = obj_function_new(top_fn_name_len);
+    (*fn)->arity = 0;
+    (*fn)->chunk = (Chunk){0};
+    memcpy((*fn)->name, top_fn_name, top_fn_name_len);
+    (*fn)->name_len = top_fn_name_len;
 
     Compiler compiler = {
-        .locals_len = 0, .scope_depth = 0, .fn = fn, .fn_type = TYPE_SCRIPT};
+        .locals_len = 0, .scope_depth = 0, .fn = (*fn), .fn_type = TYPE_SCRIPT};
     Parser parser = {.lex =
                          {
                              .source = source,
@@ -712,8 +712,6 @@ Result parser_compile(const char* source, size_t source_len, Chunk* chunk,
     }
 
     if (parser.state != PARSER_STATE_OK) return RES_PARSE_ERR;
-
-    *chunk = fn->chunk;
 
     return RES_OK;
 }
