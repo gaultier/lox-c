@@ -11,7 +11,7 @@
     do {                             \
         const Result _e = e;         \
         if (_e != RES_OK) return _e; \
-    } while (0);
+    } while (0)
 
 #define VALUES_MAX (UINT8_MAX + 1)
 
@@ -56,14 +56,13 @@ typedef struct {
 } CallFrame;
 
 typedef struct {
-    size_t ip;
     Value stack[STACK_MAX];
     uint8_t stack_len;
     Obj* objects;
     hashtab_t* globals;
 
     CallFrame frames[FRAME_MAX];
-    int8_t frame_count;
+    int8_t frame_len;
 } Vm;
 
 void vm_repl(void);

@@ -71,8 +71,11 @@ static void stack_log(Vm* vm) {
 }
 
 static Result stack_push(Vm* vm, Chunk* chunk, Value v) {
+    assert(vm->frame_len > 0);
+    CallFrame* frame = &vm->frames[vm->frame_len - 1];
+
     if (vm->stack_len == (STACK_MAX - 1)) {
-        const Location* const loc = &chunk->locations[vm->ip];
+        const Location* const loc = &chunk->locations[*(frame->ip)];
         fprintf(stderr, "%zu:%zu:Maximum stack size reached: %d\n", loc->line,
                 loc->column, STACK_MAX);
         return RES_RUN_ERR;
@@ -88,8 +91,11 @@ static Result stack_push(Vm* vm, Chunk* chunk, Value v) {
 
 static Result stack_peek_from_bottom_at(const Vm* vm, const Chunk* chunk,
                                         Value* v, intmax_t i) {
+    assert(vm->frame_len > 0);
+    const CallFrame* frame = &vm->frames[vm->frame_len - 1];
+
     if (vm->stack_len == 0 || !(i < vm->stack_len)) {
-        const Location* const loc = &chunk->locations[vm->ip];
+        const Location* const loc = &chunk->locations[*(frame->ip)];
         fprintf(
             stderr,
             "%zu:%zu:Cannot peek in the stack at this location: stack_len=%d "
@@ -112,8 +118,11 @@ static Result stack_peek_from_top_at(const Vm* vm, const Chunk* chunk, Value* v,
 }
 
 static Result stack_pop(Vm* vm, Chunk* chunk, Value* v) {
+    assert(vm->frame_len > 0);
+    CallFrame* frame = &vm->frames[vm->frame_len - 1];
+
     if (vm->stack_len == 0) {
-        const Location* const loc = &chunk->locations[vm->ip];
+        const Location* const loc = &chunk->locations[*(frame->ip)];
         fprintf(stderr, "%zu:%zu:Cannot pop from an empty stack\n", loc->line,
                 loc->column);
         return RES_RUN_ERR;
@@ -129,17 +138,20 @@ static Result stack_pop(Vm* vm, Chunk* chunk, Value* v) {
 }
 
 static Result read_next_byte(Vm* vm, Chunk* chunk, uint8_t* byte) {
-    const uint8_t opcode = chunk->opcodes[vm->ip];
-    const Location* const loc = &chunk->locations[vm->ip];
+    assert(vm->frame_len > 0);
+    CallFrame* frame = &vm->frames[vm->frame_len - 1];
 
-    vm->ip += 1;
+    const uint8_t opcode = chunk->opcodes[*(frame->ip)];
+    const Location* const loc = &chunk->locations[*(frame->ip)];
 
-    if (!(vm->ip < buf_size(chunk->opcodes))) {
+    *(frame->ip) += 1;
+
+    if (!(*(frame->ip) < buf_size(chunk->opcodes))) {
         fprintf(stderr, "%zu:%zu:Malformed opcode: missing operand for %s\n",
                 loc->line, loc->column, opcode_str[opcode]);
         return RES_RUN_ERR;
     }
-    *byte = chunk->opcodes[vm->ip];
+    *byte = chunk->opcodes[*(frame->ip)];
 
     return RES_OK;
 }
@@ -165,8 +177,11 @@ static Result read_u16(Vm* vm, Chunk* chunk, uint16_t* u16) {
 }
 
 static Result dump_opcode_u8_operand(Vm* vm, Chunk* chunk) {
-    const uint8_t opcode = chunk->opcodes[vm->ip];
-    const Location* const loc = &chunk->locations[vm->ip];
+    assert(vm->frame_len > 0);
+    CallFrame* frame = &vm->frames[vm->frame_len - 1];
+
+    const uint8_t opcode = chunk->opcodes[*(frame->ip)];
+    const Location* const loc = &chunk->locations[*(frame->ip)];
 
     uint8_t b = 0;
     RETURN_IF_ERR(read_next_byte(vm, chunk, &b));
@@ -177,8 +192,11 @@ static Result dump_opcode_u8_operand(Vm* vm, Chunk* chunk) {
 }
 
 static Result dump_opcode_u16_operand(Vm* vm, Chunk* chunk) {
-    const uint8_t opcode = chunk->opcodes[vm->ip];
-    const Location* const loc = &chunk->locations[vm->ip];
+    assert(vm->frame_len > 0);
+    CallFrame* frame = &vm->frames[vm->frame_len - 1];
+
+    const uint8_t opcode = chunk->opcodes[*(frame->ip)];
+    const Location* const loc = &chunk->locations[*(frame->ip)];
 
     uint16_t u16 = 0;
     RETURN_IF_ERR(read_u16(vm, chunk, &u16));
@@ -188,9 +206,12 @@ static Result dump_opcode_u16_operand(Vm* vm, Chunk* chunk) {
 }
 
 Result vm_dump(Vm* vm, Chunk* chunk) {
-    while (vm->ip < buf_size(chunk->opcodes)) {
-        const uint8_t opcode = chunk->opcodes[vm->ip];
-        const Location* const loc = &chunk->locations[vm->ip];
+    assert(vm->frame_len > 0);
+    CallFrame* frame = &vm->frames[vm->frame_len - 1];
+
+    while (*(frame->ip) < buf_size(chunk->opcodes)) {
+        const uint8_t opcode = chunk->opcodes[*(frame->ip)];
+        const Location* const loc = &chunk->locations[*(frame->ip)];
 
         switch (opcode) {
             case OP_RETURN:
@@ -229,18 +250,18 @@ Result vm_dump(Vm* vm, Chunk* chunk) {
                         loc->column, opcode);
                 return RES_RUN_ERR;
         }
-        vm->ip += 1;
+        *(frame->ip) += 1;
     }
     return RES_OK;
 }
 
 Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
-    assert(vm->frame_count > 0);
-    CallFrame* frame = &vm->frames[vm->frame_count - 1];
+    assert(vm->frame_len > 0);
+    CallFrame* frame = &vm->frames[vm->frame_len - 1];
 
-    while (vm->ip < buf_size(chunk->opcodes)) {
-        const uint8_t opcode = chunk->opcodes[vm->ip];
-        const Location* const loc = &chunk->locations[vm->ip];
+    while (*(frame->ip) < buf_size(chunk->opcodes)) {
+        const uint8_t opcode = chunk->opcodes[*(frame->ip)];
+        const Location* const loc = &chunk->locations[*(frame->ip)];
 
         switch (opcode) {
             case OP_NEGATE: {
@@ -497,24 +518,24 @@ Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
 
                 Value v = {0};
                 RETURN_IF_ERR(stack_peek_from_top_at(vm, chunk, &v, 0));
-                vm->ip += jump * value_is_falsy(&v);
+                *(frame->ip) += jump * value_is_falsy(&v);
             } break;
             case OP_JUMP: {
                 uint16_t jump = 0;
                 RETURN_IF_ERR(read_u16(vm, chunk, &jump));
-                vm->ip += jump;
+                *(frame->ip) += jump;
             } break;
             case OP_LOOP: {
                 uint16_t jump = 0;
                 RETURN_IF_ERR(read_u16(vm, chunk, &jump));
-                vm->ip -= jump;
+                *(frame->ip) -= jump;
             } break;
             default:
                 fprintf(stderr, "%zu:%zu:Unknown opcode %s\n", loc->line,
                         loc->column, opcode_str[opcode]);
                 return RES_RUN_ERR;
         }
-        vm->ip += 1;
+        *(frame->ip) += 1;
     }
     return RES_OK;
 }
@@ -559,7 +580,8 @@ void vm_repl(void) {
     setvbuf(stdout, (char*)NULL, _IONBF, 0);
 
     while (true) {
-        vm.ip = 0;
+        vm.stack_len = 0;
+        vm.frame_len = 0;
 
         char* source = NULL;
         ssize_t source_len = 0;
