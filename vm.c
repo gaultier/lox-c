@@ -73,15 +73,15 @@ static void stack_log(Vm* vm) {
 static Result stack_push(Vm* vm, Value v) {
     assert(vm->frame_len > 0);
     CallFrame* frame = &vm->frames[vm->frame_len - 1];
+    const size_t frame_slot_size = buf_size(frame->slots);
 
-    if (vm->stack_len == (STACK_MAX - 1)) {
+    if (frame_slot_size == (STACK_MAX - 1)) {
         const Location* const loc = &frame->fn->chunk.locations[*(frame->ip)];
         fprintf(stderr, "%zu:%zu:Maximum stack size reached: %d\n", loc->line,
                 loc->column, STACK_MAX);
         return RES_RUN_ERR;
     }
-    vm->stack_len += 1;
-    vm->stack[vm->stack_len - 1] = v;
+    buf_push(frame->slots, v);
 
     LOG("pushed %s", "");
     LOG_VALUE_LN(v);
@@ -113,25 +113,28 @@ static Result stack_peek_from_bottom_at(const Vm* vm, Value* v, intmax_t i) {
 }
 
 static Result stack_peek_from_top_at(const Vm* vm, Value* v, intmax_t i) {
-    return stack_peek_from_bottom_at(vm, v, vm->stack_len - i - 1);
+    assert(vm->frame_len > 0);
+    const CallFrame* frame = &vm->frames[vm->frame_len - 1];
+    const size_t frame_slot_size = buf_size(frame->slots);
+
+    return stack_peek_from_bottom_at(vm, v, (intmax_t)frame_slot_size - i - 1);
 }
 
 static Result stack_pop(Vm* vm, Value* v) {
     assert(vm->frame_len > 0);
     CallFrame* frame = &vm->frames[vm->frame_len - 1];
+    const size_t frame_slot_size = buf_size(frame->slots);
 
-    if (vm->stack_len == 0) {
+    if (frame_slot_size == 0) {
         const Location* const loc = &frame->fn->chunk.locations[*(frame->ip)];
         fprintf(stderr, "%zu:%zu:Cannot pop from an empty stack\n", loc->line,
                 loc->column);
         return RES_RUN_ERR;
     }
 
-    *v = vm->stack[vm->stack_len - 1];
+    *v = buf_pop(frame->slots);
     LOG("popped %s", "");
     LOG_VALUE_LN(*v);
-    vm->stack[vm->stack_len - 1] = (Value){0};
-    vm->stack_len -= 1;
 
     return RES_OK;
 }
