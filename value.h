@@ -2,6 +2,7 @@
 #pragma once
 #include <ctype.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 
 #include "config.h"
@@ -20,6 +21,7 @@ typedef enum {
 
 typedef enum {
     OBJ_STRING,
+    OBJ_FUNCTION,
 } ObjType;
 
 struct Obj {
@@ -41,11 +43,26 @@ typedef struct {
 } Value;
 
 typedef struct {
+    uint8_t* opcodes;
+    Location* locations;
+    Value* constants;
+} Chunk;
+
+typedef struct {
     Obj obj;
     size_t len;
     char s[];
 } ObjString;
 
+typedef struct {
+    Obj obj;
+    uint8_t arity;
+    Chunk chunk;
+    size_t name_len;
+    char name[];
+} ObjFunction;
+
+ObjFunction* obj_function_new(size_t name_len);
 #define BOOL_VAL(value) ((Value){VAL_BOOL, {.boolean = value}})
 #define NIL_VAL ((Value){VAL_NIL, {.number = 0}})
 #define NUMBER_VAL(value) ((Value){VAL_NUMBER, {.number = value}})
@@ -56,12 +73,14 @@ typedef struct {
 #define AS_OBJ(value) ((value).as.obj)
 #define AS_STRING(value) ((ObjString*)AS_OBJ(value))
 #define AS_CSTRING(value) (((ObjString*)AS_OBJ(value))->s)
+#define AS_FN(value) ((ObjFunction*)AS_OBJ(value))
 
 #define IS_BOOL(value) ((value).type == VAL_BOOL)
 #define IS_NIL(value) ((value).type == VAL_NIL)
 #define IS_NUMBER(value) ((value).type == VAL_NUMBER)
 #define IS_OBJ(value) ((value).type == VAL_OBJ)
 #define IS_STRING(value) value_obj_is_type(value, OBJ_STRING)
+#define IS_FN(value) value_obj_is_type(value, OBJ_FUNCTION)
 
 ObjString* value_make_string(Obj** objects, size_t s_len);
 bool value_obj_is_type(Value v, ObjType type);

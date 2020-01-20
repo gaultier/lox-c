@@ -2,7 +2,6 @@
 
 #include <stdint.h>
 
-#include "chunk.h"
 #include "config.h"
 #include "hashtab.h"
 #include "result.h"

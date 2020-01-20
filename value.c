@@ -24,6 +24,9 @@ void value_print(Value v) {
                 case OBJ_STRING:
                     printf("%.*s", (int)AS_STRING(v)->len, AS_CSTRING(v));
                     break;
+                case OBJ_FUNCTION:
+                    printf("fn@%.*s", (int)AS_FN(v)->name_len, AS_FN(v)->name);
+                    break;
                 default:
                     UNREACHABLE();
             }
@@ -50,6 +53,9 @@ void value_print_err(Value v) {
                 case OBJ_STRING:
                     fprintf(stderr, "\"%.*s\"", (int)AS_STRING(v)->len,
                             AS_CSTRING(v));
+                    break;
+                case OBJ_FUNCTION:
+                    printf("fn@%.*s", (int)AS_FN(v)->name_len, AS_FN(v)->name);
                     break;
                 default:
                     UNREACHABLE();
@@ -108,3 +114,7 @@ bool value_obj_is_type(Value v, ObjType type) {
     return IS_OBJ(v) && AS_OBJ(v)->type == type;
 }
 
+ObjFunction* obj_function_new(size_t name_len) {
+    ObjFunction* const fn = REALLOC_SAFE(NULL, sizeof(ObjFunction) + name_len);
+    return fn;
+}
