@@ -88,19 +88,18 @@ static Result stack_push(Vm* vm, Value v) {
 static Result stack_peek_from_bottom_at(const Vm* vm, Value* v, intmax_t i) {
     assert(vm->frame_len > 0);
     const CallFrame* frame = &vm->frames[vm->frame_len - 1];
-    const size_t frame_slot_size = buf_size(frame->slots);
 
-    if (frame_slot_size == 0 || !((size_t)i < frame_slot_size)) {
+    if (vm->stack_len == 0 || !((size_t)i < vm->stack_len)) {
         const Location* const loc = &frame->fn->chunk.locations[0];
         fprintf(
             stderr,
-            "%zu:%zu:Cannot peek in the stack at this location: stack_len=%zu "
+            "%zu:%zu:Cannot peek in the stack at this location: stack_len=%d "
             "i=%jd\n",
-            loc->line, loc->column, frame_slot_size, i);
+            loc->line, loc->column, vm->stack_len, i);
         return RES_RUN_ERR;
     }
 
-    *v = frame->slots[i];
+    *v = vm->stack[i];
 
     LOG("i=%jd v=", i);
     LOG_VALUE_LN(*v);
@@ -109,11 +108,7 @@ static Result stack_peek_from_bottom_at(const Vm* vm, Value* v, intmax_t i) {
 }
 
 static Result stack_peek_from_top_at(const Vm* vm, Value* v, intmax_t i) {
-    assert(vm->frame_len > 0);
-    const CallFrame* frame = &vm->frames[vm->frame_len - 1];
-    const size_t frame_slot_size = buf_size(frame->slots);
-
-    return stack_peek_from_bottom_at(vm, v, (intmax_t)frame_slot_size - i - 1);
+    return stack_peek_from_bottom_at(vm, v, (intmax_t)vm->stack_len - i - 1);
 }
 
 static Result stack_pop(Vm* vm, Value* v) {
