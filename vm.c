@@ -139,12 +139,13 @@ static Result read_next_byte(Vm* vm, uint8_t* byte) {
     assert(vm->frame_len > 0);
     CallFrame* frame = &vm->frames[vm->frame_len - 1];
 
-    const uint8_t opcode = frame->fn->chunk.opcodes[*(frame->ip)];
+    const uint8_t opcode = *frame->ip;
     const Location* const loc = &frame->fn->chunk.locations[*(frame->ip)];
 
     frame->ip += 1;
 
-    if (!(*(frame->ip) < buf_size(frame->fn->chunk.opcodes))) {
+    if (!(frame->ip <
+          frame->fn->chunk.opcodes + buf_size(frame->fn->chunk.opcodes))) {
         fprintf(stderr, "%zu:%zu:Malformed opcode: missing operand for %s\n",
                 loc->line, loc->column, opcode_str[opcode]);
         return RES_RUN_ERR;
@@ -181,7 +182,7 @@ static Result dump_opcode_u8_operand(Vm* vm) {
     assert(vm->frame_len > 0);
     CallFrame* frame = &vm->frames[vm->frame_len - 1];
 
-    const uint8_t opcode = frame->fn->chunk.opcodes[*(frame->ip)];
+    const uint8_t opcode = *frame->ip;
     const Location* const loc = &frame->fn->chunk.locations[*(frame->ip)];
 
     uint8_t b = 0;
@@ -196,7 +197,7 @@ static Result dump_opcode_u16_operand(Vm* vm) {
     assert(vm->frame_len > 0);
     CallFrame* frame = &vm->frames[vm->frame_len - 1];
 
-    const uint8_t opcode = frame->fn->chunk.opcodes[*(frame->ip)];
+    const uint8_t opcode = *frame->ip;
     const Location* const loc = &frame->fn->chunk.locations[*(frame->ip)];
 
     uint16_t u16 = 0;
@@ -210,10 +211,9 @@ Result vm_dump(Vm* vm) {
     assert(vm->frame_len > 0);
     CallFrame* frame = &vm->frames[vm->frame_len - 1];
     const size_t opcodes_len = buf_size(frame->fn->chunk.opcodes);
-    const Location* loc = frame->fn->chunk.locations;
 
     while (frame->ip < frame->fn->chunk.opcodes + opcodes_len) {
-        LOG("frame ip=%d opcodes_len=%zu\n", *(frame->ip),
+        LOG("frame ip=%d opcodes_len=%zu\n", *frame->ip,
             buf_size(frame->fn->chunk.opcodes));
         const uint8_t opcode = *frame->ip;
         const Location* const loc = &frame->fn->chunk.locations[*(frame->ip)];
