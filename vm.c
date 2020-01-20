@@ -558,6 +558,12 @@ Result vm_interpret(char* source, size_t source_len,
     LOG("parsing successful%s\n", "");
 
     stack_push(&vm, OBJ_VAL(fn));
+
+    CallFrame* frame = &vm.frames[vm.frame_len++];
+    frame->fn = fn;
+    frame->ip = fn->chunk.opcodes;
+    frame->slots = vm.stack;
+
     result = bytecode_fn(&vm);
 
 cleanup:
