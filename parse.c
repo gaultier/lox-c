@@ -694,6 +694,12 @@ Result parser_compile(const char* source, size_t source_len, ObjFunction** fn,
 
     Compiler compiler = {
         .locals_len = 0, .scope_depth = 0, .fn = (*fn), .fn_type = TYPE_SCRIPT};
+
+    Local* const local = &compiler.locals[compiler.locals_len++];
+    local->depth = 0;
+    local->name.source = "";
+    local->name.source_len = 0;
+
     Parser parser = {.lex =
                          {
                              .source = source,

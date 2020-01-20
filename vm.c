@@ -91,7 +91,7 @@ static Result stack_peek_from_bottom_at(const Vm* vm, Value* v, intmax_t i) {
     const size_t frame_slot_size = buf_size(frame->slots);
 
     if (frame_slot_size == 0 || !((size_t)i < frame_slot_size)) {
-        const Location* const loc = &frame->fn->chunk.locations[*(frame->ip)];
+        const Location* const loc = &frame->fn->chunk.locations[0];
         fprintf(
             stderr,
             "%zu:%zu:Cannot peek in the stack at this location: stack_len=%zu "
@@ -117,18 +117,17 @@ static Result stack_peek_from_top_at(const Vm* vm, Value* v, intmax_t i) {
 }
 
 static Result stack_pop(Vm* vm, Value* v) {
-    assert(vm->frame_len > 0);
+    assert(vm->stack_len > 0);
     CallFrame* frame = &vm->frames[vm->frame_len - 1];
-    const size_t frame_slot_size = buf_size(frame->slots);
 
-    if (frame_slot_size == 0) {
-        const Location* const loc = &frame->fn->chunk.locations[*(frame->ip)];
+    if (vm->stack_len == 0) {
+        const Location* const loc = &frame->fn->chunk.locations[0];
         fprintf(stderr, "%zu:%zu:Cannot pop from an empty stack\n", loc->line,
                 loc->column);
         return RES_RUN_ERR;
     }
 
-    *v = buf_pop(frame->slots);
+    *v = vm->stack[--vm->stack_len];
     LOG("popped %s", "");
     LOG_VALUE_LN(*v);
 
@@ -140,7 +139,7 @@ static Result read_next_byte(Vm* vm, uint8_t* byte) {
     CallFrame* frame = &vm->frames[vm->frame_len - 1];
 
     const uint8_t opcode = *frame->ip;
-    const Location* const loc = &frame->fn->chunk.locations[*(frame->ip)];
+    const Location* const loc = &frame->fn->chunk.locations[0];
 
     frame->ip += 1;
 
@@ -150,7 +149,7 @@ static Result read_next_byte(Vm* vm, uint8_t* byte) {
                 loc->line, loc->column, opcode_str[opcode]);
         return RES_RUN_ERR;
     }
-    *byte = frame->fn->chunk.opcodes[*(frame->ip)];
+    *byte = *frame->ip;
 
     return RES_OK;
 }
@@ -183,7 +182,7 @@ static Result dump_opcode_u8_operand(Vm* vm) {
     CallFrame* frame = &vm->frames[vm->frame_len - 1];
 
     const uint8_t opcode = *frame->ip;
-    const Location* const loc = &frame->fn->chunk.locations[*(frame->ip)];
+    const Location* const loc = &frame->fn->chunk.locations[0];
 
     uint8_t b = 0;
     RETURN_IF_ERR(read_next_byte(vm, &b));
@@ -198,7 +197,7 @@ static Result dump_opcode_u16_operand(Vm* vm) {
     CallFrame* frame = &vm->frames[vm->frame_len - 1];
 
     const uint8_t opcode = *frame->ip;
-    const Location* const loc = &frame->fn->chunk.locations[*(frame->ip)];
+    const Location* const loc = &frame->fn->chunk.locations[0];
 
     uint16_t u16 = 0;
     RETURN_IF_ERR(read_u16(vm, &u16));
@@ -216,7 +215,7 @@ Result vm_dump(Vm* vm) {
         LOG("frame ip=%d opcodes_len=%zu\n", *frame->ip,
             buf_size(frame->fn->chunk.opcodes));
         const uint8_t opcode = *frame->ip;
-        const Location* const loc = &frame->fn->chunk.locations[*(frame->ip)];
+        const Location* const loc = &frame->fn->chunk.locations[0];
 
         switch (opcode) {
             case OP_RETURN:
@@ -263,10 +262,11 @@ Result vm_dump(Vm* vm) {
 Result vm_run_bytecode(Vm* vm) {
     assert(vm->frame_len > 0);
     CallFrame* frame = &vm->frames[vm->frame_len - 1];
+    const size_t opcodes_len = buf_size(frame->fn->chunk.opcodes);
 
-    while (*(frame->ip) < buf_size(frame->fn->chunk.opcodes)) {
-        const uint8_t opcode = frame->fn->chunk.opcodes[*(frame->ip)];
-        const Location* const loc = &frame->fn->chunk.locations[*(frame->ip)];
+    while (frame->ip < frame->fn->chunk.opcodes + opcodes_len) {
+        const uint8_t opcode = *frame->ip;
+        const Location* const loc = &frame->fn->chunk.locations[0];
 
         switch (opcode) {
             case OP_NEGATE: {
@@ -519,17 +519,17 @@ Result vm_run_bytecode(Vm* vm) {
 
                 Value v = {0};
                 RETURN_IF_ERR(stack_peek_from_top_at(vm, &v, 0));
-                *(frame->ip) += jump * value_is_falsy(&v);
+                frame->ip += jump * value_is_falsy(&v);
             } break;
             case OP_JUMP: {
                 uint16_t jump = 0;
                 RETURN_IF_ERR(read_u16(vm, &jump));
-                *(frame->ip) += jump;
+                frame->ip += jump;
             } break;
             case OP_LOOP: {
                 uint16_t jump = 0;
                 RETURN_IF_ERR(read_u16(vm, &jump));
-                *(frame->ip) -= jump;
+                frame->ip -= jump;
             } break;
             default:
                 fprintf(stderr, "%zu:%zu:Unknown opcode %s\n", loc->line,
