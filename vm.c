@@ -92,18 +92,19 @@ static Result stack_push(Vm* vm, Value v) {
 static Result stack_peek_from_bottom_at(const Vm* vm, Value* v, intmax_t i) {
     assert(vm->frame_len > 0);
     const CallFrame* frame = &vm->frames[vm->frame_len - 1];
+    const size_t frame_slot_size = buf_size(frame->slots);
 
-    if (vm->stack_len == 0 || !(i < vm->stack_len)) {
+    if (frame_slot_size == 0 || !((size_t)i < frame_slot_size)) {
         const Location* const loc = &frame->fn->chunk.locations[*(frame->ip)];
         fprintf(
             stderr,
-            "%zu:%zu:Cannot peek in the stack at this location: stack_len=%d "
+            "%zu:%zu:Cannot peek in the stack at this location: stack_len=%zu "
             "i=%jd\n",
-            loc->line, loc->column, vm->stack_len, i);
+            loc->line, loc->column, frame_slot_size, i);
         return RES_RUN_ERR;
     }
 
-    *v = vm->stack[i];
+    *v = frame->slots[i];
 
     LOG("i=%jd v=", i);
     LOG_VALUE_LN(*v);
