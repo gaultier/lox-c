@@ -8,6 +8,12 @@
 
 #include "utils.h"
 
+static void fn_print(const ObjFunction* fn) {
+    const char* const s = fn->name_len == 0 ? "<script>" : fn->name;
+    const size_t s_len = fn->name_len == 0 ? sizeof(s) : fn->name_len;
+    printf("fn@%.*s", (int)s_len, s);
+}
+
 void value_print(Value v) {
     switch (v.type) {
         case VAL_BOOL:
@@ -25,7 +31,7 @@ void value_print(Value v) {
                     printf("%.*s", (int)AS_STRING(v)->len, AS_CSTRING(v));
                     break;
                 case OBJ_FUNCTION:
-                    printf("fn@%.*s", (int)AS_FN(v)->name_len, AS_FN(v)->name);
+                    fn_print(AS_FN(v));
                     break;
                 default:
                     UNREACHABLE();
@@ -55,7 +61,7 @@ void value_print_err(Value v) {
                             AS_CSTRING(v));
                     break;
                 case OBJ_FUNCTION:
-                    printf("fn@%.*s", (int)AS_FN(v)->name_len, AS_FN(v)->name);
+                    fn_print(AS_FN(v));
                     break;
                 default:
                     UNREACHABLE();
@@ -85,7 +91,6 @@ bool value_eq(Value lhs, Value rhs) {
             if (AS_STRING(lhs)->len != AS_STRING(rhs)->len) return false;
             return memcmp(AS_STRING(lhs)->s, AS_STRING(rhs)->s,
                           AS_STRING(lhs)->len) == 0;
-
         default:
             UNREACHABLE();
     }
