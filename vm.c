@@ -235,6 +235,9 @@ Result vm_dump(Vm* vm, Chunk* chunk) {
 }
 
 Result vm_run_bytecode(Vm* vm, Chunk* chunk) {
+    assert(vm->frame_count > 0);
+    CallFrame* frame = &vm->frames[vm->frame_count - 1];
+
     while (vm->ip < buf_size(chunk->opcodes)) {
         const uint8_t opcode = chunk->opcodes[vm->ip];
         const Location* const loc = &chunk->locations[vm->ip];
