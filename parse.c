@@ -677,7 +677,8 @@ static void function(Parser* parser, Vm* vm) {
     expect(parser, TOKEN_LEFT_PAREN, "Missing `(` after function name");
     expect(parser, TOKEN_RIGHT_PAREN, "Missing `)` after function parameters");
 
-    statement(parser, vm);
+    expect(parser, TOKEN_LEFT_BRACE, "Missing `{` after function parameters");
+    block(parser, vm);
 }
 
 static void fn_declaration(Parser* parser, Vm* vm) {
