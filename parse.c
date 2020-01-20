@@ -44,6 +44,7 @@ static void declaration(Parser* parser, Vm* vm);
 static void statement(Parser* parser, Vm* vm);
 static void var_declaration(Parser* parser, Vm* vm);
 static void fn_declaration(Parser*, Vm*);
+static void emit_byte(Parser* parser, uint8_t byte);
 
 static const ParseRule rules[TOKEN_COUNT] = {
     [TOKEN_LEFT_PAREN] = {.prefix = grouping},
@@ -67,6 +68,18 @@ static const ParseRule rules[TOKEN_COUNT] = {
     [TOKEN_AND] = {.infix = and, .precedence = PREC_AND},
     [TOKEN_OR] = {.infix = or, .precedence = PREC_OR},
 };
+
+void compiler_init(Compiler* c, FunctionType type) {
+    c->locals_len = 0;
+    c->scope_depth = 0;
+    c->fn = NULL;
+    c->fn_type = type;
+}
+
+ObjFunction* compiler_end(Compiler* compiler, Parser* parser) {
+    emit_byte(parser, OP_RETURN);
+    return compiler->fn;
+}
 
 static void error(Parser* parser, const Token* token, const char* err,
                   size_t err_len) {
@@ -376,7 +389,7 @@ static void expr_stmt(Parser* parser, Vm* vm) {
     emit_byte(parser, OP_POP);
 }
 
-static void begin_scope(Parser* parser) { parser->compiler->scope_depth += 1; }
+static void begin_scope(Compiler* compiler) { compiler->scope_depth += 1; }
 
 static void block(Parser* parser, Vm* vm) {
     while (!peek(parser, TOKEN_EOF) && !peek(parser, TOKEN_RIGHT_BRACE)) {
@@ -503,7 +516,7 @@ static void while_stmt(Parser* parser, Vm* vm) {
 }
 
 static void for_stmt(Parser* parser, Vm* vm) {
-    begin_scope(parser);
+    begin_scope(parser->compiler);
     expect(parser, TOKEN_LEFT_PAREN, "Expect `(` after `for`");
 
     if (match(parser, TOKEN_VAR))
@@ -557,7 +570,7 @@ static void statement(Parser* parser, Vm* vm) {
     if (match(parser, TOKEN_PRINT)) {
         print_stmt(parser, vm);
     } else if (match(parser, TOKEN_LEFT_BRACE)) {
-        begin_scope(parser);
+        begin_scope(parser->compiler);
         block(parser, vm);
         end_scope(parser);
     } else if (match(parser, TOKEN_IF)) {
@@ -674,11 +687,18 @@ static void var_declaration(Parser* parser, Vm* vm) {
 }
 
 static void function(Parser* parser, Vm* vm) {
+    Compiler compiler;
+    compiler_init(&compiler, TYPE_FUNCTION);
+    begin_scope(&compiler);
+
     expect(parser, TOKEN_LEFT_PAREN, "Missing `(` after function name");
     expect(parser, TOKEN_RIGHT_PAREN, "Missing `)` after function parameters");
 
     expect(parser, TOKEN_LEFT_BRACE, "Missing `{` after function parameters");
     block(parser, vm);
+
+    ObjFunction* const fn = compiler_end(&compiler, parser);
+    emit_byte2(parser, OP_CONSTANT, make_constant(parser, OBJ_VAL(fn)));
 }
 
 static void fn_declaration(Parser* parser, Vm* vm) {
@@ -711,8 +731,9 @@ Result parser_compile(const char* source, size_t source_len, ObjFunction** fn,
     (*fn)->chunk = (Chunk){0};
     memcpy((*fn)->name, top_fn_name, top_fn_name_len);
 
-    Compiler compiler = {
-        .locals_len = 0, .scope_depth = 0, .fn = (*fn), .fn_type = TYPE_SCRIPT};
+    Compiler compiler;
+    compiler_init(&compiler, TYPE_SCRIPT);
+    compiler.fn = *fn;
 
     Local* const local = &compiler.locals[compiler.locals_len++];
     local->depth = 0;
