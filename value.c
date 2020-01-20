@@ -118,6 +118,7 @@ bool value_obj_is_type(Value v, ObjType type) {
 }
 
 ObjFunction* obj_function_new(size_t name_len) {
-    ObjFunction* const fn = REALLOC_SAFE(NULL, sizeof(ObjFunction) + name_len);
+    ObjFunction* fn = NULL;
+    REALLOC_SAFE(&fn, sizeof(ObjFunction) + name_len);
     return fn;
 }
