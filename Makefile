@@ -19,4 +19,4 @@ docker:
 clean:
 	rm -rf lox-release lox-debug lox-debug.dSYM
 
-.PHONY: clean docker
+.PHONY: release debug clean docker
