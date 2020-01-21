@@ -79,6 +79,8 @@ void compiler_init(Compiler* c, FunctionType type, Compiler* enclosing) {
 
 static ObjFunction* compiler_end(Compiler* compiler, Parser* parser) {
     emit_byte(parser, OP_RETURN);
+
+    parser->compiler = compiler->enclosing;
     return compiler->fn;
 }
 
