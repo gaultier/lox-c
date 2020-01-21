@@ -119,7 +119,6 @@ static Result stack_pop(Vm* vm, Value* v) {
 static Result read_u8(Vm* vm, uint8_t* byte) {
     assert(vm->frame_len > 0);
     CallFrame* const frame = &vm->frames[vm->frame_len - 1];
-    assert(frame->ip >= 0);
     assert(frame->ip < buf_size(frame->fn->chunk.opcodes));
 
     frame->ip += 1;
@@ -504,7 +503,7 @@ Result vm_run_bytecode(Vm* vm) {
 
                 Value v = {0};
                 RETURN_IF_ERR(stack_peek_from_top_at(vm, &v, 0));
-                frame->ip += jump * value_is_falsy(&v);
+                frame->ip += jump * (size_t)(value_is_falsy(&v));
             } break;
             case OP_JUMP: {
                 uint16_t jump = 0;
