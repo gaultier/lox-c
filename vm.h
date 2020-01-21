@@ -47,7 +47,7 @@ typedef enum {
     OP_COUNT,
 } OpCode;
 
-extern const char opcode_str[OP_COUNT][17];
+extern const char opcode_str[256][17];
 
 typedef struct {
     ObjFunction* fn;

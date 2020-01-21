@@ -11,7 +11,7 @@
 #include "parse.h"
 #include "utils.h"
 
-const char opcode_str[OP_COUNT][17] = {
+const char opcode_str[256][17] = {
     [OP_RETURN] = "OP_RETURN",
     [OP_CONSTANT] = "OP_CONSTANT",
     [OP_NEGATE] = "OP_NEGATE",
@@ -36,6 +36,7 @@ const char opcode_str[OP_COUNT][17] = {
     [OP_JUMP_IF_FALSE] = "OP_JUMP_IF_FALSE",
     [OP_JUMP] = "OP_JUMP",
     [OP_LOOP] = "OP_LOOP",
+    [UINT8_MAX] = "UINT8_MAX",
 };
 
 static const Location* get_location(const Vm* vm) {
