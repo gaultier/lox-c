@@ -213,7 +213,7 @@ Result vm_dump(Vm* vm) {
                 uint16_t offset = 0;
                 RETURN_IF_ERR(read_u16(vm, &offset));
                 const uint8_t opcode_target =
-                    frame->fn->chunk.opcodes[frame->ip + offset];
+                    frame->fn->chunk.opcodes[frame->ip + offset + 1];
 
                 printf("%zu:%zu:%s offset=%hu target=%s\n", loc->line,
                        loc->column, opcode_str[opcode], offset,
@@ -224,7 +224,7 @@ Result vm_dump(Vm* vm) {
                 uint16_t offset = 0;
                 RETURN_IF_ERR(read_u16(vm, &offset));
                 const uint8_t opcode_target =
-                    frame->fn->chunk.opcodes[frame->ip - offset];
+                    frame->fn->chunk.opcodes[frame->ip - offset + 1];
 
                 printf("%zu:%zu:%s offset=%d target=%s\n", loc->line,
                        loc->column, opcode_str[opcode], offset,
