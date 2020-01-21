@@ -9,6 +9,7 @@ else
 fi
 
 LOXBIN="${LOXBIN:-./lox-release}"
+TMPDIR="${TMPDIR:-/tmp}"
 
 find test -name '*.lox' -type f | sort | parallel --bar -k --timeout 4 " \
     awk -F '// expect: ' '/expect/{print \$2}' < {} > $TMPDIR/{/}.expected; \
