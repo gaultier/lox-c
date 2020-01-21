@@ -215,6 +215,7 @@ Result vm_dump(Vm* vm) {
         const Location* const loc = get_location(vm);
 
         switch (opcode) {
+            // 0 operand
             case OP_RETURN:
             case OP_NEGATE:
             case OP_ADD:
@@ -233,14 +234,29 @@ Result vm_dump(Vm* vm) {
                 printf("%zu:%zu:%s\n", loc->line, loc->column,
                        opcode_str[opcode]);
                 break;
+
+            // 1 u8 operand: index in constants
             case OP_CONSTANT:
             case OP_DEFINE_GLOBAL:
             case OP_GET_GLOBAL:
-            case OP_SET_GLOBAL:
+            case OP_SET_GLOBAL: {
+                Value v = {0};
+                RETURN_IF_ERR(read_constant_in_next_byte(vm, &v));
+                printf("%zu:%zu:%s:", loc->line, loc->column,
+                       opcode_str[opcode]);
+                value_print(v);
+                puts("");
+            } break;
+
+            // 1 u8 operand: index in stack
             case OP_GET_LOCAL:
-            case OP_SET_LOCAL:
-                RETURN_IF_ERR(dump_opcode_u8_operand(vm));
-                break;
+            case OP_SET_LOCAL: {
+                uint8_t stack_i = 0;
+                RETURN_IF_ERR(read_u8(vm, &stack_i));
+                printf("%zu:%zu: stack[%d]\n", loc->line, loc->column, stack_i);
+            }
+
+            // 1 u16 operand
             case OP_JUMP_IF_FALSE:
             case OP_JUMP:
             case OP_LOOP:
@@ -573,7 +589,6 @@ Result vm_interpret(char* source, size_t source_len,
 cleanup:
     value_obj_free(&vm);
     free(source);
-    if (fn) free(fn);
 
     return result;
 }
@@ -617,7 +632,5 @@ void vm_repl(void) {
 
         LOG("parsing successful%s\n", "");
         vm_run_bytecode(&vm);
-
-        if (fn) free(fn);
     }
 }
