@@ -79,34 +79,24 @@ static void stack_log(Vm* vm) {
 }
 
 static Result stack_push(Vm* vm, Value v) {
-    if (vm->stack_len == (STACK_MAX - 1)) {
-        fprintf(stderr, "Maximum stack size reached: %d\n", STACK_MAX);
-        return RES_RUN_ERR;
-    }
+    assert(vm->stack_len < STACK_MAX - 1);
 
     vm->stack[vm->stack_len] = v;
     vm->stack_len += 1;
 
-    LOG("pushed %s", "");
+    LOG("push stack[%jd]=", i);
     LOG_VALUE_LN(v);
 
     return RES_OK;
 }
 
 static Result stack_peek_from_bottom_at(const Vm* vm, Value* v, intmax_t i) {
-    if (vm->stack_len == 0 || !((size_t)i < vm->stack_len)) {
-        const Location* const loc = get_location(vm);
-        fprintf(
-            stderr,
-            "%zu:%zu:Cannot peek in the stack at this location: stack_len=%d "
-            "i=%jd\n",
-            loc->line, loc->column, vm->stack_len, i);
-        return RES_RUN_ERR;
-    }
+    assert(vm->stack_len > 0);
+    assert(i < vm->stack_len);
 
     *v = vm->stack[i];
 
-    LOG("i=%jd v=", i);
+    LOG("peek stack[%jd]=", i);
     LOG_VALUE_LN(*v);
 
     return RES_OK;
@@ -117,12 +107,7 @@ static Result stack_peek_from_top_at(const Vm* vm, Value* v, intmax_t i) {
 }
 
 static Result stack_pop(Vm* vm, Value* v) {
-    if (vm->stack_len == 0) {
-        const Location* const loc = get_location(vm);
-        fprintf(stderr, "%zu:%zu:Cannot pop from an empty stack\n", loc->line,
-                loc->column);
-        return RES_RUN_ERR;
-    }
+    assert(vm->stack_len > 0);
 
     *v = vm->stack[--vm->stack_len];
     LOG("popped %s", "");
@@ -134,23 +119,16 @@ static Result stack_pop(Vm* vm, Value* v) {
 static Result read_u8(Vm* vm, uint8_t* byte) {
     assert(vm->frame_len > 0);
     CallFrame* const frame = &vm->frames[vm->frame_len - 1];
+    assert(frame->ip >= 0);
+    assert(frame->ip < buf_size(frame->fn->chunk.opcodes));
 
-    const uint8_t opcode = frame->fn->chunk.opcodes[frame->ip];
-
-    const Location* const loc = get_location(vm);
     frame->ip += 1;
-
-    if (!(frame->ip < buf_size(frame->fn->chunk.opcodes))) {
-        fprintf(stderr, "%zu:%zu:Malformed opcode: missing operand for %s\n",
-                loc->line, loc->column, opcode_str[opcode]);
-        return RES_RUN_ERR;
-    }
     *byte = frame->fn->chunk.opcodes[frame->ip];
 
     return RES_OK;
 }
 
-static Result read_constant_in_next_byte(Vm* vm, Value* v) {
+static Result read_constant(Vm* vm, Value* v) {
     assert(vm->frame_len > 0);
     const CallFrame* const frame = &vm->frames[vm->frame_len - 1];
 
@@ -225,7 +203,7 @@ Result vm_dump(Vm* vm) {
             case OP_GET_GLOBAL:
             case OP_SET_GLOBAL: {
                 Value v = {0};
-                RETURN_IF_ERR(read_constant_in_next_byte(vm, &v));
+                RETURN_IF_ERR(read_constant(vm, &v));
                 printf("%zu:%zu:%s:", loc->line, loc->column,
                        opcode_str[opcode]);
                 value_print(v);
@@ -369,7 +347,7 @@ Result vm_run_bytecode(Vm* vm) {
             }
             case OP_CONSTANT: {
                 Value v = {0};
-                RETURN_IF_ERR(read_constant_in_next_byte(vm, &v));
+                RETURN_IF_ERR(read_constant(vm, &v));
                 RETURN_IF_ERR(stack_push(vm, v));
             } break;
             case OP_NIL:
@@ -439,7 +417,7 @@ Result vm_run_bytecode(Vm* vm) {
             } break;
             case OP_DEFINE_GLOBAL: {
                 Value name = {0};
-                RETURN_IF_ERR(read_constant_in_next_byte(vm, &name));
+                RETURN_IF_ERR(read_constant(vm, &name));
 
                 Value value = {0};
                 RETURN_IF_ERR(stack_pop(vm, &value));
@@ -455,7 +433,7 @@ Result vm_run_bytecode(Vm* vm) {
             }
             case OP_GET_GLOBAL: {
                 Value name = {0};
-                RETURN_IF_ERR(read_constant_in_next_byte(vm, &name));
+                RETURN_IF_ERR(read_constant(vm, &name));
 
                 char* const s = AS_CSTRING(name);
                 const size_t s_len = AS_STRING(name)->len;
@@ -474,7 +452,7 @@ Result vm_run_bytecode(Vm* vm) {
             }
             case OP_SET_GLOBAL: {
                 Value name = {0};
-                RETURN_IF_ERR(read_constant_in_next_byte(vm, &name));
+                RETURN_IF_ERR(read_constant(vm, &name));
 
                 char* const s = AS_CSTRING(name);
                 const size_t s_len = AS_STRING(name)->len;
