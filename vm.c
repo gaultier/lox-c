@@ -131,7 +131,7 @@ static Result stack_pop(Vm* vm, Value* v) {
     return RES_OK;
 }
 
-static Result read_next_byte(Vm* vm, uint8_t* byte) {
+static Result read_u8(Vm* vm, uint8_t* byte) {
     assert(vm->frame_len > 0);
     CallFrame* const frame = &vm->frames[vm->frame_len - 1];
 
@@ -156,7 +156,7 @@ static Result read_constant_in_next_byte(Vm* vm, Value* v) {
     const CallFrame* const frame = &vm->frames[vm->frame_len - 1];
 
     uint8_t value_index = 0;
-    RETURN_IF_ERR(read_next_byte(vm, &value_index));
+    RETURN_IF_ERR(read_u8(vm, &value_index));
     *v = frame->fn->chunk.constants[value_index];
     LOG("constant index=%d\n", value_index);
 
@@ -165,10 +165,10 @@ static Result read_constant_in_next_byte(Vm* vm, Value* v) {
 
 static Result read_u16(Vm* vm, uint16_t* u16) {
     uint8_t b1 = 0;
-    RETURN_IF_ERR(read_next_byte(vm, &b1));
+    RETURN_IF_ERR(read_u8(vm, &b1));
 
     uint8_t b2 = 0;
-    RETURN_IF_ERR(read_next_byte(vm, &b2));
+    RETURN_IF_ERR(read_u8(vm, &b2));
 
     *u16 = (uint16_t)(b1 << 8) | b2;
     return RES_OK;
@@ -182,7 +182,7 @@ static Result dump_opcode_u8_operand(Vm* vm) {
     const Location* const loc = get_location(vm);
 
     uint8_t b = 0;
-    RETURN_IF_ERR(read_next_byte(vm, &b));
+    RETURN_IF_ERR(read_u8(vm, &b));
 
     printf("%zu:%zu:%s:%d\n", loc->line, loc->column, opcode_str[opcode], b);
 
@@ -490,7 +490,7 @@ Result vm_run_bytecode(Vm* vm) {
             }
             case OP_GET_LOCAL: {
                 uint8_t local_index = 0;
-                RETURN_IF_ERR(read_next_byte(vm, &local_index));
+                RETURN_IF_ERR(read_u8(vm, &local_index));
 
                 Value v = {0};
                 RETURN_IF_ERR(stack_peek_from_bottom_at(vm, &v, local_index));
@@ -503,7 +503,7 @@ Result vm_run_bytecode(Vm* vm) {
             }
             case OP_SET_LOCAL: {
                 uint8_t local_index = 0;
-                RETURN_IF_ERR(read_next_byte(vm, &local_index));
+                RETURN_IF_ERR(read_u8(vm, &local_index));
 
                 Value v = {0};
                 RETURN_IF_ERR(stack_peek_from_top_at(vm, &v, 0));
