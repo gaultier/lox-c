@@ -11,7 +11,7 @@ Prerequisites:
 - POSIX Make
 
 ```sh
-$ make release
+$ make lox-release
 $ ./lox-release run test/hello_world.lox
 $ printf "(12 + 2) * 3" | ./lox-release run -
 $ ./lox-release dump test/hello_world.lox
@@ -28,9 +28,9 @@ Additional prerequisites:
 
 ```sh
 # With Address Sanitizer:
-$ make debug
+$ make lox-debug
 # Or without:
-$ make debug SANITIZER=""
+$ make lox-debug SANITIZER=""
 $ ./lox-debug
 # Test
 $ ./test.sh
