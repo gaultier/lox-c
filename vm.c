@@ -598,9 +598,20 @@ void vm_repl(void) {
         ObjFunction* fn = NULL;
         if ((result = parser_compile(source, (size_t)source_len, &fn, &vm)) !=
             RES_OK)
-            continue;
+            goto cleanup;
 
         LOG("parsing successful%s\n", "");
+
+        stack_push(&vm, OBJ_VAL(fn));
+
+        CallFrame* const frame = &vm.frames[vm.frame_len++];
+        frame->fn = fn;
+        LOG("frame opcodes len=%zu\n", buf_size(fn->chunk.opcodes));
+        frame->ip = 0;
+        frame->slots = vm.stack;
         vm_run_bytecode(&vm);
+
+    cleanup:
+        if (fn) free(fn);
     }
 }
