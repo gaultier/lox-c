@@ -42,9 +42,8 @@ const char opcode_str[256][17] = {
 static const Location* get_location(const Vm* vm) {
     assert(vm->frame_len > 0);
     const CallFrame* const frame = &vm->frames[vm->frame_len - 1];
-    const size_t loc_i = (size_t)(frame->ip - frame->fn->chunk.opcodes);
 
-    return &frame->fn->chunk.locations[loc_i];
+    return &frame->fn->chunk.locations[frame->ip];
 }
 
 static void str_cat(Vm* vm, Value lhs, Value rhs, Value* res) {
@@ -136,18 +135,17 @@ static Result read_u8(Vm* vm, uint8_t* byte) {
     assert(vm->frame_len > 0);
     CallFrame* const frame = &vm->frames[vm->frame_len - 1];
 
-    const uint8_t opcode = *frame->ip;
+    const uint8_t opcode = frame->fn->chunk.opcodes[frame->ip];
 
     const Location* const loc = get_location(vm);
     frame->ip += 1;
 
-    if (!(frame->ip <
-          frame->fn->chunk.opcodes + buf_size(frame->fn->chunk.opcodes))) {
+    if (!(frame->ip < buf_size(frame->fn->chunk.opcodes))) {
         fprintf(stderr, "%zu:%zu:Malformed opcode: missing operand for %s\n",
                 loc->line, loc->column, opcode_str[opcode]);
         return RES_RUN_ERR;
     }
-    *byte = *frame->ip;
+    *byte = frame->fn->chunk.opcodes[frame->ip];
 
     return RES_OK;
 }
@@ -179,7 +177,7 @@ static Result dump_opcode_u16_operand(Vm* vm) {
     assert(vm->frame_len > 0);
     const CallFrame* const frame = &vm->frames[vm->frame_len - 1];
 
-    const uint8_t opcode = *frame->ip;
+    const uint8_t opcode = frame->fn->chunk.opcodes[frame->ip];
     const Location* const loc = get_location(vm);
 
     uint16_t u16 = 0;
@@ -194,10 +192,10 @@ Result vm_dump(Vm* vm) {
     CallFrame* const frame = &vm->frames[vm->frame_len - 1];
     const size_t opcodes_len = buf_size(frame->fn->chunk.opcodes);
 
-    while (frame->ip < frame->fn->chunk.opcodes + opcodes_len) {
-        LOG("frame ip=%d opcodes_len=%zu\n", *frame->ip,
+    while (frame->ip < opcodes_len) {
+        LOG("frame ip=%zu opcodes_len=%zu\n", frame->ip,
             buf_size(frame->fn->chunk.opcodes));
-        const uint8_t opcode = *frame->ip;
+        const uint8_t opcode = frame->fn->chunk.opcodes[frame->ip];
         const Location* const loc = get_location(vm);
 
         switch (opcode) {
@@ -232,7 +230,8 @@ Result vm_dump(Vm* vm) {
                        opcode_str[opcode]);
                 value_print(v);
                 puts("");
-            } break;
+                break;
+            }
 
             // 1 u8 operand: index in stack
             case OP_GET_LOCAL:
@@ -241,6 +240,7 @@ Result vm_dump(Vm* vm) {
                 RETURN_IF_ERR(read_u8(vm, &stack_i));
                 printf("%zu:%zu:%s stack[%d]\n", loc->line, loc->column,
                        opcode_str[opcode], stack_i);
+                break;
             }
 
             // 1 u16 operand
@@ -264,8 +264,8 @@ Result vm_run_bytecode(Vm* vm) {
     CallFrame* const frame = &vm->frames[vm->frame_len - 1];
     const size_t opcodes_len = buf_size(frame->fn->chunk.opcodes);
 
-    while (frame->ip < frame->fn->chunk.opcodes + opcodes_len) {
-        const uint8_t opcode = *frame->ip;
+    while (frame->ip < opcodes_len) {
+        const uint8_t opcode = frame->fn->chunk.opcodes[frame->ip];
         const Location* const loc = get_location(vm);
 
         switch (opcode) {
@@ -567,8 +567,8 @@ Result vm_interpret(char* source, size_t source_len,
 
     CallFrame* const frame = &vm.frames[vm.frame_len++];
     frame->fn = fn;
-    LOG("frame opcodes len = %zu\n", buf_size(fn->chunk.opcodes));
-    frame->ip = fn->chunk.opcodes;
+    LOG("frame opcodes len=%zu\n", buf_size(fn->chunk.opcodes));
+    frame->ip = 0;
     frame->slots = vm.stack;
 
     result = bytecode_fn(&vm);

@@ -51,7 +51,7 @@ extern const char opcode_str[256][17];
 
 typedef struct {
     ObjFunction* fn;
-    uint8_t* ip;
+    size_t ip;
     Value* slots;
 } CallFrame;
 
