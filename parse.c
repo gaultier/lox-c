@@ -431,6 +431,7 @@ static void jump_patch(Parser* parser, intmax_t offset) {
                       "Reached jump limit for the `if` body");
 
     const uint16_t u16_jump = (uint16_t)jump;
+    LOG("patch jump=%hu\n", u16_jump);
     const uint8_t b1 = (u16_jump >> 8);
     const uint8_t b2 = (uint8_t)u16_jump;
 

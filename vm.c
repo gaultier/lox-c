@@ -84,7 +84,7 @@ static Result stack_push(Vm* vm, Value v) {
     vm->stack[vm->stack_len] = v;
     vm->stack_len += 1;
 
-    LOG("push stack[%jd]=", i);
+    LOG("push stack=%s", "");
     LOG_VALUE_LN(v);
 
     return RES_OK;
@@ -151,20 +151,6 @@ static Result read_u16(Vm* vm, uint16_t* u16) {
     return RES_OK;
 }
 
-static Result dump_opcode_u16_operand(Vm* vm) {
-    assert(vm->frame_len > 0);
-    const CallFrame* const frame = &vm->frames[vm->frame_len - 1];
-
-    const uint8_t opcode = frame->fn->chunk.opcodes[frame->ip];
-    const Location* const loc = get_location(vm);
-
-    uint16_t u16 = 0;
-    RETURN_IF_ERR(read_u16(vm, &u16));
-    printf("%zu:%zu:%s:%d\n", loc->line, loc->column, opcode_str[opcode], u16);
-
-    return RES_OK;
-}
-
 Result vm_dump(Vm* vm) {
     assert(vm->frame_len > 0);
     CallFrame* const frame = &vm->frames[vm->frame_len - 1];
@@ -221,12 +207,31 @@ Result vm_dump(Vm* vm) {
                 break;
             }
 
-            // 1 u16 operand
+            // 1  u16 operand
             case OP_JUMP_IF_FALSE:
-            case OP_JUMP:
-            case OP_LOOP:
-                RETURN_IF_ERR(dump_opcode_u16_operand(vm));
+            case OP_JUMP: {
+                uint16_t offset = 0;
+                RETURN_IF_ERR(read_u16(vm, &offset));
+                const uint8_t opcode_target =
+                    frame->fn->chunk.opcodes[frame->ip + offset];
+
+                printf("%zu:%zu:%s offset=%hu target=%s\n", loc->line,
+                       loc->column, opcode_str[opcode], offset,
+                       opcode_str[opcode_target]);
                 break;
+            }
+            case OP_LOOP: {
+                uint16_t offset = 0;
+                RETURN_IF_ERR(read_u16(vm, &offset));
+                const uint8_t opcode_target =
+                    frame->fn->chunk.opcodes[frame->ip - offset];
+
+                printf("%zu:%zu:%s offset=%d target=%s\n", loc->line,
+                       loc->column, opcode_str[opcode], offset,
+                       opcode_str[opcode_target]);
+                break;
+            }
+
             default:
                 fprintf(stderr, "%zu:%zu:Unknown opcode %hhu\n", loc->line,
                         loc->column, opcode);
