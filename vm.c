@@ -174,21 +174,6 @@ static Result read_u16(Vm* vm, uint16_t* u16) {
     return RES_OK;
 }
 
-static Result dump_opcode_u8_operand(Vm* vm) {
-    assert(vm->frame_len > 0);
-    const CallFrame* const frame = &vm->frames[vm->frame_len - 1];
-
-    const uint8_t opcode = *frame->ip;
-    const Location* const loc = get_location(vm);
-
-    uint8_t b = 0;
-    RETURN_IF_ERR(read_u8(vm, &b));
-
-    printf("%zu:%zu:%s:%d\n", loc->line, loc->column, opcode_str[opcode], b);
-
-    return RES_OK;
-}
-
 static Result dump_opcode_u16_operand(Vm* vm) {
     assert(vm->frame_len > 0);
     const CallFrame* const frame = &vm->frames[vm->frame_len - 1];
@@ -253,7 +238,8 @@ Result vm_dump(Vm* vm) {
             case OP_SET_LOCAL: {
                 uint8_t stack_i = 0;
                 RETURN_IF_ERR(read_u8(vm, &stack_i));
-                printf("%zu:%zu: stack[%d]\n", loc->line, loc->column, stack_i);
+                printf("%zu:%zu:%s stack[%d]\n", loc->line, loc->column,
+                       opcode_str[opcode], stack_i);
             }
 
             // 1 u16 operand
