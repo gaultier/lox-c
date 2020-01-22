@@ -251,7 +251,24 @@ Result vm_dump(Vm* vm) {
     return RES_OK;
 }
 
-Result value_call(Value callee, uint8_t arg_count) { return RES_OK; }
+static Result fn_call(Vm* vm, ObjFunction* fn, uint8_t arg_count) {
+    return RES_OK;
+}
+
+static Result value_call(Vm* vm, Value callee, uint8_t arg_count) {
+    const Location* const loc = get_location(vm);
+    if (!IS_OBJ(callee))
+        VM_ERROR(loc, "Can only call functions and classes, got:", callee);
+
+    switch (OBJ_VAL(&callee).type) {
+        case OBJ_FUNCTION:
+            return fn_call(vm, AS_FN(callee), arg_count);
+        case OBJ_STRING:
+            VM_ERROR(loc, "Can only call functions and classes, got:", callee);
+        default:
+            UNREACHABLE();
+    }
+}
 
 Result vm_run_bytecode(Vm* vm) {
     assert(vm->frame_len > 0);
@@ -533,7 +550,7 @@ Result vm_run_bytecode(Vm* vm) {
 
                 Value callee = {0};
                 RETURN_IF_ERR(stack_peek_from_top_at(vm, &callee, arg_count));
-                RETURN_IF_ERR(value_call(callee, arg_count));
+                RETURN_IF_ERR(value_call(vm, callee, arg_count));
 
                 frame = &vm->frames[vm->frame_len - 1];
 
