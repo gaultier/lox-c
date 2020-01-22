@@ -211,6 +211,7 @@ Result vm_dump(Vm* vm) {
             case OP_JUMP: {
                 uint16_t offset = 0;
                 RETURN_IF_ERR(read_u16(vm, &offset));
+                // TODO: bound check
                 const uint8_t opcode_target =
                     frame->fn->chunk.opcodes[frame->ip + offset + 1];
 
