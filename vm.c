@@ -36,6 +36,7 @@ const char opcode_str[256][17] = {
     [OP_JUMP_IF_FALSE] = "OP_JUMP_IF_FALSE",
     [OP_JUMP] = "OP_JUMP",
     [OP_LOOP] = "OP_LOOP",
+    [OP_CALL] = "OP_CALL",
     [UINT8_MAX] = "UINT8_MAX",
 };
 

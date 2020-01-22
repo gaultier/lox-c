@@ -39,7 +39,7 @@ static void string(Parser*, Vm*, bool);
 static void variable(Parser*, Vm*, bool);
 static void and (Parser*, Vm*, bool);
 static void or (Parser*, Vm*, bool);
-static void call(Parser*, Vm*, bool);
+static void fn_call(Parser*, Vm*, bool);
 static void expression(Parser*, Vm*);
 static void declaration(Parser*, Vm*);
 static void statement(Parser*, Vm*);
@@ -49,7 +49,7 @@ static void emit_byte(Parser*, uint8_t);
 
 static const ParseRule rules[TOKEN_COUNT] = {
     [TOKEN_LEFT_PAREN] = {.prefix = grouping,
-                          .infix = call,
+                          .infix = fn_call,
                           .precedence = PREC_CALL},
     [TOKEN_MINUS] = {.prefix = unary, .infix = binary, .precedence = PREC_TERM},
     [TOKEN_PLUS] = {.infix = binary, .precedence = PREC_TERM},
@@ -495,6 +495,14 @@ static void or (Parser * parser, Vm* vm, bool canAssign) {
     jump_patch(parser, end_jump);
 }
 
+static uint8_t fn_argument_list(Parser* parser, Vm* vm) { return 0; }
+
+static void fn_call(Parser* parser, Vm* vm, bool canAssign) {
+    (void)canAssign;
+    const uint8_t arg_count = fn_argument_list(parser, vm);
+    emit_byte2(parser, OP_CALL, arg_count);
+}
+
 static void emit_loop(Parser* parser, size_t loop_start) {
     emit_byte(parser, OP_LOOP);
 
@@ -513,8 +521,6 @@ static void emit_loop(Parser* parser, size_t loop_start) {
     emit_byte(parser, b1);
     emit_byte(parser, b2);
 }
-
-static void call(Parser* parser, Vm* vm, bool canAssign) { (void)canAssign; }
 
 static void while_stmt(Parser* parser, Vm* vm) {
     const size_t loop_start = buf_size(parser->compiler->fn->chunk.opcodes);
