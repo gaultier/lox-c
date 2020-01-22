@@ -37,7 +37,7 @@ const char opcode_str[256][17] = {
     [OP_JUMP] = "OP_JUMP",
     [OP_LOOP] = "OP_LOOP",
     [OP_CALL] = "OP_CALL",
-    [UINT8_MAX] = "UINT8_MAX",
+    [UINT8_MAX] = "UINT8_MAX",  // Only used in logs
 };
 
 static const Location* get_location(const Vm* vm) {
