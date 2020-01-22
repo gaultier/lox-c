@@ -262,7 +262,11 @@ static Result fn_call(Vm* vm, ObjFunction* fn, uint8_t arg_count) {
     CallFrame* frame = &vm->frames[vm->frame_len - 1];
     frame->fn = fn;
     frame->ip = fn->chunk.opcodes;
-    frame->slots = vm->stack + vm->stack_len - 1 - arg_count;
+    frame->slots = &vm->stack[vm->stack_len - 1 - arg_count];
+    LOG("call f=%.*s slots[0]=", (int)frame->fn->name_len, frame->fn->name);
+    LOG_VALUE_LN(frame->slots[0]);
+    LOG("stack top=%s", "");
+    LOG_VALUE_LN(vm->stack[vm->stack_len - 1]);
 
     return RES_OK;
 }
@@ -520,8 +524,7 @@ Result vm_run_bytecode(Vm* vm) {
                 RETURN_IF_ERR(read_u8(vm, &slot));
 
                 RETURN_IF_ERR(stack_push(vm, frame->slots[slot]));
-                LOG("OP_GET_LOCAL local_index=%d v=", local_index);
-                LOG_VALUE_LN(v);
+                LOG("OP_GET_LOCAL local_index=%d v=", slot);
 
                 stack_log(vm);
                 break;
