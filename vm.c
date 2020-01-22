@@ -206,6 +206,14 @@ Result vm_dump(Vm* vm) {
                        opcode_str[opcode], stack_i);
                 break;
             }
+            // 1 u8 operand: number
+            case OP_CALL: {
+                uint8_t count = 0;
+                RETURN_IF_ERR(read_u8(vm, &count));
+                printf("%zu:%zu:%s count:%d\n", loc->line, loc->column,
+                       opcode_str[opcode], count);
+                break;
+            }
 
             // 1  u16 operand
             case OP_JUMP_IF_FALSE:
