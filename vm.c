@@ -516,12 +516,10 @@ Result vm_run_bytecode(Vm* vm) {
                 break;
             }
             case OP_GET_LOCAL: {
-                uint8_t local_index = 0;
-                RETURN_IF_ERR(read_u8(vm, &local_index));
+                uint8_t slot = 0;
+                RETURN_IF_ERR(read_u8(vm, &slot));
 
-                Value v = {0};
-                RETURN_IF_ERR(stack_peek_from_bottom_at(vm, &v, local_index));
-                RETURN_IF_ERR(stack_push(vm, v));
+                RETURN_IF_ERR(stack_push(vm, frame->slots[slot]));
                 LOG("OP_GET_LOCAL local_index=%d v=", local_index);
                 LOG_VALUE_LN(v);
 
@@ -529,12 +527,12 @@ Result vm_run_bytecode(Vm* vm) {
                 break;
             }
             case OP_SET_LOCAL: {
-                uint8_t local_index = 0;
-                RETURN_IF_ERR(read_u8(vm, &local_index));
+                uint8_t slot = 0;
+                RETURN_IF_ERR(read_u8(vm, &slot));
 
                 Value v = {0};
                 RETURN_IF_ERR(stack_peek_from_top_at(vm, &v, 0));
-                vm->stack[local_index] = v;
+                frame->slots[slot] = v;
                 stack_log(vm);
 
                 break;
