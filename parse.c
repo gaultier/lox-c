@@ -39,6 +39,7 @@ static void string(Parser*, Vm*, bool);
 static void variable(Parser*, Vm*, bool);
 static void and (Parser*, Vm*, bool);
 static void or (Parser*, Vm*, bool);
+static void call(Parser*, Vm*, bool);
 static void expression(Parser*, Vm*);
 static void declaration(Parser*, Vm*);
 static void statement(Parser*, Vm*);
@@ -47,7 +48,9 @@ static void fn_declaration(Parser*, Vm*);
 static void emit_byte(Parser*, uint8_t);
 
 static const ParseRule rules[TOKEN_COUNT] = {
-    [TOKEN_LEFT_PAREN] = {.prefix = grouping},
+    [TOKEN_LEFT_PAREN] = {.prefix = grouping,
+                          .infix = call,
+                          .precedence = PREC_CALL},
     [TOKEN_MINUS] = {.prefix = unary, .infix = binary, .precedence = PREC_TERM},
     [TOKEN_PLUS] = {.infix = binary, .precedence = PREC_TERM},
     [TOKEN_SLASH] = {.infix = binary, .precedence = PREC_FACTOR},
@@ -510,6 +513,8 @@ static void emit_loop(Parser* parser, size_t loop_start) {
     emit_byte(parser, b1);
     emit_byte(parser, b2);
 }
+
+static void call(Parser* parser, Vm* vm, bool canAssign) { (void)canAssign; }
 
 static void while_stmt(Parser* parser, Vm* vm) {
     const size_t loop_start = buf_size(parser->compiler->fn->chunk.opcodes);
