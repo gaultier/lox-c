@@ -722,11 +722,10 @@ static void function_args(Parser* parser, Vm* vm) {
     expect(parser, TOKEN_RIGHT_PAREN, "Missing `)` after function parameters");
 }
 
-static void function(Parser* parser, Vm* vm) {
+static void function(Parser* parser, Vm* vm, uint8_t fn_name_i) {
     Compiler compiler;
-    const ObjString* const fn_name = AS_STRING(
-        parser->compiler->fn->chunk
-            .constants[buf_size(parser->compiler->fn->chunk.constants) - 1]);
+    const ObjString* const fn_name =
+        AS_STRING(parser->compiler->fn->chunk.constants[fn_name_i]);
     compiler_init(&compiler, TYPE_FUNCTION, parser, fn_name->s, fn_name->len);
     begin_scope(parser);
 
@@ -744,7 +743,7 @@ static void fn_declaration(Parser* parser, Vm* vm) {
     const uint8_t arg = variable_name(parser, vm, "Expected function name");
     compiler_local_mark_initialized(parser);
 
-    function(parser, vm);
+    function(parser, vm, arg);
     define_variable(parser, arg);
 }
 
