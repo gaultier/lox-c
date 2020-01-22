@@ -158,11 +158,11 @@ Result vm_dump(Vm* vm) {
 
     while ((size_t)(frame->ip - frame->fn->chunk.opcodes) <
            buf_size(frame->fn->chunk.opcodes)) {
-        LOG("frame ip=%zu opcodes_len=%zu\n",
+        LOG("frame ip=%zu opcodes_len=%zu vm opcode[0]=%s frame opcode=%s\n",
             frame->ip - frame->fn->chunk.opcodes,
-            buf_size(frame->fn->chunk.opcodes));
-        const uint8_t opcode =
-            frame->fn->chunk.opcodes[frame->ip - frame->fn->chunk.opcodes];
+            buf_size(frame->fn->chunk.opcodes),
+            opcode_str[frame->fn->chunk.opcodes[0]], opcode_str[*(frame->ip)]);
+        const uint8_t opcode = *(frame->ip);
         const Location* const loc = get_location(vm);
 
         switch (opcode) {
@@ -259,7 +259,8 @@ Result vm_dump(Vm* vm) {
 }
 
 static Result fn_call(Vm* vm, ObjFunction* fn, uint8_t arg_count) {
-    CallFrame* frame = &vm->frames[vm->frame_len - 1];
+    CallFrame* frame = &vm->frames[vm->frame_len++];
+    LOG("frames=%d\n", vm->frame_len);
     frame->fn = fn;
     frame->ip = fn->chunk.opcodes;
     frame->slots = &vm->stack[vm->stack_len - 1 - arg_count];
@@ -292,8 +293,7 @@ Result vm_run_bytecode(Vm* vm) {
 
     while ((size_t)(frame->ip - frame->fn->chunk.opcodes) <
            buf_size(frame->fn->chunk.opcodes)) {
-        const uint8_t opcode =
-            frame->fn->chunk.opcodes[frame->ip - frame->fn->chunk.opcodes];
+        const uint8_t opcode = *(frame->ip);
         const Location* const loc = get_location(vm);
 
         switch (opcode) {
@@ -568,6 +568,11 @@ Result vm_run_bytecode(Vm* vm) {
 
                 frame = &vm->frames[vm->frame_len - 1];
 
+                LOG("calling f=%.*s slots[0]=", (int)frame->fn->name_len,
+                    frame->fn->name);
+                LOG_VALUE_LN(frame->slots[0]);
+                frame->ip--;  // FIXME
+
                 break;
             }
             default:
@@ -606,6 +611,8 @@ Result vm_interpret(char* source, size_t source_len,
     frame->fn = fn;
     LOG("frame opcodes len=%zu\n", buf_size(fn->chunk.opcodes));
     frame->ip = fn->chunk.opcodes;
+    LOG("frame ip[0]=%s fn opcode[0]=%s\n", opcode_str[*(frame->ip)],
+        opcode_str[fn->chunk.opcodes[0]]);
     frame->slots = vm.stack;
 
     result = bytecode_fn(&vm);
