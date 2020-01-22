@@ -495,7 +495,25 @@ static void or (Parser * parser, Vm* vm, bool canAssign) {
     jump_patch(parser, end_jump);
 }
 
-static uint8_t fn_argument_list(Parser* parser, Vm* vm) { return 0; }
+static uint8_t fn_argument_list(Parser* parser, Vm* vm) {
+    uint8_t arg_count = 0;
+    if (match(parser, TOKEN_RIGHT_PAREN)) return arg_count;
+
+    do {
+        expression(parser, vm);
+
+        if (arg_count == UINT8_MAX)
+            error_str_nul(
+                parser, &parser->previous,
+                "Reached maximum number of arguments for a function call: 255");
+
+        arg_count += 1;
+    } while (match(parser, TOKEN_COMMA));
+
+    expect(parser, TOKEN_RIGHT_PAREN, "Missing `)` after function parameters");
+
+    return arg_count;
+}
 
 static void fn_call(Parser* parser, Vm* vm, bool canAssign) {
     (void)canAssign;
@@ -720,15 +738,13 @@ static void function_args(Parser* parser, Vm* vm) {
             variable_name(parser, vm, "Expected variable name");
         define_variable(parser, var_i);
 
-        if (parser->compiler->fn->arity == 255)
+        if (parser->compiler->fn->arity == UINT8_MAX)
             error_str_nul(
                 parser, &parser->previous,
                 "Reached maximum number of arguments for a function: 255");
 
         parser->compiler->fn->arity += 1;
-    }
-
-    while (match(parser, TOKEN_COMMA));
+    } while (match(parser, TOKEN_COMMA));
 
     expect(parser, TOKEN_RIGHT_PAREN, "Missing `)` after function parameters");
 }
