@@ -272,7 +272,7 @@ static Result value_call(Vm* vm, Value callee, uint8_t arg_count) {
     if (!IS_OBJ(callee))
         VM_ERROR(loc, "Can only call functions and classes, got:", callee);
 
-    switch (OBJ_VAL(&callee).type) {
+    switch (AS_OBJ(callee)->type) {
         case OBJ_FUNCTION:
             return fn_call(vm, AS_FN(callee), arg_count);
         case OBJ_STRING:
