@@ -651,7 +651,7 @@ static void declare_variable(Parser* parser) {
     // Prevent shadowing in the same scope
     for (int i = parser->compiler->locals_len - 1; i >= 0; i--) {
         Local* const local = &parser->compiler->locals[i];
-        LOG("local %.*s", (int)name->source_len, name->source);
+        LOG("local %.*s\n", (int)name->source_len, name->source);
 
         if (local->depth != -1 && local->depth < parser->compiler->scope_depth)
             break;
