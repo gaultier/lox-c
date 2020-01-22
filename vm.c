@@ -525,6 +525,12 @@ Result vm_run_bytecode(Vm* vm) {
                 RETURN_IF_ERR(read_u16(vm, &jump));
                 frame->ip -= jump;
             } break;
+            case OP_CALL: {
+                uint8_t arg_count = 0;
+                RETURN_IF_ERR(read_u8(vm, &arg_count));
+                // TODO
+                break;
+            }
             default:
                 fprintf(stderr, "%zu:%zu:Unknown opcode %s\n", loc->line,
                         loc->column, opcode_str[opcode]);
