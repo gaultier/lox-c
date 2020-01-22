@@ -776,7 +776,6 @@ Result parser_compile(const char* source, size_t source_len, ObjFunction** fn,
     Compiler compiler = {0};
     compiler_init(&compiler, TYPE_SCRIPT, &parser, top_fn_name,
                   top_fn_name_len);
-    compiler.fn = *fn;
 
     advance(&parser);
 
