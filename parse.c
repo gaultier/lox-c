@@ -69,19 +69,21 @@ static const ParseRule rules[TOKEN_COUNT] = {
     [TOKEN_OR] = {.infix = or, .precedence = PREC_OR},
 };
 
-void compiler_init(Compiler* c, FunctionType type, Compiler* enclosing) {
+static void compiler_init(Compiler* c, FunctionType type, Parser* p) {
     c->locals_len = 0;
     c->scope_depth = 0;
     c->fn = NULL;
     c->fn_type = type;
-    c->enclosing = enclosing;
+    c->enclosing = p->compiler;
+
+    p->compiler = c;
 }
 
-static ObjFunction* compiler_end(Compiler* compiler, Parser* parser) {
+static ObjFunction* compiler_end(Parser* parser) {
     emit_byte(parser, OP_RETURN);
 
     ObjFunction* const fn = parser->compiler->fn;
-    parser->compiler = compiler->enclosing;
+    parser->compiler = parser->compiler->enclosing;
 
     return fn;
 }
@@ -394,7 +396,7 @@ static void expr_stmt(Parser* parser, Vm* vm) {
     emit_byte(parser, OP_POP);
 }
 
-static void begin_scope(Compiler* compiler) { compiler->scope_depth += 1; }
+static void begin_scope(Parser* parser) { parser->compiler->scope_depth += 1; }
 
 static void block(Parser* parser, Vm* vm) {
     while (!peek(parser, TOKEN_EOF) && !peek(parser, TOKEN_RIGHT_BRACE)) {
@@ -522,7 +524,7 @@ static void while_stmt(Parser* parser, Vm* vm) {
 }
 
 static void for_stmt(Parser* parser, Vm* vm) {
-    begin_scope(parser->compiler);
+    begin_scope(parser);
     expect(parser, TOKEN_LEFT_PAREN, "Expect `(` after `for`");
 
     if (match(parser, TOKEN_VAR))
@@ -576,7 +578,7 @@ static void statement(Parser* parser, Vm* vm) {
     if (match(parser, TOKEN_PRINT)) {
         print_stmt(parser, vm);
     } else if (match(parser, TOKEN_LEFT_BRACE)) {
-        begin_scope(parser->compiler);
+        begin_scope(parser);
         block(parser, vm);
         end_scope(parser);
     } else if (match(parser, TOKEN_IF)) {
@@ -615,9 +617,10 @@ static void sync(Parser* parser) {
     }
 }
 
-static void compiler_local_mark_initialized(Compiler* compiler) {
-    if (compiler->scope_depth == 0) return;
-    compiler->locals[compiler->locals_len - 1].depth = compiler->scope_depth;
+static void compiler_local_mark_initialized(Parser* parser) {
+    if (parser->compiler->scope_depth == 0) return;
+    parser->compiler->locals[parser->compiler->locals_len - 1].depth =
+        parser->compiler->scope_depth;
 }
 
 static void compiler_add_local(Parser* parser, const Token* name) {
@@ -672,7 +675,7 @@ static uint8_t variable_name(Parser* parser, Vm* vm, const char err[]) {
 static void define_variable(Parser* parser, uint8_t global_i) {
     // Skip locals
     if (parser->compiler->scope_depth > 0) {
-        compiler_local_mark_initialized(parser->compiler);
+        compiler_local_mark_initialized(parser);
         return;
     }
     emit_byte2(parser, OP_DEFINE_GLOBAL, global_i);
@@ -715,8 +718,8 @@ static void function_args(Parser* parser, Vm* vm) {
 
 static void function(Parser* parser, Vm* vm) {
     Compiler compiler;
-    compiler_init(&compiler, TYPE_FUNCTION, parser->compiler);
-    begin_scope(&compiler);
+    compiler_init(&compiler, TYPE_FUNCTION, parser);
+    begin_scope(parser);
 
     expect(parser, TOKEN_LEFT_PAREN, "Missing `(` after function name");
     function_args(parser, vm);
@@ -724,13 +727,13 @@ static void function(Parser* parser, Vm* vm) {
     expect(parser, TOKEN_LEFT_BRACE, "Missing `{` after function parameters");
     block(parser, vm);
 
-    ObjFunction* const fn = compiler_end(&compiler, parser);
+    ObjFunction* const fn = compiler_end(parser);
     emit_byte2(parser, OP_CONSTANT, make_constant(parser, OBJ_VAL(fn)));
 }
 
 static void fn_declaration(Parser* parser, Vm* vm) {
     const uint8_t arg = variable_name(parser, vm, "Expected function name");
-    compiler_local_mark_initialized(parser->compiler);
+    compiler_local_mark_initialized(parser);
 
     function(parser, vm);
     define_variable(parser, arg);
@@ -755,24 +758,22 @@ Result parser_compile(const char* source, size_t source_len, ObjFunction** fn,
     const size_t top_fn_name_len = sizeof(top_fn_name);
     *fn = obj_function_new(top_fn_name, top_fn_name_len);
 
+    Parser parser = {.lex = {
+                         .source = source,
+                         .source_len = source_len,
+                         .line = 1,
+                         .column = 1,
+                         .pos = 0,
+                     }};
+
     Compiler compiler;
-    compiler_init(&compiler, TYPE_SCRIPT, NULL);
+    compiler_init(&compiler, TYPE_SCRIPT, &parser);
     compiler.fn = *fn;
 
     Local* const local = &compiler.locals[compiler.locals_len++];
     local->depth = 0;
     local->name.source = "";
     local->name.source_len = 0;
-
-    Parser parser = {.lex =
-                         {
-                             .source = source,
-                             .source_len = source_len,
-                             .line = 1,
-                             .column = 1,
-                             .pos = 0,
-                         },
-                     .compiler = &compiler};
 
     advance(&parser);
 
@@ -782,7 +783,7 @@ Result parser_compile(const char* source, size_t source_len, ObjFunction** fn,
 
     if (parser.state != PARSER_STATE_OK) return RES_PARSE_ERR;
 
-    *fn = compiler_end(&compiler, &parser);
+    *fn = compiler_end(&parser);
 
     return RES_OK;
 }

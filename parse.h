@@ -58,4 +58,3 @@ typedef struct {
 Result parser_compile(const char* source, size_t source_len, ObjFunction** fn,
                       Vm* vm);
 Result fmt(const char* source, size_t source_len);
-void compiler_init(Compiler* c, FunctionType type, Compiler* enclosing);
