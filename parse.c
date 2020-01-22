@@ -773,7 +773,7 @@ Result parser_compile(const char* source, size_t source_len, ObjFunction** fn,
                          .pos = 0,
                      }};
 
-    Compiler compiler = {0};
+    Compiler compiler;
     compiler_init(&compiler, TYPE_SCRIPT, &parser, top_fn_name,
                   top_fn_name_len);
 
