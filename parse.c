@@ -699,7 +699,16 @@ static void function_args(Parser* parser, Vm* vm) {
         const uint8_t var_i =
             variable_name(parser, vm, "Expected variable name");
         define_variable(parser, var_i);
-    } while (match(parser, TOKEN_COMMA));
+
+        if (parser->compiler->fn->arity == 255)
+            error_str_nul(
+                parser, &parser->previous,
+                "Reached maximum number of arguments for a function: 255");
+
+        parser->compiler->fn->arity += 1;
+    }
+
+    while (match(parser, TOKEN_COMMA));
 
     expect(parser, TOKEN_RIGHT_PAREN, "Missing `)` after function parameters");
 }
