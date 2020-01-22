@@ -251,9 +251,11 @@ Result vm_dump(Vm* vm) {
     return RES_OK;
 }
 
+Result value_call(Value callee, uint8_t arg_count) { return RES_OK; }
+
 Result vm_run_bytecode(Vm* vm) {
     assert(vm->frame_len > 0);
-    CallFrame* const frame = &vm->frames[vm->frame_len - 1];
+    CallFrame* frame = &vm->frames[vm->frame_len - 1];
     const size_t opcodes_len = buf_size(frame->fn->chunk.opcodes);
 
     while (frame->ip < opcodes_len) {
@@ -528,7 +530,13 @@ Result vm_run_bytecode(Vm* vm) {
             case OP_CALL: {
                 uint8_t arg_count = 0;
                 RETURN_IF_ERR(read_u8(vm, &arg_count));
-                // TODO
+
+                Value callee = {0};
+                RETURN_IF_ERR(stack_peek_from_top_at(vm, &callee, arg_count));
+                RETURN_IF_ERR(value_call(callee, arg_count));
+
+                frame = &vm->frames[vm->frame_len - 1];
+
                 break;
             }
             default:
