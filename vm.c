@@ -259,9 +259,18 @@ Result vm_dump(Vm* vm) {
 }
 
 static Result fn_call(Vm* vm, ObjFunction* fn, uint8_t arg_count) {
+    if (fn->arity != arg_count) {
+        const Location* const loc = get_location(vm);
+        fprintf(stderr,
+                "%zu:%zu:Wrong arity in function call: expected %d, got: %d\n",
+                loc->line, loc->column, fn->arity, arg_count);
+        return RES_RUN_ERR;
+    }
+
     CallFrame* frame = &vm->frames[vm->frame_len++];
     LOG("frames=%d\n", vm->frame_len);
     frame->fn = fn;
+
     frame->ip = fn->chunk.opcodes;
     frame->slots = &vm->stack[vm->stack_len - 1 - arg_count];
     LOG("call f=%.*s slots[0]=", (int)frame->fn->name_len, frame->fn->name);
