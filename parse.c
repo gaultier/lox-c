@@ -692,13 +692,25 @@ static void var_declaration(Parser* parser, Vm* vm) {
     define_variable(parser, arg);
 }
 
+static void function_args(Parser* parser, Vm* vm) {
+    if (match(parser, TOKEN_RIGHT_PAREN)) return;
+
+    do {
+        const uint8_t var_i =
+            variable_name(parser, vm, "Expected variable name");
+        define_variable(parser, var_i);
+    } while (match(parser, TOKEN_COMMA));
+
+    expect(parser, TOKEN_RIGHT_PAREN, "Missing `)` after function parameters");
+}
+
 static void function(Parser* parser, Vm* vm) {
     Compiler compiler;
     compiler_init(&compiler, TYPE_FUNCTION, parser->compiler);
     begin_scope(&compiler);
 
     expect(parser, TOKEN_LEFT_PAREN, "Missing `(` after function name");
-    expect(parser, TOKEN_RIGHT_PAREN, "Missing `)` after function parameters");
+    function_args(parser, vm);
 
     expect(parser, TOKEN_LEFT_BRACE, "Missing `{` after function parameters");
     block(parser, vm);
