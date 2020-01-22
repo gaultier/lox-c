@@ -39,12 +39,12 @@ static void string(Parser*, Vm*, bool);
 static void variable(Parser*, Vm*, bool);
 static void and (Parser*, Vm*, bool);
 static void or (Parser*, Vm*, bool);
-static void expression(Parser* parser, Vm* vm);
-static void declaration(Parser* parser, Vm* vm);
-static void statement(Parser* parser, Vm* vm);
-static void var_declaration(Parser* parser, Vm* vm);
+static void expression(Parser*, Vm*);
+static void declaration(Parser*, Vm*);
+static void statement(Parser*, Vm*);
+static void var_declaration(Parser*, Vm*);
 static void fn_declaration(Parser*, Vm*);
-static void emit_byte(Parser* parser, uint8_t byte);
+static void emit_byte(Parser*, uint8_t);
 
 static const ParseRule rules[TOKEN_COUNT] = {
     [TOKEN_LEFT_PAREN] = {.prefix = grouping},
