@@ -80,8 +80,10 @@ void compiler_init(Compiler* c, FunctionType type, Compiler* enclosing) {
 static ObjFunction* compiler_end(Compiler* compiler, Parser* parser) {
     emit_byte(parser, OP_RETURN);
 
+    ObjFunction* const fn = parser->compiler->fn;
     parser->compiler = compiler->enclosing;
-    return compiler->fn;
+
+    return fn;
 }
 
 static void error(Parser* parser, const Token* token, const char* err,
@@ -730,10 +732,7 @@ Result parser_compile(const char* source, size_t source_len, ObjFunction** fn,
 
     const char top_fn_name[] = "<script>";
     const size_t top_fn_name_len = sizeof(top_fn_name);
-    *fn = obj_function_new(top_fn_name_len);
-    (*fn)->arity = 0;
-    (*fn)->chunk = (Chunk){0};
-    memcpy((*fn)->name, top_fn_name, top_fn_name_len);
+    *fn = obj_function_new(top_fn_name, top_fn_name_len);
 
     Compiler compiler;
     compiler_init(&compiler, TYPE_SCRIPT, NULL);

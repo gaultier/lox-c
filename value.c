@@ -116,10 +116,13 @@ bool value_obj_is_type(Value v, ObjType type) {
     return IS_OBJ(v) && AS_OBJ(v)->type == type;
 }
 
-ObjFunction* obj_function_new(size_t name_len) {
+ObjFunction* obj_function_new(const char* name, size_t name_len) {
     ObjFunction* fn = NULL;
     REALLOC_SAFE(&fn, sizeof(ObjFunction) + name_len);
     fn->obj.type = OBJ_FUNCTION;
+    fn->arity = 0;
+    fn->chunk = (Chunk){0};
+    memcpy(fn->name, name, name_len);
     fn->name_len = name_len;
     return fn;
 }

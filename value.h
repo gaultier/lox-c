@@ -67,11 +67,11 @@ typedef struct {
     char name[];
 } ObjFunction;
 
-ObjFunction* obj_function_new(size_t name_len);
-#define BOOL_VAL(value) ((Value){VAL_BOOL, {.boolean = value}})
-#define NIL_VAL ((Value){VAL_NIL, {.number = 0}})
-#define NUMBER_VAL(value) ((Value){VAL_NUMBER, {.number = value}})
-#define OBJ_VAL(object) ((Value){VAL_OBJ, {.obj = (Obj*)object}})
+ObjFunction* obj_function_new(const char* name, size_t name_len);
+#define BOOL_VAL(value) ((Value){.type = VAL_BOOL, {.boolean = value}})
+#define NIL_VAL ((Value){.type = VAL_NIL, {.number = 0}})
+#define NUMBER_VAL(value) ((Value){.type = VAL_NUMBER, {.number = value}})
+#define OBJ_VAL(object) ((Value){.type = VAL_OBJ, {.obj = (Obj*)object}})
 
 #define AS_BOOL(value) ((value).as.boolean)
 #define AS_NUMBER(value) ((value).as.number)
