@@ -76,7 +76,12 @@ static void compiler_init(Compiler* c, FunctionType type, Parser* p) {
     c->fn_type = type;
     c->enclosing = p->compiler;
 
-    p->compiler = c;
+    p->compiler = p->compiler->enclosing;
+
+    Local* const local = &c->locals[c->locals_len++];
+    local->depth = 0;
+    local->name.source = "";
+    local->name.source_len = 0;
 }
 
 static ObjFunction* compiler_end(Parser* parser) {
@@ -769,11 +774,6 @@ Result parser_compile(const char* source, size_t source_len, ObjFunction** fn,
     Compiler compiler;
     compiler_init(&compiler, TYPE_SCRIPT, &parser);
     compiler.fn = *fn;
-
-    Local* const local = &compiler.locals[compiler.locals_len++];
-    local->depth = 0;
-    local->name.source = "";
-    local->name.source_len = 0;
 
     advance(&parser);
 
