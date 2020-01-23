@@ -276,9 +276,13 @@ static int resolve_local(Parser* parser, const Token* name) {
                     parser, &parser->previous,
                     "Cannot read local variable in its own initializer");
 
+            LOG("resolved variable=%.*s as local depth=%d\n",
+                (int)name->source_len, name->source, i);
             return i;
         }
     }
+    LOG("resolved variable=%.*s as global\n", (int)name->source_len,
+        name->source);
     return -1;
 }
 
