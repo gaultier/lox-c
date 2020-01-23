@@ -84,13 +84,19 @@ static char peek_next(const Lex* lex) {
 }
 
 static void skip_until_char(Lex* lex, char c) {
-    while (!is_at_end(lex) && peek(lex) != c) advance(lex);
+    while (!is_at_end(lex) && peek(lex) != c) {
+        advance(lex);
+    }
 }
 
 static bool match(Lex* lex, char c) {
-    if (is_at_end(lex)) return false;
+    if (is_at_end(lex)) {
+        return false;
+    }
 
-    if (lex->source[lex->pos] != c) return false;
+    if (lex->source[lex->pos] != c) {
+        return false;
+    }
 
     advance(lex);
     return true;
@@ -115,10 +121,11 @@ static void skip_whitespace(Lex* lex) {
                 newline(lex);
                 break;
             case '/':
-                if (peek_next(lex) == '/')
+                if (peek_next(lex) == '/') {
                     skip_until_char(lex, '\n');
-                else
+                } else {
                     return;
+                }
                 break;
             default:
                 return;
@@ -129,10 +136,11 @@ static void skip_whitespace(Lex* lex) {
 static void string(Lex* lex, Token* token) {
     const Lex start_lex = *lex;
     while (!is_at_end(lex) && peek(lex) != '"') {
-        if (peek(lex) == '\n')
+        if (peek(lex) == '\n') {
             newline(lex);
-        else
+        } else {
             advance(lex);
+        }
     }
 
     if (is_at_end(lex)) {
