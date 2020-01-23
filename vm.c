@@ -269,7 +269,12 @@ static Result fn_call(Vm* vm, ObjFunction* fn, uint8_t arg_count) {
                  "Wrong arity in function call: expected %d, got: %d",
                  fn->arity, arg_count);
 
+    if ((vm->frame_len + 1) == FRAMES_MAX)
+        VM_ERROR(vm, get_location(vm), "Reached maximum number of frames: %d",
+                 FRAMES_MAX);
+
     CallFrame* frame = &vm->frames[vm->frame_len++];
+
     LOG("frames=%d\n", vm->frame_len);
     frame->fn = fn;
 

@@ -72,8 +72,13 @@ static const ParseRule rules[TOKEN_COUNT] = {
     [TOKEN_OR] = {.infix = or, .precedence = PREC_OR},
 };
 
-static void compiler_init(Compiler* c, FunctionType type, Parser* p,
-                          const char* fn_name, size_t fn_name_len) {
+static void compiler_init(Compiler* c, FunctionType type, Parser* p) {
+    const char* const fn_name =
+        type == TYPE_SCRIPT ? "<script>" : p->previous.source;
+    const size_t fn_name_len = type == TYPE_SCRIPT ? 8 : p->previous.source_len;
+    LOG("fn_name=`%.*s` fn_name_len=%zu\n", (int)fn_name_len, fn_name,
+        fn_name_len);
+
     c->locals_len = 0;
     c->scope_depth = 0;
     c->fn = obj_function_new(fn_name, fn_name_len);
@@ -774,18 +779,7 @@ static void function_args(Parser* parser, Vm* vm) {
 
 static void function(Parser* parser, Vm* vm, uint8_t fn_name_i) {
     Compiler compiler;
-    const char* const fn_name =
-        parser->compiler->scope_depth > 0
-            ? parser->compiler->locals[fn_name_i].name.source
-            : AS_STRING(parser->compiler->fn->chunk.constants[fn_name_i])->s;
-    const size_t fn_name_len =
-        parser->compiler->scope_depth > 0
-            ? parser->compiler->locals[fn_name_i].name.source_len
-            : AS_STRING(parser->compiler->fn->chunk.constants[fn_name_i])->len;
-    LOG("scope_depth=%jd fn_name=`%.*s` fn_name_i=%d\n",
-        parser->compiler->scope_depth, (int)fn_name_len, fn_name, fn_name_i);
-
-    compiler_init(&compiler, TYPE_FUNCTION, parser, fn_name, fn_name_len);
+    compiler_init(&compiler, TYPE_FUNCTION, parser);
     begin_scope(parser);
 
     expect(parser, TOKEN_LEFT_PAREN, "Missing `(` after function name");
@@ -833,8 +827,7 @@ Result parser_compile(const char* source, size_t source_len, ObjFunction** fn,
                      }};
 
     Compiler compiler;
-    compiler_init(&compiler, TYPE_SCRIPT, &parser, top_fn_name,
-                  top_fn_name_len);
+    compiler_init(&compiler, TYPE_SCRIPT, &parser);
 
     advance(&parser);
 
