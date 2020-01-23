@@ -1,0 +1,11 @@
+fun printNumbers(i) {
+    if (i == 5) return;
+    print i;
+    printNumbers(i+1);
+}
+
+printNumbers(1);
+// expect: 1
+// expect: 2
+// expect: 3
+// expect: 4
