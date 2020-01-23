@@ -531,13 +531,13 @@ Result vm_run_bytecode(Vm* vm) {
                 char* const s = AS_CSTRING(name);
                 const size_t s_len = AS_STRING(name)->len;
                 Value* value = ht_search(vm->globals, s, s_len);
-                LOG("get global name=%.*s value=%s\n", (int)s_len, s,
-                    value_to_str_debug(*value));
 
                 if (!value)
-                    VM_ERROR(vm, loc, "Undefined variable `%.*s`", (int)s_len,
-                             s);
+                    VM_ERROR(vm, loc, "Undefined global variable `%.*s`",
+                             (int)s_len, s);
 
+                LOG("get global name=%.*s value=%s\n", (int)s_len, s,
+                    value_to_str_debug(*value));
                 RETURN_IF_ERR(stack_push(vm, *value));
                 break;
             }
@@ -549,8 +549,8 @@ Result vm_run_bytecode(Vm* vm) {
                 const size_t s_len = AS_STRING(name)->len;
                 Value* const value = ht_search(vm->globals, s, s_len);
                 if (!value)
-                    VM_ERROR(vm, loc, "Undefined variable `%.*s`", (int)s_len,
-                             s);
+                    VM_ERROR(vm, loc, "Undefined global variable `%.*s`",
+                             (int)s_len, s);
 
                 RETURN_IF_ERR(stack_peek_from_top_at(vm, value, 0));
                 LOG("set global name=%.*s value=%s\n", (int)s_len, s,

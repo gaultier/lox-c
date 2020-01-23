@@ -697,7 +697,7 @@ static void declare_variable(Parser* parser) {
     // Prevent shadowing in the same scope
     for (int i = parser->compiler->locals_len - 1; i >= 0; i--) {
         Local* const local = &parser->compiler->locals[i];
-        LOG("local %.*s\n", (int)name->source_len, name->source);
+        LOG("local=%.*s local_i=%d\n", (int)name->source_len, name->source, i);
 
         if (local->depth != -1 && local->depth < parser->compiler->scope_depth)
             break;
@@ -768,9 +768,16 @@ static void function_args(Parser* parser, Vm* vm) {
 
 static void function(Parser* parser, Vm* vm, uint8_t fn_name_i) {
     Compiler compiler;
-    const ObjString* const fn_name =
-        AS_STRING(parser->compiler->fn->chunk.constants[fn_name_i]);
-    compiler_init(&compiler, TYPE_FUNCTION, parser, fn_name->s, fn_name->len);
+    const char* const fn_name =
+        parser->compiler->scope_depth > 0
+            ? parser->compiler->locals[fn_name_i].name.source
+            : AS_STRING(parser->compiler->fn->chunk.constants[fn_name_i])->s;
+    const size_t fn_name_len =
+        parser->compiler->scope_depth > 0
+            ? parser->compiler->locals[fn_name_i].name.source_len
+            : AS_STRING(parser->compiler->fn->chunk.constants[fn_name_i])->len;
+
+    compiler_init(&compiler, TYPE_FUNCTION, parser, fn_name, fn_name_len);
     begin_scope(parser);
 
     expect(parser, TOKEN_LEFT_PAREN, "Missing `(` after function name");
