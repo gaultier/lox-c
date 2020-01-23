@@ -79,11 +79,12 @@ static void compiler_init(Compiler* c, FunctionType type, Parser* p) {
     LOG("fn_name=`%.*s` fn_name_len=%zu\n", (int)fn_name_len, fn_name,
         fn_name_len);
 
+    c->enclosing = p->compiler;
+    c->fn = NULL;
+    c->fn_type = type;
     c->locals_len = 0;
     c->scope_depth = 0;
     c->fn = obj_function_new(fn_name, fn_name_len);
-    c->fn_type = type;
-    c->enclosing = p->compiler;
 
     p->compiler = c;
 
@@ -268,6 +269,9 @@ static void string(Parser* parser, Vm* vm, bool canAssign) {
 static int resolve_local(Parser* parser, const Token* name) {
     for (int i = parser->compiler->locals_len - 1; i >= 0; i--) {
         const Local* const l = &parser->compiler->locals[i];
+        LOG("cmp `%.*s` `%.*s` i=%d locals=%d\n", (int)name->source_len,
+            name->source, (int)l->name.source_len, l->name.source, i,
+            parser->compiler->locals_len);
 
         if (str_eq(name->source, name->source_len, l->name.source,
                    l->name.source_len)) {
@@ -706,6 +710,7 @@ static void declare_variable(Parser* parser) {
     if (parser->compiler->scope_depth == 0) return;
 
     const Token* const name = &parser->previous;
+    LOG("declaring var=%.*s\n", (int)name->source_len, name->source);
 
     // Prevent shadowing in the same scope
     for (int i = parser->compiler->locals_len - 1; i >= 0; i--) {
@@ -783,6 +788,8 @@ static void function_args(Parser* parser, Vm* vm) {
 
 static void function(Parser* parser, Vm* vm, uint8_t fn_name_i) {
     Compiler compiler;
+    memset(&compiler, 0, sizeof(compiler));
+
     compiler_init(&compiler, TYPE_FUNCTION, parser);
     begin_scope(parser);
 
@@ -797,11 +804,12 @@ static void function(Parser* parser, Vm* vm, uint8_t fn_name_i) {
 }
 
 static void fn_declaration(Parser* parser, Vm* vm) {
-    const uint8_t arg = variable_name(parser, vm, "Expected function name");
+    const uint8_t global_i =
+        variable_name(parser, vm, "Expected function name");
     compiler_local_mark_initialized(parser);
 
-    function(parser, vm, arg);
-    define_variable(parser, arg);
+    function(parser, vm, global_i);
+    define_variable(parser, global_i);
 }
 
 static void declaration(Parser* parser, Vm* vm) {
@@ -831,6 +839,7 @@ Result parser_compile(const char* source, size_t source_len, ObjFunction** fn,
                      }};
 
     Compiler compiler;
+    memset(&compiler, 0, sizeof(compiler));
     compiler_init(&compiler, TYPE_SCRIPT, &parser);
 
     advance(&parser);
