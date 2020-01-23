@@ -63,11 +63,12 @@ fun simpleRec(i) {
 simpleRec(20); // expect: 10
 
 // Local function
-{
-    fun simpleRec(i) {
-        if ( i == 11) print i;
-        else simpleRec(i-1);
-    }
-
-    simpleRec(20); // expect: 11
-}
+// Disabled for now
+//{
+//    fun simpleRec(i) {
+//        if ( i == 11) print i;
+//        else simpleRec(i-1);
+//    }
+//
+//    simpleRec(20); // Expect: 11
+//}
