@@ -395,7 +395,7 @@ static void expression(Parser* parser, Vm* vm) {
 static void print_stmt(Parser* parser, Vm* vm) {
     expression(parser, vm);
     expect(parser, TOKEN_SEMICOLON,
-           "Expected terminating semicolon after expression");
+           "Expected terminating semicolon after print value");
     emit_byte(parser, OP_PRINT);
 }
 
@@ -610,6 +610,16 @@ static void for_stmt(Parser* parser, Vm* vm) {
     end_scope(parser);
 }
 
+static void return_stmt(Parser* parser, Vm* vm) {
+    if (match(parser, TOKEN_SEMICOLON)) {
+        emit_byte(parser, OP_NIL);
+    } else {
+        expression(parser, vm);
+        expect(parser, TOKEN_SEMICOLON, "Expect `;` after return value");
+    }
+    emit_byte(parser, OP_RETURN);
+}
+
 static void statement(Parser* parser, Vm* vm) {
     if (match(parser, TOKEN_PRINT)) {
         print_stmt(parser, vm);
@@ -623,6 +633,8 @@ static void statement(Parser* parser, Vm* vm) {
         while_stmt(parser, vm);
     } else if (match(parser, TOKEN_FOR)) {
         for_stmt(parser, vm);
+    } else if (match(parser, TOKEN_RETURN)) {
+        return_stmt(parser, vm);
     } else {
         expr_stmt(parser, vm);
     }
