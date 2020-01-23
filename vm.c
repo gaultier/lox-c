@@ -11,6 +11,12 @@
 #include "parse.h"
 #include "utils.h"
 
+#define RETURN_IF_ERR(e)             \
+    do {                             \
+        const Result _e = e;         \
+        if (_e != RES_OK) return _e; \
+    } while (0)
+
 const char opcode_str[256][17] = {
     [OP_RETURN] = "OP_RETURN",
     [OP_CONSTANT] = "OP_CONSTANT",

@@ -7,12 +7,6 @@
 #include "result.h"
 #include "value.h"
 
-#define RETURN_IF_ERR(e)             \
-    do {                             \
-        const Result _e = e;         \
-        if (_e != RES_OK) return _e; \
-    } while (0)
-
 #define VALUES_MAX (UINT8_MAX + 1)
 
 #define FRAMES_MAX 64
