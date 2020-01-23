@@ -457,7 +457,7 @@ Result vm_run_bytecode(Vm* vm) {
             case OP_NOT: {
                 Value v = {0};
                 RETURN_IF_ERR(stack_pop(vm, &v));
-                RETURN_IF_ERR(stack_push(vm, BOOL_VAL(value_is_falsy(&v))));
+                RETURN_IF_ERR(stack_push(vm, BOOL_VAL(value_is_falsy(v))));
                 break;
             }
             case OP_EQUAL: {
@@ -591,7 +591,7 @@ Result vm_run_bytecode(Vm* vm) {
 
                 Value v = {0};
                 RETURN_IF_ERR(stack_peek_from_top_at(vm, &v, 0));
-                frame->ip += jump * (size_t)(value_is_falsy(&v));
+                frame->ip += jump * (size_t)(value_is_falsy(v));
             } break;
             case OP_JUMP: {
                 uint16_t jump = 0;
