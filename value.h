@@ -94,3 +94,4 @@ bool value_eq(Value lhs, Value rhs);
 bool value_is_falsy(const Value* v);
 void value_print(Value v);
 void value_print_err(Value v);
+const char* value_to_str(Value v);

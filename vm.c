@@ -64,12 +64,11 @@ static void str_cat(Vm* vm, Value lhs, Value rhs, Value* res) {
     *res = OBJ_VAL(os);
 }
 
-#define VM_ERROR(loc, fmt, value)                                \
-    do {                                                         \
-        fprintf(stderr, "%zu:%zu:" fmt, loc->line, loc->column); \
-        value_print_err(value);                                  \
-        fprintf(stderr, "\n");                                   \
-        return RES_RUN_ERR;                                      \
+#define VM_ERROR(loc, fmt, ...)                                      \
+    do {                                                             \
+        fprintf(stderr, "%zu:%zu:" fmt "\n", loc->line, loc->column, \
+                __VA_ARGS__);                                        \
+        return RES_RUN_ERR;                                          \
     } while (0)
 
 static void stack_log(Vm* vm) {
@@ -259,13 +258,10 @@ Result vm_dump(Vm* vm) {
 }
 
 static Result fn_call(Vm* vm, ObjFunction* fn, uint8_t arg_count) {
-    if (fn->arity != arg_count) {
-        const Location* const loc = get_location(vm);
-        fprintf(stderr,
-                "%zu:%zu:Wrong arity in function call: expected %d, got: %d\n",
-                loc->line, loc->column, fn->arity, arg_count);
-        return RES_RUN_ERR;
-    }
+    if (fn->arity != arg_count)
+        VM_ERROR(get_location(vm),
+                 "Wrong arity in function call: expected %d, got: %d\n",
+                 fn->arity, arg_count);
 
     CallFrame* frame = &vm->frames[vm->frame_len++];
     LOG("frames=%d\n", vm->frame_len);
@@ -284,13 +280,15 @@ static Result fn_call(Vm* vm, ObjFunction* fn, uint8_t arg_count) {
 static Result value_call(Vm* vm, Value callee, uint8_t arg_count) {
     const Location* const loc = get_location(vm);
     if (!IS_OBJ(callee))
-        VM_ERROR(loc, "Can only call functions and classes, got:", callee);
+        VM_ERROR(loc, "Can only call functions and classes, got:%s",
+                 value_to_str(callee));
 
     switch (AS_OBJ(callee)->type) {
         case OBJ_FUNCTION:
             return fn_call(vm, AS_FN(callee), arg_count);
         case OBJ_STRING:
-            VM_ERROR(loc, "Can only call functions and classes, got:", callee);
+            VM_ERROR(loc, "Can only call functions and classes, got:%s",
+                     value_to_str(callee));
         default:
             UNREACHABLE();
     }
@@ -313,7 +311,8 @@ Result vm_run_bytecode(Vm* vm) {
                 RETURN_IF_ERR(stack_pop(vm, &value));
 
                 if (!IS_NUMBER(value))
-                    VM_ERROR(loc, "Negation: expected a number, got:", value);
+                    VM_ERROR(loc, "Negation: expected a number, got:%s",
+                             value_to_str(value));
 
                 RETURN_IF_ERR(stack_push(vm, NUMBER_VAL(-AS_NUMBER(value))));
                 break;
@@ -333,22 +332,24 @@ Result vm_run_bytecode(Vm* vm) {
                 }
 
                 if ((IS_STRING(lhs) && !IS_STRING(rhs)))
-                    VM_ERROR(
-                        loc,
-                        "Addition: cannot concatenate a non-string type, got:",
-                        rhs);
+                    VM_ERROR(loc,
+                             "Addition: cannot concatenate a non-string type, "
+                             "got:%s",
+                             value_to_str(rhs));
 
                 if ((IS_STRING(rhs) && !IS_STRING(lhs)))
-                    VM_ERROR(
-                        loc,
-                        "Addition: cannot concatenate a non-string type, got:",
-                        lhs);
+                    VM_ERROR(loc,
+                             "Addition: cannot concatenate a non-string type, "
+                             "got:%s",
+                             value_to_str(lhs));
 
                 if (!IS_NUMBER(lhs))
-                    VM_ERROR(loc, "Addition: expected a number, got:", lhs);
+                    VM_ERROR(loc, "Addition: expected a number, got:%s",
+                             value_to_str(lhs));
 
                 if (!IS_NUMBER(rhs))
-                    VM_ERROR(loc, "Addition: expected a number, got:", rhs);
+                    VM_ERROR(loc, "Addition: expected a number, got:%s",
+                             value_to_str(rhs));
 
                 // TODO: Check for underflow/overflow
                 RETURN_IF_ERR(stack_push(
@@ -359,12 +360,14 @@ Result vm_run_bytecode(Vm* vm) {
                 Value rhs = {0};
                 RETURN_IF_ERR(stack_pop(vm, &rhs));
                 if (!IS_NUMBER(rhs))
-                    VM_ERROR(loc, "Subtraction: expected a number, got:", rhs);
+                    VM_ERROR(loc, "Subtraction: expected a number, got:%s",
+                             value_to_str(rhs));
 
                 Value lhs = {0};
                 RETURN_IF_ERR(stack_pop(vm, &lhs));
                 if (!IS_NUMBER(lhs))
-                    VM_ERROR(loc, "Subtraction: expected a number, got:", lhs);
+                    VM_ERROR(loc, "Subtraction: expected a number, got:%s",
+                             value_to_str(lhs));
 
                 // TODO: Check for underflow/overflow
                 RETURN_IF_ERR(stack_push(
@@ -375,15 +378,13 @@ Result vm_run_bytecode(Vm* vm) {
                 Value rhs = {0};
                 RETURN_IF_ERR(stack_pop(vm, &rhs));
                 if (!IS_NUMBER(rhs))
-                    VM_ERROR(loc,
-                             "Multiplication: expected a number, got:", rhs);
-
+                    VM_ERROR(loc, "Multiplication: expected a number, got:%s",
+                             value_to_str(rhs));
                 Value lhs = {0};
                 RETURN_IF_ERR(stack_pop(vm, &lhs));
                 if (!IS_NUMBER(lhs))
-                    VM_ERROR(loc,
-                             "Multiplication: expected a number, got:", lhs);
-
+                    VM_ERROR(loc, "Multiplication: expected a number, got:%s",
+                             value_to_str(lhs));
                 // TODO: Check for underflow/overflow
                 RETURN_IF_ERR(stack_push(
                     vm, NUMBER_VAL(AS_NUMBER(lhs) * AS_NUMBER(rhs))));
@@ -393,12 +394,14 @@ Result vm_run_bytecode(Vm* vm) {
                 Value rhs = {0};
                 RETURN_IF_ERR(stack_pop(vm, &rhs));
                 if (!IS_NUMBER(rhs))
-                    VM_ERROR(loc, "Division: expected a number, got:", rhs);
+                    VM_ERROR(loc, "Division: expected a number, got:%s",
+                             value_to_str(rhs));
 
                 Value lhs = {0};
                 RETURN_IF_ERR(stack_pop(vm, &lhs));
                 if (!IS_NUMBER(lhs))
-                    VM_ERROR(loc, "Division: expected a number, got:", lhs);
+                    VM_ERROR(loc, "Division: expected a number, got:%s",
+                             value_to_str(lhs));
 
                 RETURN_IF_ERR(stack_push(
                     vm, NUMBER_VAL(AS_NUMBER(lhs) / AS_NUMBER(rhs))));
@@ -436,12 +439,14 @@ Result vm_run_bytecode(Vm* vm) {
                 Value rhs = {0};
                 RETURN_IF_ERR(stack_pop(vm, &rhs));
                 if (!IS_NUMBER(rhs))
-                    VM_ERROR(loc, "Comparison:expected a number, got:", rhs);
+                    VM_ERROR(loc, "Comparison:expected a number, got:%s",
+                             value_to_str(rhs));
 
                 Value lhs = {0};
                 RETURN_IF_ERR(stack_pop(vm, &lhs));
                 if (!IS_NUMBER(lhs))
-                    VM_ERROR(loc, "Comparison:expected a number, got:", lhs);
+                    VM_ERROR(loc, "Comparison:expected a number, got:%s",
+                             value_to_str(lhs));
 
                 // TODO: Check for 0
                 RETURN_IF_ERR(
@@ -452,12 +457,14 @@ Result vm_run_bytecode(Vm* vm) {
                 Value rhs = {0};
                 RETURN_IF_ERR(stack_pop(vm, &rhs));
                 if (!IS_NUMBER(rhs))
-                    VM_ERROR(loc, "Comparison:expected a number, got:", rhs);
+                    VM_ERROR(loc, "Comparison:expected a number, got:%s",
+                             value_to_str(rhs));
 
                 Value lhs = {0};
                 RETURN_IF_ERR(stack_pop(vm, &lhs));
                 if (!IS_NUMBER(lhs))
-                    VM_ERROR(loc, "Comparison:expected a number, got:", lhs);
+                    VM_ERROR(loc, "Comparison:expected a number, got:%s",
+                             value_to_str(lhs));
 
                 // TODO: Check for 0
                 RETURN_IF_ERR(

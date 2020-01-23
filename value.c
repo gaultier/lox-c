@@ -126,3 +126,38 @@ ObjFunction* obj_function_new(const char* name, size_t name_len) {
     fn->name_len = name_len;
     return fn;
 }
+
+const char* value_to_str(Value v) {
+    static char str[UINT8_MAX + 1] = "";
+
+    switch (v.type) {
+        case VAL_BOOL:
+            snprintf(str, UINT8_MAX, "%s", v.as.boolean ? "true" : "false");
+            break;
+        case VAL_NIL:
+            snprintf(str, UINT8_MAX, "nil");
+            break;
+        case VAL_NUMBER:
+            snprintf(str, UINT8_MAX, "%g", v.as.number);
+            break;
+        case VAL_OBJ:
+            switch (AS_OBJ(v)->type) {
+                case OBJ_STRING:
+                    snprintf(str, UINT8_MAX, "\"%.*s\"", (int)AS_STRING(v)->len,
+                             AS_CSTRING(v));
+                    break;
+                case OBJ_FUNCTION:
+                    snprintf(str, UINT8_MAX, "fn@%.*s", (int)AS_FN(v)->name_len,
+                             AS_FN(v)->name);
+                    break;
+                default:
+                    UNREACHABLE();
+            }
+            break;
+        default:
+            UNREACHABLE();
+    }
+    str[UINT8_MAX] = '\0';
+    return str;
+}
+
