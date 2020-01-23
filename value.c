@@ -8,36 +8,6 @@
 
 #include "utils.h"
 
-void value_print_err(Value v) {
-    switch (v.type) {
-        case VAL_BOOL:
-            fprintf(stderr, "%s", v.as.boolean ? "true" : "false");
-            break;
-        case VAL_NIL:
-            fprintf(stderr, "nil");
-            break;
-        case VAL_NUMBER:
-            fprintf(stderr, "%g", v.as.number);
-            break;
-        case VAL_OBJ:
-            switch (AS_OBJ(v)->type) {
-                case OBJ_STRING:
-                    fprintf(stderr, "\"%.*s\"", (int)AS_STRING(v)->len,
-                            AS_CSTRING(v));
-                    break;
-                case OBJ_FUNCTION:
-                    fprintf(stderr, "%s", value_to_str(v));
-                    break;
-                default:
-                    UNREACHABLE();
-            }
-
-            break;
-        default:
-            UNREACHABLE();
-    }
-}
-
 bool value_is_falsy(const Value* v) {
     return IS_NIL(*v) || (IS_BOOL(*v) && !AS_BOOL(*v));
 }
