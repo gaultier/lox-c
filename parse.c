@@ -261,10 +261,8 @@ static void string(Parser* parser, Vm* vm, bool canAssign) {
 }
 
 static int resolve_local(Parser* parser, const Token* name) {
-    for (int i = parser->compiler->locals_len - 1; i > 0; i--) {
+    for (int i = parser->compiler->locals_len - 1; i >= 0; i--) {
         const Local* const l = &parser->compiler->locals[i];
-        assert(name->source_len > 0);
-        assert(l->name.source_len > 0);
 
         if (str_eq(name->source, name->source_len, l->name.source,
                    l->name.source_len)) {
