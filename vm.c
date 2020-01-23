@@ -666,12 +666,8 @@ void vm_repl(void) {
         LOG("parsing successful%s\n", "");
 
         stack_push(&vm, OBJ_VAL(fn));
+        fn_call(&vm, fn, 0);
 
-        CallFrame* const frame = &vm.frames[vm.frame_len++];
-        frame->fn = fn;
-        LOG("frame opcodes len=%zu\n", buf_size(fn->chunk.opcodes));
-        frame->ip = fn->chunk.opcodes;
-        frame->slots = vm.stack;
         vm_run_bytecode(&vm);
 
     cleanup:
