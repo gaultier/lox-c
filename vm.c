@@ -77,11 +77,12 @@ static void stack_trace_print(const Vm* vm) {
     }
 }
 
-#define VM_ERROR(vm, loc, fmt, ...)                                           \
-    do {                                                                      \
-        fprintf(stderr, "%zu:%zu:" fmt, loc->line, loc->column, __VA_ARGS__); \
-        stack_trace_print(vm);                                                \
-        return RES_RUN_ERR;                                                   \
+#define VM_ERROR(vm, loc, fmt, ...)                                  \
+    do {                                                             \
+        fprintf(stderr, "%zu:%zu:" fmt "\n", loc->line, loc->column, \
+                __VA_ARGS__);                                        \
+        stack_trace_print(vm);                                       \
+        return RES_RUN_ERR;                                          \
     } while (0)
 
 static void stack_log(Vm* vm) {
@@ -255,9 +256,7 @@ Result vm_dump(Vm* vm) {
             }
 
             default:
-                fprintf(stderr, "%zu:%zu:Unknown opcode %hhu\n", loc->line,
-                        loc->column, opcode);
-                return RES_RUN_ERR;
+                assert(false);
         }
         frame->ip += 1;
     }
@@ -267,7 +266,7 @@ Result vm_dump(Vm* vm) {
 static Result fn_call(Vm* vm, ObjFunction* fn, uint8_t arg_count) {
     if (fn->arity != arg_count)
         VM_ERROR(vm, get_location(vm),
-                 "Wrong arity in function call: expected %d, got: %d\n",
+                 "Wrong arity in function call: expected %d, got: %d",
                  fn->arity, arg_count);
 
     CallFrame* frame = &vm->frames[vm->frame_len++];

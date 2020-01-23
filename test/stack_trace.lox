@@ -5,3 +5,10 @@ fun c() {
 }
 
 a();
+
+// expect: 4:18:Wrong arity in function call: expected 0, got: 2
+// expect: 4:18: in c()
+// expect: 2:13: in b()
+// expect: 1:13: in a()
+// expect: 7:3: in <script>
+
