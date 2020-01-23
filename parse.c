@@ -256,7 +256,7 @@ static void number(Parser* parser, Vm* vm, bool canAssign) {
 
 static void string(Parser* parser, Vm* vm, bool canAssign) {
     (void)canAssign;
-    assert(parser->previous.type = TOKEN_STRING);
+    assert(parser->previous.type == TOKEN_STRING);
 
     ObjString* const os =
         value_make_string(&vm->objects, parser->previous.source_len);
@@ -279,10 +279,11 @@ static int resolve_local(Parser* parser, const Token* name) {
 
         if (str_eq(name->source, name->source_len, l->name.source,
                    l->name.source_len)) {
-            if (l->depth == -1)
+            if (l->depth == -1) {
                 error_str_nul(
                     parser, &parser->previous,
                     "Cannot read local variable in its own initializer");
+            }
 
             LOG("resolved variable=%.*s as local depth=%d\n",
                 (int)name->source_len, name->source, i);
@@ -310,9 +311,10 @@ static void named_variable(Parser* parser, Vm* vm, bool canAssign) {
         expression(parser, vm);
         emit_byte2(parser, is_local ? OP_SET_LOCAL : OP_SET_GLOBAL,
                    (uint8_t)arg);
-    } else
+    } else {
         emit_byte2(parser, is_local ? OP_GET_LOCAL : OP_GET_GLOBAL,
                    (uint8_t)arg);
+    }
 }
 
 static void variable(Parser* parser, Vm* vm, bool canAssign) {
@@ -566,7 +568,7 @@ static void emit_loop(Parser* parser, size_t loop_start) {
     }
 
     const uint16_t u16_jump = (uint16_t)jump;
-    const uint8_t b1 = (u16_jump >> 8);
+    const uint8_t b1 = (u16_jump >> (uint8_t)8);
     const uint8_t b2 = (uint8_t)u16_jump;
 
     emit_byte(parser, b1);
@@ -767,7 +769,9 @@ static uint8_t variable_name(Parser* parser, Vm* vm, const char err[]) {
 
     declare_variable(parser);
     // Globals are resolved at runtime
-    if (parser->compiler->scope_depth > 0) return 0;
+    if (parser->compiler->scope_depth > 0) {
+        return 0;
+    }
 
     return make_identifier_constant(parser, vm);
 }
@@ -784,10 +788,11 @@ static void define_variable(Parser* parser, uint8_t global_i) {
 static void var_declaration(Parser* parser, Vm* vm) {
     const uint8_t arg = variable_name(parser, vm, "Expected variable name");
 
-    if (match(parser, TOKEN_EQUAL))
+    if (match(parser, TOKEN_EQUAL)) {
         expression(parser, vm);
-    else
+    } else {
         emit_byte(parser, OP_NIL);
+    }
 
     expect(parser, TOKEN_SEMICOLON,
            "Expected semicolon after variable declaration");
@@ -796,17 +801,20 @@ static void var_declaration(Parser* parser, Vm* vm) {
 }
 
 static void function_args(Parser* parser, Vm* vm) {
-    if (match(parser, TOKEN_RIGHT_PAREN)) return;
+    if (match(parser, TOKEN_RIGHT_PAREN)) {
+        return;
+    }
 
     do {
         const uint8_t var_i =
             variable_name(parser, vm, "Expected variable name");
         define_variable(parser, var_i);
 
-        if (parser->compiler->fn->arity == UINT8_MAX)
+        if (parser->compiler->fn->arity == UINT8_MAX) {
             error_str_nul(parser, &parser->previous,
                           "Reached maximum number of arguments for a function: "
                           "UINT8_MAX");
+        }
 
         parser->compiler->fn->arity += 1;
     } while (match(parser, TOKEN_COMMA));
@@ -842,14 +850,17 @@ static void fn_declaration(Parser* parser, Vm* vm) {
 }
 
 static void declaration(Parser* parser, Vm* vm) {
-    if (match(parser, TOKEN_VAR))
+    if (match(parser, TOKEN_VAR)) {
         var_declaration(parser, vm);
-    else if (match(parser, TOKEN_FUN)) {
+    } else if (match(parser, TOKEN_FUN)) {
         fn_declaration(parser, vm);
-    } else
+    } else {
         statement(parser, vm);
+    }
 
-    if (parser->state == PARSER_STATE_PANIC_MODE) sync(parser);
+    if (parser->state == PARSER_STATE_PANIC_MODE) {
+        sync(parser);
+    }
 }
 
 Result parser_compile(const char* source, size_t source_len, ObjFunction** fn,
@@ -874,7 +885,9 @@ Result parser_compile(const char* source, size_t source_len, ObjFunction** fn,
         declaration(&parser, vm);
     }
 
-    if (parser.state != PARSER_STATE_OK) return RES_PARSE_ERR;
+    if (parser.state != PARSER_STATE_OK) {
+        return RES_PARSE_ERR;
+    }
 
     *fn = compiler_end(&parser);
 
@@ -903,8 +916,12 @@ Result fmt(const char* source, size_t source_len) {
     while (true) {
         previous = current;
         lex_scan_token(&lex, &current);
-        if (previous.type == TOKEN_LEFT_BRACE) fputs("\n", out);
-        if (previous.type == TOKEN_RIGHT_BRACE) fputs("\n", out);
+        if (previous.type == TOKEN_LEFT_BRACE) {
+            fputs("\n", out);
+        }
+        if (previous.type == TOKEN_RIGHT_BRACE) {
+            fputs("\n", out);
+        }
 
         switch (current.type) {
             // Sometimes one space
