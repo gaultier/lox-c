@@ -309,8 +309,23 @@ Result vm_run_bytecode(Vm* vm) {
         const Location* const loc = get_location(vm);
 
         switch (opcode) {
-            case OP_RETURN:
+            case OP_RETURN: {
+                Value value = {0};
+                RETURN_IF_ERR(stack_pop(vm, &value));
+
+                vm->frame_len--;
+
+                if (vm->frame_len == 0) {  // End of script
+                    RETURN_IF_ERR(stack_pop(vm, &value));
+                    return RES_OK;
+                }
+
+                RETURN_IF_ERR(stack_push(vm, value));
+
+                frame = &vm->frames[vm->frame_len - 1];
+
                 break;
+            }
             case OP_NEGATE: {
                 Value value = {0};
                 RETURN_IF_ERR(stack_pop(vm, &value));
