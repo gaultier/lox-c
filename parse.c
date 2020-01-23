@@ -261,7 +261,7 @@ static void string(Parser* parser, Vm* vm, bool canAssign) {
 }
 
 static int resolve_local(Parser* parser, const Token* name) {
-    for (int i = parser->compiler->locals_len - 1; i >= 0; i--) {
+    for (int i = parser->compiler->locals_len - 1; i > 0; i--) {
         const Local* const l = &parser->compiler->locals[i];
         assert(name->source_len > 0);
         assert(l->name.source_len > 0);
@@ -784,8 +784,8 @@ static void function(Parser* parser, Vm* vm, uint8_t fn_name_i) {
         parser->compiler->scope_depth > 0
             ? parser->compiler->locals[fn_name_i].name.source_len
             : AS_STRING(parser->compiler->fn->chunk.constants[fn_name_i])->len;
-    LOG("scope_depth=%jd fn_name=`%.*s`\n", parser->compiler->scope_depth,
-        (int)fn_name_len, fn_name);
+    LOG("scope_depth=%jd fn_name=`%.*s` fn_name_i=%d\n",
+        parser->compiler->scope_depth, (int)fn_name_len, fn_name, fn_name_i);
 
     compiler_init(&compiler, TYPE_FUNCTION, parser, fn_name, fn_name_len);
     begin_scope(parser);

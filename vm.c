@@ -563,7 +563,8 @@ Result vm_run_bytecode(Vm* vm) {
                 RETURN_IF_ERR(read_u8(vm, &slot));
 
                 RETURN_IF_ERR(stack_push(vm, frame->slots[slot]));
-                LOG("OP_GET_LOCAL local_index=%d v=", slot);
+                LOG("OP_GET_LOCAL local_index=%d v=%s\n", slot,
+                    value_to_str_debug(frame->slots[slot]));
 
                 stack_log(vm);
                 break;
