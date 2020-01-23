@@ -1,7 +1,7 @@
 .POSIX:
 .SUFFIX:
 
-CFLAGS= -std=c99 -Wall -Wextra -Wpedantic -Wsign-conversion -Wmissing-prototypes
+CFLAGS= -std=c99 -Wall -Wextra -Wpedantic -Wsign-conversion -Wmissing-prototypes -ffast-math
 SANITIZER= -fsanitize=address
 
 SRC_H= buf.h config.h hashtab.h lex.h parse.h result.h utils.h value.h vm.h
