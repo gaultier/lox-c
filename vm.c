@@ -64,11 +64,24 @@ static void str_cat(Vm* vm, Value lhs, Value rhs, Value* res) {
     *res = OBJ_VAL(os);
 }
 
-#define VM_ERROR(loc, fmt, ...)                                      \
-    do {                                                             \
-        fprintf(stderr, "%zu:%zu:" fmt "\n", loc->line, loc->column, \
-                __VA_ARGS__);                                        \
-        return RES_RUN_ERR;                                          \
+static void stack_trace_print(const Vm* vm) {
+    assert(vm->frame_len > 0);
+
+    for (int i = vm->frame_len - 1; i >= 0; i--) {
+        const CallFrame* const frame = &vm->frames[i];
+
+        const Location* const loc =
+            &frame->fn->chunk.locations[frame->ip - frame->fn->chunk.opcodes];
+        fprintf(stderr, "%zu:%zu: in %.*s%s\n", loc->line, loc->column,
+                (int)frame->fn->name_len, frame->fn->name, i > 0 ? "()" : "");
+    }
+}
+
+#define VM_ERROR(vm, loc, fmt, ...)                                           \
+    do {                                                                      \
+        fprintf(stderr, "%zu:%zu:" fmt, loc->line, loc->column, __VA_ARGS__); \
+        stack_trace_print(vm);                                                \
+        return RES_RUN_ERR;                                                   \
     } while (0)
 
 static void stack_log(Vm* vm) {
@@ -253,7 +266,7 @@ Result vm_dump(Vm* vm) {
 
 static Result fn_call(Vm* vm, ObjFunction* fn, uint8_t arg_count) {
     if (fn->arity != arg_count)
-        VM_ERROR(get_location(vm),
+        VM_ERROR(vm, get_location(vm),
                  "Wrong arity in function call: expected %d, got: %d\n",
                  fn->arity, arg_count);
 
@@ -273,14 +286,14 @@ static Result fn_call(Vm* vm, ObjFunction* fn, uint8_t arg_count) {
 static Result value_call(Vm* vm, Value callee, uint8_t arg_count) {
     const Location* const loc = get_location(vm);
     if (!IS_OBJ(callee))
-        VM_ERROR(loc, "Can only call functions and classes, got: %s",
+        VM_ERROR(vm, loc, "Can only call functions and classes, got: %s",
                  value_to_str_debug(callee));
 
     switch (AS_OBJ(callee)->type) {
         case OBJ_FUNCTION:
             return fn_call(vm, AS_FN(callee), arg_count);
         case OBJ_STRING:
-            VM_ERROR(loc, "Can only call functions and classes, got: %s",
+            VM_ERROR(vm, loc, "Can only call functions and classes, got: %s",
                      value_to_str_debug(callee));
         default:
             UNREACHABLE();
@@ -304,7 +317,7 @@ Result vm_run_bytecode(Vm* vm) {
                 RETURN_IF_ERR(stack_pop(vm, &value));
 
                 if (!IS_NUMBER(value))
-                    VM_ERROR(loc, "Negation: expected a number, got: %s",
+                    VM_ERROR(vm, loc, "Negation: expected a number, got: %s",
                              value_to_str_debug(value));
 
                 RETURN_IF_ERR(stack_push(vm, NUMBER_VAL(-AS_NUMBER(value))));
@@ -325,23 +338,23 @@ Result vm_run_bytecode(Vm* vm) {
                 }
 
                 if ((IS_STRING(lhs) && !IS_STRING(rhs)))
-                    VM_ERROR(loc,
+                    VM_ERROR(vm, loc,
                              "Addition: cannot concatenate a non-string type, "
                              "got: %s",
                              value_to_str_debug(rhs));
 
                 if ((IS_STRING(rhs) && !IS_STRING(lhs)))
-                    VM_ERROR(loc,
+                    VM_ERROR(vm, loc,
                              "Addition: cannot concatenate a non-string type, "
                              "got: %s",
                              value_to_str_debug(lhs));
 
                 if (!IS_NUMBER(lhs))
-                    VM_ERROR(loc, "Addition: expected a number, got: %s",
+                    VM_ERROR(vm, loc, "Addition: expected a number, got: %s",
                              value_to_str_debug(lhs));
 
                 if (!IS_NUMBER(rhs))
-                    VM_ERROR(loc, "Addition: expected a number, got: %s",
+                    VM_ERROR(vm, loc, "Addition: expected a number, got: %s",
                              value_to_str_debug(rhs));
 
                 // TODO: Check for underflow/overflow
@@ -353,13 +366,13 @@ Result vm_run_bytecode(Vm* vm) {
                 Value rhs = {0};
                 RETURN_IF_ERR(stack_pop(vm, &rhs));
                 if (!IS_NUMBER(rhs))
-                    VM_ERROR(loc, "Subtraction: expected a number, got: %s",
+                    VM_ERROR(vm, loc, "Subtraction: expected a number, got: %s",
                              value_to_str_debug(rhs));
 
                 Value lhs = {0};
                 RETURN_IF_ERR(stack_pop(vm, &lhs));
                 if (!IS_NUMBER(lhs))
-                    VM_ERROR(loc, "Subtraction: expected a number, got: %s",
+                    VM_ERROR(vm, loc, "Subtraction: expected a number, got: %s",
                              value_to_str_debug(lhs));
 
                 // TODO: Check for underflow/overflow
@@ -371,12 +384,14 @@ Result vm_run_bytecode(Vm* vm) {
                 Value rhs = {0};
                 RETURN_IF_ERR(stack_pop(vm, &rhs));
                 if (!IS_NUMBER(rhs))
-                    VM_ERROR(loc, "Multiplication: expected a number, got: %s",
+                    VM_ERROR(vm, loc,
+                             "Multiplication: expected a number, got: %s",
                              value_to_str_debug(rhs));
                 Value lhs = {0};
                 RETURN_IF_ERR(stack_pop(vm, &lhs));
                 if (!IS_NUMBER(lhs))
-                    VM_ERROR(loc, "Multiplication: expected a number, got: %s",
+                    VM_ERROR(vm, loc,
+                             "Multiplication: expected a number, got: %s",
                              value_to_str_debug(lhs));
                 // TODO: Check for underflow/overflow
                 RETURN_IF_ERR(stack_push(
@@ -387,13 +402,13 @@ Result vm_run_bytecode(Vm* vm) {
                 Value rhs = {0};
                 RETURN_IF_ERR(stack_pop(vm, &rhs));
                 if (!IS_NUMBER(rhs))
-                    VM_ERROR(loc, "Division: expected a number, got: %s",
+                    VM_ERROR(vm, loc, "Division: expected a number, got: %s",
                              value_to_str_debug(rhs));
 
                 Value lhs = {0};
                 RETURN_IF_ERR(stack_pop(vm, &lhs));
                 if (!IS_NUMBER(lhs))
-                    VM_ERROR(loc, "Division: expected a number, got: %s",
+                    VM_ERROR(vm, loc, "Division: expected a number, got: %s",
                              value_to_str_debug(lhs));
 
                 RETURN_IF_ERR(stack_push(
@@ -432,13 +447,13 @@ Result vm_run_bytecode(Vm* vm) {
                 Value rhs = {0};
                 RETURN_IF_ERR(stack_pop(vm, &rhs));
                 if (!IS_NUMBER(rhs))
-                    VM_ERROR(loc, "Comparison:expected a number, got: %s",
+                    VM_ERROR(vm, loc, "Comparison:expected a number, got: %s",
                              value_to_str_debug(rhs));
 
                 Value lhs = {0};
                 RETURN_IF_ERR(stack_pop(vm, &lhs));
                 if (!IS_NUMBER(lhs))
-                    VM_ERROR(loc, "Comparison:expected a number, got: %s",
+                    VM_ERROR(vm, loc, "Comparison:expected a number, got: %s",
                              value_to_str_debug(lhs));
 
                 // TODO: Check for 0
@@ -450,13 +465,13 @@ Result vm_run_bytecode(Vm* vm) {
                 Value rhs = {0};
                 RETURN_IF_ERR(stack_pop(vm, &rhs));
                 if (!IS_NUMBER(rhs))
-                    VM_ERROR(loc, "Comparison:expected a number, got: %s",
+                    VM_ERROR(vm, loc, "Comparison:expected a number, got: %s",
                              value_to_str_debug(rhs));
 
                 Value lhs = {0};
                 RETURN_IF_ERR(stack_pop(vm, &lhs));
                 if (!IS_NUMBER(lhs))
-                    VM_ERROR(loc, "Comparison:expected a number, got: %s",
+                    VM_ERROR(vm, loc, "Comparison:expected a number, got: %s",
                              value_to_str_debug(lhs));
 
                 // TODO: Check for 0
