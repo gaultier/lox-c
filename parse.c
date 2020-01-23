@@ -263,6 +263,9 @@ static void string(Parser* parser, Vm* vm, bool canAssign) {
 static int resolve_local(Parser* parser, const Token* name) {
     for (int i = parser->compiler->locals_len - 1; i >= 0; i--) {
         const Local* const l = &parser->compiler->locals[i];
+        assert(name->source_len > 0);
+        assert(l->name.source_len > 0);
+
         if (str_eq(name->source, name->source_len, l->name.source,
                    l->name.source_len)) {
             if (l->depth == -1)
@@ -687,6 +690,9 @@ static void compiler_add_local(Parser* parser, const Token* name) {
     Local* const local = &compiler->locals[compiler->locals_len++];
     local->name = *name;
     local->depth = -1;
+    LOG("added local name=`%.*s` i=%d scope_depth=%jd\n",
+        (int)local->name.source_len, local->name.source,
+        compiler->locals_len - 1, compiler->scope_depth);
 }
 
 static void declare_variable(Parser* parser) {
@@ -697,7 +703,9 @@ static void declare_variable(Parser* parser) {
     // Prevent shadowing in the same scope
     for (int i = parser->compiler->locals_len - 1; i >= 0; i--) {
         Local* const local = &parser->compiler->locals[i];
-        LOG("local=%.*s local_i=%d\n", (int)name->source_len, name->source, i);
+        LOG("scope_depth=%jd local=%.*s local_i=%d\n",
+            parser->compiler->scope_depth, (int)name->source_len, name->source,
+            i);
 
         if (local->depth != -1 && local->depth < parser->compiler->scope_depth)
             break;
@@ -776,6 +784,8 @@ static void function(Parser* parser, Vm* vm, uint8_t fn_name_i) {
         parser->compiler->scope_depth > 0
             ? parser->compiler->locals[fn_name_i].name.source_len
             : AS_STRING(parser->compiler->fn->chunk.constants[fn_name_i])->len;
+    LOG("scope_depth=%jd fn_name=`%.*s`\n", parser->compiler->scope_depth,
+        (int)fn_name_len, fn_name);
 
     compiler_init(&compiler, TYPE_FUNCTION, parser, fn_name, fn_name_len);
     begin_scope(parser);
