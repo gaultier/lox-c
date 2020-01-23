@@ -73,8 +73,7 @@ static void str_cat(Vm* vm, Value lhs, Value rhs, Value* res) {
 
 static void stack_log(Vm* vm) {
     for (intmax_t i = 0; i < vm->stack_len; i++) {
-        LOG("stack[%jd]=", i);
-        LOG_VALUE_LN(vm->stack[i]);
+        LOG("stack[%jd]=%s\n", i, value_to_str(vm->stack[i]));
     }
 }
 
@@ -84,8 +83,7 @@ static Result stack_push(Vm* vm, Value v) {
     vm->stack[vm->stack_len] = v;
     vm->stack_len += 1;
 
-    LOG("push stack=%s", "");
-    LOG_VALUE_LN(v);
+    LOG("push stack=%s\n", value_to_str(v));
 
     return RES_OK;
 }
@@ -96,8 +94,7 @@ static Result stack_peek_from_bottom_at(const Vm* vm, Value* v, intmax_t i) {
 
     *v = vm->stack[i];
 
-    LOG("peek stack[%jd]=", i);
-    LOG_VALUE_LN(*v);
+    LOG("peek stack[%jd]=%s\n", i, value_to_str(*v));
 
     return RES_OK;
 }
@@ -110,8 +107,7 @@ static Result stack_pop(Vm* vm, Value* v) {
     assert(vm->stack_len > 0);
 
     *v = vm->stack[--vm->stack_len];
-    LOG("popped %s", "");
-    LOG_VALUE_LN(*v);
+    LOG("popped %s%s\n", "", value_to_str(*v));
 
     return RES_OK;
 }
@@ -192,10 +188,8 @@ Result vm_dump(Vm* vm) {
             case OP_SET_GLOBAL: {
                 Value v = {0};
                 RETURN_IF_ERR(read_constant(vm, &v));
-                printf("%zu:%zu:%s:", loc->line, loc->column,
-                       opcode_str[opcode]);
-                value_print(v);
-                puts("");
+                printf("%zu:%zu:%s:%s\n", loc->line, loc->column,
+                       opcode_str[opcode], value_to_str(v));
                 break;
             }
 
@@ -269,10 +263,9 @@ static Result fn_call(Vm* vm, ObjFunction* fn, uint8_t arg_count) {
 
     frame->ip = fn->chunk.opcodes;
     frame->slots = &vm->stack[vm->stack_len - 1 - arg_count];
-    LOG("call f=%.*s slots[0]=", (int)frame->fn->name_len, frame->fn->name);
-    LOG_VALUE_LN(frame->slots[0]);
-    LOG("stack top=%s", "");
-    LOG_VALUE_LN(vm->stack[vm->stack_len - 1]);
+    LOG("call f=%.*s slots[0]=%s\n", (int)frame->fn->name_len, frame->fn->name,
+        value_to_str(frame->slots[0]));
+    LOG("stack top=%s\n", value_to_str(vm->stack[vm->stack_len - 1]));
 
     return RES_OK;
 }
@@ -474,8 +467,7 @@ Result vm_run_bytecode(Vm* vm) {
             case OP_PRINT: {
                 Value value = {0};
                 RETURN_IF_ERR(stack_pop(vm, &value));
-                value_print(value);
-                puts("");
+                printf("%s\n", value_to_str(value));
             } break;
             case OP_POP: {
                 Value value = {0};
@@ -490,9 +482,9 @@ Result vm_run_bytecode(Vm* vm) {
 
                 ht_insert(vm->globals, AS_CSTRING(name), AS_STRING(name)->len,
                           &value, sizeof(value));
-                LOG("def global name=%.*s value=", (int)AS_STRING(name)->len,
-                    AS_CSTRING(name));
-                LOG_VALUE_LN(value);
+                LOG("def global name=%.*s value=%s\n",
+                    (int)AS_STRING(name)->len, AS_CSTRING(name),
+                    value_to_str(value));
 
                 LOG("stack size: %d\n", vm->stack_len);
                 break;
@@ -504,8 +496,8 @@ Result vm_run_bytecode(Vm* vm) {
                 char* const s = AS_CSTRING(name);
                 const size_t s_len = AS_STRING(name)->len;
                 Value* value = ht_search(vm->globals, s, s_len);
-                LOG("get global name=%.*s value=", (int)s_len, s);
-                LOG_VALUE_LN(*value);
+                LOG("get global name=%.*s value=%s\n", (int)s_len, s,
+                    value_to_str(*value));
 
                 if (!value) {
                     fprintf(stderr, "%zu:%zu:Undefined variable `%.*s`\n",
@@ -530,8 +522,8 @@ Result vm_run_bytecode(Vm* vm) {
                 }
 
                 RETURN_IF_ERR(stack_peek_from_top_at(vm, value, 0));
-                LOG("set global name=%.*s value=", (int)s_len, s);
-                LOG_VALUE_LN(*value);
+                LOG("set global name=%.*s value=%s\n", (int)s_len, s,
+                    value_to_str(*value));
 
                 break;
             }
@@ -584,9 +576,8 @@ Result vm_run_bytecode(Vm* vm) {
 
                 frame = &vm->frames[vm->frame_len - 1];
 
-                LOG("calling f=%.*s slots[0]=", (int)frame->fn->name_len,
-                    frame->fn->name);
-                LOG_VALUE_LN(frame->slots[0]);
+                LOG("calling f=%.*s slots[0]=%s\n", (int)frame->fn->name_len,
+                    frame->fn->name, value_to_str(frame->slots[0]));
                 frame->ip--;  // FIXME
 
                 break;

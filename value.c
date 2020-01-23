@@ -8,38 +8,6 @@
 
 #include "utils.h"
 
-static void fn_print(const ObjFunction* fn) {
-    printf("fn@%.*s", (int)fn->name_len, fn->name);
-}
-
-void value_print(Value v) {
-    switch (v.type) {
-        case VAL_BOOL:
-            printf("%s", v.as.boolean ? "true" : "false");
-            break;
-        case VAL_NIL:
-            printf("nil");
-            break;
-        case VAL_NUMBER:
-            printf("%g", v.as.number);
-            break;
-        case VAL_OBJ:
-            switch (AS_OBJ(v)->type) {
-                case OBJ_STRING:
-                    printf("%.*s", (int)AS_STRING(v)->len, AS_CSTRING(v));
-                    break;
-                case OBJ_FUNCTION:
-                    fn_print(AS_FN(v));
-                    break;
-                default:
-                    UNREACHABLE();
-            }
-            break;
-        default:
-            UNREACHABLE();
-    }
-}
-
 void value_print_err(Value v) {
     switch (v.type) {
         case VAL_BOOL:
@@ -58,7 +26,7 @@ void value_print_err(Value v) {
                             AS_CSTRING(v));
                     break;
                 case OBJ_FUNCTION:
-                    fn_print(AS_FN(v));
+                    fprintf(stderr, "%s", value_to_str(v));
                     break;
                 default:
                     UNREACHABLE();
@@ -129,6 +97,7 @@ ObjFunction* obj_function_new(const char* name, size_t name_len) {
 
 const char* value_to_str(Value v) {
     static char str[UINT8_MAX + 1] = "";
+    memset(str, 0, UINT8_MAX + 1);
 
     switch (v.type) {
         case VAL_BOOL:
