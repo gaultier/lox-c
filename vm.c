@@ -616,14 +616,7 @@ Result vm_interpret(char* source, size_t source_len,
 
     stack_push(&vm, OBJ_VAL(fn));
 
-    CallFrame* const frame = &vm.frames[vm.frame_len++];
-    frame->fn = fn;
-    LOG("frame opcodes len=%zu\n", buf_size(fn->chunk.opcodes));
-    frame->ip = fn->chunk.opcodes;
-    LOG("frame ip[0]=%s fn opcode[0]=%s\n", opcode_str[*(frame->ip)],
-        opcode_str[fn->chunk.opcodes[0]]);
-    frame->slots = vm.stack;
-
+    fn_call(&vm, fn, 0);
     result = bytecode_fn(&vm);
 
 cleanup:
