@@ -89,6 +89,7 @@ static void compiler_init(Compiler* c, FunctionType type, Parser* p,
 }
 
 static ObjFunction* compiler_end(Parser* parser) {
+    emit_byte(parser, OP_NIL);
     emit_byte(parser, OP_RETURN);
 
     ObjFunction* const fn = parser->compiler->fn;
