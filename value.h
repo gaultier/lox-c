@@ -93,3 +93,4 @@ ObjString* value_obj_str_allocate(Obj** objects, size_t size);
 bool value_eq(Value lhs, Value rhs);
 bool value_is_falsy(const Value* v);
 const char* value_to_str(Value v);
+const char* value_to_str_debug(Value v);

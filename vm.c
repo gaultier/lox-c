@@ -73,7 +73,7 @@ static void str_cat(Vm* vm, Value lhs, Value rhs, Value* res) {
 
 static void stack_log(Vm* vm) {
     for (intmax_t i = 0; i < vm->stack_len; i++) {
-        LOG("stack[%jd]=%s\n", i, value_to_str(vm->stack[i]));
+        LOG("stack[%jd]=%s\n", i, value_to_str_debug(vm->stack[i]));
     }
 }
 
@@ -83,7 +83,7 @@ static Result stack_push(Vm* vm, Value v) {
     vm->stack[vm->stack_len] = v;
     vm->stack_len += 1;
 
-    LOG("push stack=%s\n", value_to_str(v));
+    LOG("push stack=%s\n", value_to_str_debug(v));
 
     return RES_OK;
 }
@@ -94,7 +94,7 @@ static Result stack_peek_from_bottom_at(const Vm* vm, Value* v, intmax_t i) {
 
     *v = vm->stack[i];
 
-    LOG("peek stack[%jd]=%s\n", i, value_to_str(*v));
+    LOG("peek stack[%jd]=%s\n", i, value_to_str_debug(*v));
 
     return RES_OK;
 }
@@ -107,7 +107,7 @@ static Result stack_pop(Vm* vm, Value* v) {
     assert(vm->stack_len > 0);
 
     *v = vm->stack[--vm->stack_len];
-    LOG("popped %s%s\n", "", value_to_str(*v));
+    LOG("popped %s%s\n", "", value_to_str_debug(*v));
 
     return RES_OK;
 }
@@ -189,7 +189,7 @@ Result vm_dump(Vm* vm) {
                 Value v = {0};
                 RETURN_IF_ERR(read_constant(vm, &v));
                 printf("%zu:%zu:%s:%s\n", loc->line, loc->column,
-                       opcode_str[opcode], value_to_str(v));
+                       opcode_str[opcode], value_to_str_debug(v));
                 break;
             }
 
@@ -264,8 +264,8 @@ static Result fn_call(Vm* vm, ObjFunction* fn, uint8_t arg_count) {
     frame->ip = fn->chunk.opcodes;
     frame->slots = &vm->stack[vm->stack_len - 1 - arg_count];
     LOG("call f=%.*s slots[0]=%s\n", (int)frame->fn->name_len, frame->fn->name,
-        value_to_str(frame->slots[0]));
-    LOG("stack top=%s\n", value_to_str(vm->stack[vm->stack_len - 1]));
+        value_to_str_debug(frame->slots[0]));
+    LOG("stack top=%s\n", value_to_str_debug(vm->stack[vm->stack_len - 1]));
 
     return RES_OK;
 }
@@ -273,15 +273,15 @@ static Result fn_call(Vm* vm, ObjFunction* fn, uint8_t arg_count) {
 static Result value_call(Vm* vm, Value callee, uint8_t arg_count) {
     const Location* const loc = get_location(vm);
     if (!IS_OBJ(callee))
-        VM_ERROR(loc, "Can only call functions and classes, got:%s",
-                 value_to_str(callee));
+        VM_ERROR(loc, "Can only call functions and classes, got: %s",
+                 value_to_str_debug(callee));
 
     switch (AS_OBJ(callee)->type) {
         case OBJ_FUNCTION:
             return fn_call(vm, AS_FN(callee), arg_count);
         case OBJ_STRING:
-            VM_ERROR(loc, "Can only call functions and classes, got:%s",
-                     value_to_str(callee));
+            VM_ERROR(loc, "Can only call functions and classes, got: %s",
+                     value_to_str_debug(callee));
         default:
             UNREACHABLE();
     }
@@ -304,8 +304,8 @@ Result vm_run_bytecode(Vm* vm) {
                 RETURN_IF_ERR(stack_pop(vm, &value));
 
                 if (!IS_NUMBER(value))
-                    VM_ERROR(loc, "Negation: expected a number, got:%s",
-                             value_to_str(value));
+                    VM_ERROR(loc, "Negation: expected a number, got: %s",
+                             value_to_str_debug(value));
 
                 RETURN_IF_ERR(stack_push(vm, NUMBER_VAL(-AS_NUMBER(value))));
                 break;
@@ -327,22 +327,22 @@ Result vm_run_bytecode(Vm* vm) {
                 if ((IS_STRING(lhs) && !IS_STRING(rhs)))
                     VM_ERROR(loc,
                              "Addition: cannot concatenate a non-string type, "
-                             "got:%s",
-                             value_to_str(rhs));
+                             "got: %s",
+                             value_to_str_debug(rhs));
 
                 if ((IS_STRING(rhs) && !IS_STRING(lhs)))
                     VM_ERROR(loc,
                              "Addition: cannot concatenate a non-string type, "
-                             "got:%s",
-                             value_to_str(lhs));
+                             "got: %s",
+                             value_to_str_debug(lhs));
 
                 if (!IS_NUMBER(lhs))
-                    VM_ERROR(loc, "Addition: expected a number, got:%s",
-                             value_to_str(lhs));
+                    VM_ERROR(loc, "Addition: expected a number, got: %s",
+                             value_to_str_debug(lhs));
 
                 if (!IS_NUMBER(rhs))
-                    VM_ERROR(loc, "Addition: expected a number, got:%s",
-                             value_to_str(rhs));
+                    VM_ERROR(loc, "Addition: expected a number, got: %s",
+                             value_to_str_debug(rhs));
 
                 // TODO: Check for underflow/overflow
                 RETURN_IF_ERR(stack_push(
@@ -353,14 +353,14 @@ Result vm_run_bytecode(Vm* vm) {
                 Value rhs = {0};
                 RETURN_IF_ERR(stack_pop(vm, &rhs));
                 if (!IS_NUMBER(rhs))
-                    VM_ERROR(loc, "Subtraction: expected a number, got:%s",
-                             value_to_str(rhs));
+                    VM_ERROR(loc, "Subtraction: expected a number, got: %s",
+                             value_to_str_debug(rhs));
 
                 Value lhs = {0};
                 RETURN_IF_ERR(stack_pop(vm, &lhs));
                 if (!IS_NUMBER(lhs))
-                    VM_ERROR(loc, "Subtraction: expected a number, got:%s",
-                             value_to_str(lhs));
+                    VM_ERROR(loc, "Subtraction: expected a number, got: %s",
+                             value_to_str_debug(lhs));
 
                 // TODO: Check for underflow/overflow
                 RETURN_IF_ERR(stack_push(
@@ -371,13 +371,13 @@ Result vm_run_bytecode(Vm* vm) {
                 Value rhs = {0};
                 RETURN_IF_ERR(stack_pop(vm, &rhs));
                 if (!IS_NUMBER(rhs))
-                    VM_ERROR(loc, "Multiplication: expected a number, got:%s",
-                             value_to_str(rhs));
+                    VM_ERROR(loc, "Multiplication: expected a number, got: %s",
+                             value_to_str_debug(rhs));
                 Value lhs = {0};
                 RETURN_IF_ERR(stack_pop(vm, &lhs));
                 if (!IS_NUMBER(lhs))
-                    VM_ERROR(loc, "Multiplication: expected a number, got:%s",
-                             value_to_str(lhs));
+                    VM_ERROR(loc, "Multiplication: expected a number, got: %s",
+                             value_to_str_debug(lhs));
                 // TODO: Check for underflow/overflow
                 RETURN_IF_ERR(stack_push(
                     vm, NUMBER_VAL(AS_NUMBER(lhs) * AS_NUMBER(rhs))));
@@ -387,14 +387,14 @@ Result vm_run_bytecode(Vm* vm) {
                 Value rhs = {0};
                 RETURN_IF_ERR(stack_pop(vm, &rhs));
                 if (!IS_NUMBER(rhs))
-                    VM_ERROR(loc, "Division: expected a number, got:%s",
-                             value_to_str(rhs));
+                    VM_ERROR(loc, "Division: expected a number, got: %s",
+                             value_to_str_debug(rhs));
 
                 Value lhs = {0};
                 RETURN_IF_ERR(stack_pop(vm, &lhs));
                 if (!IS_NUMBER(lhs))
-                    VM_ERROR(loc, "Division: expected a number, got:%s",
-                             value_to_str(lhs));
+                    VM_ERROR(loc, "Division: expected a number, got: %s",
+                             value_to_str_debug(lhs));
 
                 RETURN_IF_ERR(stack_push(
                     vm, NUMBER_VAL(AS_NUMBER(lhs) / AS_NUMBER(rhs))));
@@ -432,14 +432,14 @@ Result vm_run_bytecode(Vm* vm) {
                 Value rhs = {0};
                 RETURN_IF_ERR(stack_pop(vm, &rhs));
                 if (!IS_NUMBER(rhs))
-                    VM_ERROR(loc, "Comparison:expected a number, got:%s",
-                             value_to_str(rhs));
+                    VM_ERROR(loc, "Comparison:expected a number, got: %s",
+                             value_to_str_debug(rhs));
 
                 Value lhs = {0};
                 RETURN_IF_ERR(stack_pop(vm, &lhs));
                 if (!IS_NUMBER(lhs))
-                    VM_ERROR(loc, "Comparison:expected a number, got:%s",
-                             value_to_str(lhs));
+                    VM_ERROR(loc, "Comparison:expected a number, got: %s",
+                             value_to_str_debug(lhs));
 
                 // TODO: Check for 0
                 RETURN_IF_ERR(
@@ -450,14 +450,14 @@ Result vm_run_bytecode(Vm* vm) {
                 Value rhs = {0};
                 RETURN_IF_ERR(stack_pop(vm, &rhs));
                 if (!IS_NUMBER(rhs))
-                    VM_ERROR(loc, "Comparison:expected a number, got:%s",
-                             value_to_str(rhs));
+                    VM_ERROR(loc, "Comparison:expected a number, got: %s",
+                             value_to_str_debug(rhs));
 
                 Value lhs = {0};
                 RETURN_IF_ERR(stack_pop(vm, &lhs));
                 if (!IS_NUMBER(lhs))
-                    VM_ERROR(loc, "Comparison:expected a number, got:%s",
-                             value_to_str(lhs));
+                    VM_ERROR(loc, "Comparison:expected a number, got: %s",
+                             value_to_str_debug(lhs));
 
                 // TODO: Check for 0
                 RETURN_IF_ERR(
@@ -484,7 +484,7 @@ Result vm_run_bytecode(Vm* vm) {
                           &value, sizeof(value));
                 LOG("def global name=%.*s value=%s\n",
                     (int)AS_STRING(name)->len, AS_CSTRING(name),
-                    value_to_str(value));
+                    value_to_str_debug(value));
 
                 LOG("stack size: %d\n", vm->stack_len);
                 break;
@@ -497,7 +497,7 @@ Result vm_run_bytecode(Vm* vm) {
                 const size_t s_len = AS_STRING(name)->len;
                 Value* value = ht_search(vm->globals, s, s_len);
                 LOG("get global name=%.*s value=%s\n", (int)s_len, s,
-                    value_to_str(*value));
+                    value_to_str_debug(*value));
 
                 if (!value) {
                     fprintf(stderr, "%zu:%zu:Undefined variable `%.*s`\n",
@@ -523,7 +523,7 @@ Result vm_run_bytecode(Vm* vm) {
 
                 RETURN_IF_ERR(stack_peek_from_top_at(vm, value, 0));
                 LOG("set global name=%.*s value=%s\n", (int)s_len, s,
-                    value_to_str(*value));
+                    value_to_str_debug(*value));
 
                 break;
             }
@@ -577,7 +577,7 @@ Result vm_run_bytecode(Vm* vm) {
                 frame = &vm->frames[vm->frame_len - 1];
 
                 LOG("calling f=%.*s slots[0]=%s\n", (int)frame->fn->name_len,
-                    frame->fn->name, value_to_str(frame->slots[0]));
+                    frame->fn->name, value_to_str_debug(frame->slots[0]));
                 frame->ip--;  // FIXME
 
                 break;
