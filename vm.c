@@ -86,7 +86,7 @@ static void stack_trace_print(const Vm* vm) {
     } while (0)
 
 static void stack_log(Vm* vm) {
-    for (intmax_t i = 0; i < vm->stack_len; i++) {
+    for (size_t i = 0; i < vm->stack_len; i++) {
         LOG("stack[%jd]=%s\n", i, value_to_str_debug(vm->stack[i]));
     }
 }
@@ -104,7 +104,7 @@ static Result stack_push(Vm* vm, Value v) {
 
 static Result stack_peek_from_bottom_at(const Vm* vm, Value* v, intmax_t i) {
     assert(vm->stack_len > 0);
-    assert(i < vm->stack_len);
+    assert((size_t)i < vm->stack_len);
 
     *v = vm->stack[i];
 
@@ -323,7 +323,7 @@ Result vm_run_bytecode(Vm* vm) {
                     return RES_OK;
                 }
 
-                LOG("vm_stack_len=%d frame_slots_i=%d\n", vm->stack_len,
+                LOG("vm_stack_len=%zu frame_slots_i=%d\n", vm->stack_len,
                     frame_slots_i);
                 vm->stack_len = frame_slots_i;
                 RETURN_IF_ERR(stack_push(vm, value));
@@ -521,7 +521,7 @@ Result vm_run_bytecode(Vm* vm) {
                     (int)AS_STRING(name)->len, AS_CSTRING(name),
                     value_to_str_debug(value));
 
-                LOG("stack size: %d\n", vm->stack_len);
+                LOG("stack size: %zu\n", vm->stack_len);
                 break;
             }
             case OP_GET_GLOBAL: {

@@ -17,7 +17,7 @@
 
 #define FRAMES_MAX 64
 
-#define STACK_MAX (FRAMES_MAX * (UINT8_COUNT + 1))
+#define STACK_MAX (FRAMES_MAX * (UINT8_MAX + 1))
 
 typedef enum {
     OP_RETURN = 0,
@@ -58,7 +58,7 @@ typedef struct {
 
 typedef struct {
     Value stack[STACK_MAX];
-    uint8_t stack_len;
+    size_t stack_len;
     Obj* objects;
     hashtab_t* globals;
 
