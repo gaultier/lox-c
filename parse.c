@@ -611,6 +611,10 @@ static void for_stmt(Parser* parser, Vm* vm) {
 }
 
 static void return_stmt(Parser* parser, Vm* vm) {
+    if (parser->compiler->fn_type == TYPE_SCRIPT)
+        error_str_nul(parser, &parser->current,
+                      "Cannot return from top-level code");
+
     if (match(parser, TOKEN_SEMICOLON)) {
         emit_byte(parser, OP_NIL);
     } else {
