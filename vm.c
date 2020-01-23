@@ -313,6 +313,9 @@ Result vm_run_bytecode(Vm* vm) {
                 Value value = {0};
                 RETURN_IF_ERR(stack_pop(vm, &value));
 
+                const uint8_t frame_slots_i =
+                    (uint8_t)(vm->frames[vm->frame_len - 1].slots - vm->stack);
+
                 vm->frame_len--;
 
                 if (vm->frame_len == 0) {  // End of script
@@ -320,6 +323,9 @@ Result vm_run_bytecode(Vm* vm) {
                     return RES_OK;
                 }
 
+                LOG("vm_stack_len=%d frame_slots_i=%d\n", vm->stack_len,
+                    frame_slots_i);
+                vm->stack_len = frame_slots_i;
                 RETURN_IF_ERR(stack_push(vm, value));
 
                 frame = &vm->frames[vm->frame_len - 1];
