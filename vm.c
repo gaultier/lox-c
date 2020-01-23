@@ -67,13 +67,13 @@ static void str_cat(Vm* vm, Value lhs, Value rhs, Value* res) {
 static void stack_trace_print(const Vm* vm) {
     assert(vm->frame_len > 0);
 
-    for (int i = vm->frame_len - 1; i >= 0; i--) {
+    for (int i = vm->frame_len - 1; i > 0; i--) {
         const CallFrame* const frame = &vm->frames[i];
 
         const Location* const loc =
             &frame->fn->chunk.locations[frame->ip - frame->fn->chunk.opcodes];
-        fprintf(stderr, "%zu:%zu: in %.*s%s\n", loc->line, loc->column,
-                (int)frame->fn->name_len, frame->fn->name, i > 0 ? "()" : "");
+        fprintf(stderr, "%zu:%zu: in %.*s()\n", loc->line, loc->column,
+                (int)frame->fn->name_len, frame->fn->name);
     }
 }
 
@@ -513,11 +513,9 @@ Result vm_run_bytecode(Vm* vm) {
                 LOG("get global name=%.*s value=%s\n", (int)s_len, s,
                     value_to_str_debug(*value));
 
-                if (!value) {
-                    fprintf(stderr, "%zu:%zu:Undefined variable `%.*s`\n",
-                            loc->line, loc->column, (int)s_len, s);
-                    return RES_RUN_ERR;
-                }
+                if (!value)
+                    VM_ERROR(vm, loc, "Undefined variable `%.*s`", (int)s_len,
+                             s);
 
                 RETURN_IF_ERR(stack_push(vm, *value));
                 break;
@@ -529,11 +527,9 @@ Result vm_run_bytecode(Vm* vm) {
                 char* const s = AS_CSTRING(name);
                 const size_t s_len = AS_STRING(name)->len;
                 Value* const value = ht_search(vm->globals, s, s_len);
-                if (!value) {
-                    fprintf(stderr, "%zu:%zu:Undefined variable `%.*s`\n",
-                            loc->line, loc->column, (int)s_len, s);
-                    return RES_RUN_ERR;
-                }
+                if (!value)
+                    VM_ERROR(vm, loc, "Undefined variable `%.*s`", (int)s_len,
+                             s);
 
                 RETURN_IF_ERR(stack_peek_from_top_at(vm, value, 0));
                 LOG("set global name=%.*s value=%s\n", (int)s_len, s,
@@ -597,9 +593,7 @@ Result vm_run_bytecode(Vm* vm) {
                 break;
             }
             default:
-                fprintf(stderr, "%zu:%zu:Unknown opcode %s\n", loc->line,
-                        loc->column, opcode_str[opcode]);
-                return RES_RUN_ERR;
+                assert(false);
         }
         frame->ip += 1;
     }
