@@ -11,10 +11,12 @@
 #include "parse.h"
 #include "utils.h"
 
-#define RETURN_IF_ERR(e)             \
-    do {                             \
-        const Result _e = e;         \
-        if (_e != RES_OK) return _e; \
+#define RETURN_IF_ERR(e)     \
+    do {                     \
+        const Result _e = e; \
+        if (_e != RES_OK) {  \
+            return _e;       \
+        }                    \
     } while (0)
 
 const char opcode_str[256][17] = {
@@ -275,9 +277,10 @@ static Result fn_call(Vm* vm, ObjFunction* fn, uint8_t arg_count) {
                  "Wrong arity in function call: expected %d, got: %d",
                  fn->arity, arg_count);
 
-    if ((vm->frame_len + 1) == FRAMES_MAX)
+    if ((vm->frame_len + 1) == FRAMES_MAX) {
         VM_ERROR(vm, get_location(vm), "Reached maximum number of frames: %d",
                  FRAMES_MAX);
+    }
 
     CallFrame* frame = &vm->frames[vm->frame_len++];
 
@@ -368,17 +371,19 @@ Result vm_run_bytecode(Vm* vm) {
                     break;
                 }
 
-                if ((IS_STRING(lhs) && !IS_STRING(rhs)))
+                if ((IS_STRING(lhs) && !IS_STRING(rhs))) {
                     VM_ERROR(vm, loc,
                              "Addition: cannot concatenate a non-string type, "
                              "got: %s",
                              value_to_str_debug(rhs));
+                }
 
-                if ((IS_STRING(rhs) && !IS_STRING(lhs)))
+                if ((IS_STRING(rhs) && !IS_STRING(lhs))) {
                     VM_ERROR(vm, loc,
                              "Addition: cannot concatenate a non-string type, "
                              "got: %s",
                              value_to_str_debug(lhs));
+                }
 
                 if (!IS_NUMBER(lhs))
                     VM_ERROR(vm, loc, "Addition: expected a number, got: %s",
@@ -648,8 +653,9 @@ Result vm_interpret(char* source, size_t source_len,
     Result result = RES_OK;
 
     ObjFunction* fn = NULL;
-    if ((result = parser_compile(source, source_len, &fn, &vm)) != RES_OK)
+    if ((result = parser_compile(source, source_len, &fn, &vm)) != RES_OK) {
         goto cleanup;
+    }
 
     LOG("parsing successful%s\n", "");
 
@@ -699,8 +705,9 @@ void vm_repl(void) {
 
         ObjFunction* fn = NULL;
         if ((result = parser_compile(source, (size_t)source_len, &fn, &vm)) !=
-            RES_OK)
+            RES_OK) {
             goto cleanup;
+        }
 
         LOG("parsing successful%s\n", "");
 
