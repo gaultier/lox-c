@@ -385,13 +385,15 @@ Result vm_run_bytecode(Vm* vm) {
                              value_to_str_debug(lhs));
                 }
 
-                if (!IS_NUMBER(lhs))
+                if (!IS_NUMBER(lhs)) {
                     VM_ERROR(vm, loc, "Addition: expected a number, got: %s",
                              value_to_str_debug(lhs));
+                }
 
-                if (!IS_NUMBER(rhs))
+                if (!IS_NUMBER(rhs)) {
                     VM_ERROR(vm, loc, "Addition: expected a number, got: %s",
                              value_to_str_debug(rhs));
+                }
 
                 // TODO: Check for underflow/overflow
                 RETURN_IF_ERR(stack_push(
@@ -401,15 +403,17 @@ Result vm_run_bytecode(Vm* vm) {
             case OP_SUBTRACT: {
                 Value rhs = {0};
                 RETURN_IF_ERR(stack_pop(vm, &rhs));
-                if (!IS_NUMBER(rhs))
+                if (!IS_NUMBER(rhs)) {
                     VM_ERROR(vm, loc, "Subtraction: expected a number, got: %s",
                              value_to_str_debug(rhs));
+                }
 
                 Value lhs = {0};
                 RETURN_IF_ERR(stack_pop(vm, &lhs));
-                if (!IS_NUMBER(lhs))
+                if (!IS_NUMBER(lhs)) {
                     VM_ERROR(vm, loc, "Subtraction: expected a number, got: %s",
                              value_to_str_debug(lhs));
+                }
 
                 // TODO: Check for underflow/overflow
                 RETURN_IF_ERR(stack_push(
@@ -419,16 +423,20 @@ Result vm_run_bytecode(Vm* vm) {
             case OP_MULTIPLY: {
                 Value rhs = {0};
                 RETURN_IF_ERR(stack_pop(vm, &rhs));
-                if (!IS_NUMBER(rhs))
+                if (!IS_NUMBER(rhs)) {
                     VM_ERROR(vm, loc,
                              "Multiplication: expected a number, got: %s",
                              value_to_str_debug(rhs));
+                }
+
                 Value lhs = {0};
                 RETURN_IF_ERR(stack_pop(vm, &lhs));
-                if (!IS_NUMBER(lhs))
+                if (!IS_NUMBER(lhs)) {
                     VM_ERROR(vm, loc,
                              "Multiplication: expected a number, got: %s",
                              value_to_str_debug(lhs));
+                }
+
                 // TODO: Check for underflow/overflow
                 RETURN_IF_ERR(stack_push(
                     vm, NUMBER_VAL(AS_NUMBER(lhs) * AS_NUMBER(rhs))));
@@ -437,15 +445,17 @@ Result vm_run_bytecode(Vm* vm) {
             case OP_DIVIDE: {
                 Value rhs = {0};
                 RETURN_IF_ERR(stack_pop(vm, &rhs));
-                if (!IS_NUMBER(rhs))
+                if (!IS_NUMBER(rhs)) {
                     VM_ERROR(vm, loc, "Division: expected a number, got: %s",
                              value_to_str_debug(rhs));
+                }
 
                 Value lhs = {0};
                 RETURN_IF_ERR(stack_pop(vm, &lhs));
-                if (!IS_NUMBER(lhs))
+                if (!IS_NUMBER(lhs)) {
                     VM_ERROR(vm, loc, "Division: expected a number, got: %s",
                              value_to_str_debug(lhs));
+                }
 
                 RETURN_IF_ERR(stack_push(
                     vm, NUMBER_VAL(AS_NUMBER(lhs) / AS_NUMBER(rhs))));
@@ -482,15 +492,17 @@ Result vm_run_bytecode(Vm* vm) {
             case OP_LESS: {
                 Value rhs = {0};
                 RETURN_IF_ERR(stack_pop(vm, &rhs));
-                if (!IS_NUMBER(rhs))
+                if (!IS_NUMBER(rhs)) {
                     VM_ERROR(vm, loc, "Comparison:expected a number, got: %s",
                              value_to_str_debug(rhs));
+                }
 
                 Value lhs = {0};
                 RETURN_IF_ERR(stack_pop(vm, &lhs));
-                if (!IS_NUMBER(lhs))
+                if (!IS_NUMBER(lhs)) {
                     VM_ERROR(vm, loc, "Comparison:expected a number, got: %s",
                              value_to_str_debug(lhs));
+                }
 
                 // TODO: Check for 0
                 RETURN_IF_ERR(
@@ -500,15 +512,17 @@ Result vm_run_bytecode(Vm* vm) {
             case OP_GREATER: {
                 Value rhs = {0};
                 RETURN_IF_ERR(stack_pop(vm, &rhs));
-                if (!IS_NUMBER(rhs))
+                if (!IS_NUMBER(rhs)) {
                     VM_ERROR(vm, loc, "Comparison:expected a number, got: %s",
                              value_to_str_debug(rhs));
+                }
 
                 Value lhs = {0};
                 RETURN_IF_ERR(stack_pop(vm, &lhs));
-                if (!IS_NUMBER(lhs))
+                if (!IS_NUMBER(lhs)) {
                     VM_ERROR(vm, loc, "Comparison:expected a number, got: %s",
                              value_to_str_debug(lhs));
+                }
 
                 // TODO: Check for 0
                 RETURN_IF_ERR(
@@ -548,9 +562,10 @@ Result vm_run_bytecode(Vm* vm) {
                 const size_t s_len = AS_STRING(name)->len;
                 Value* value = ht_search(vm->globals, s, s_len);
 
-                if (!value)
+                if (!value) {
                     VM_ERROR(vm, loc, "Undefined global variable `%.*s`",
                              (int)s_len, s);
+                }
 
                 LOG("get global name=%.*s value=%s\n", (int)s_len, s,
                     value_to_str_debug(*value));
@@ -564,9 +579,10 @@ Result vm_run_bytecode(Vm* vm) {
                 char* const s = AS_CSTRING(name);
                 const size_t s_len = AS_STRING(name)->len;
                 Value* const value = ht_search(vm->globals, s, s_len);
-                if (!value)
+                if (!value) {
                     VM_ERROR(vm, loc, "Undefined global variable `%.*s`",
                              (int)s_len, s);
+                }
 
                 RETURN_IF_ERR(stack_peek_from_top_at(vm, value, 0));
                 LOG("set global name=%.*s value=%s\n", (int)s_len, s,
