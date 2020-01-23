@@ -1,1 +1,1 @@
-"1" / 1; // expect: 1:7:Division: expected a number, got:"1"
+"1" / 1; // expect: 1:7:Division: expected a number, got: string ("1")

@@ -1,1 +1,1 @@
-true + nil; // expect: 1:8:Addition: expected a number, got:true
+true + nil; // expect: 1:8:Addition: expected a number, got: boolean (true)
