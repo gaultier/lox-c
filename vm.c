@@ -668,7 +668,7 @@ static void value_obj_free(Vm* vm) {
 
 Result vm_interpret(char* source, size_t source_len,
                     Result (*bytecode_fn)(Vm*)) {
-    Vm vm = {.globals = ht_init(100, NULL)};
+    Vm vm = {.globals = ht_init(UINT8_MAX, NULL)};
     Result result = RES_OK;
 
     ObjFunction* fn = NULL;
@@ -698,7 +698,7 @@ static void repl_sig_quit(int signal) {
 void vm_repl(void) {
     signal(SIGINT, repl_sig_quit);
 
-    Vm vm = {.globals = ht_init(100, NULL)};
+    Vm vm = {.globals = ht_init(UINT8_MAX, NULL)};
     setvbuf(stdout, (char*)NULL, _IONBF, 0);
 
     while (true) {
@@ -716,8 +716,9 @@ void vm_repl(void) {
                         "Could not read from stdin: errno=%s error=%d\n",
                         strerror(errno), errno);
                 exit(errno);
-            } else
+            } else {
                 exit(0);
+            }
         }
 
         Result result = RES_OK;
