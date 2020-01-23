@@ -146,13 +146,17 @@ static void string(Lex* lex, Token* token) {
 }
 
 static void number(Lex* lex, Token* token, const Lex* start_lex) {
-    while (!is_at_end(lex) && isdigit(peek(lex))) advance(lex);
+    while (!is_at_end(lex) && isdigit(peek(lex))) {
+        advance(lex);
+    }
 
     if (!is_at_end(lex) && peek(lex) == '.' && isdigit(peek_next(lex))) {
         // Consume the dot
         advance(lex);
 
-        while (!is_at_end(lex) && isdigit(peek(lex))) advance(lex);
+        while (!is_at_end(lex) && isdigit(peek(lex))) {
+            advance(lex);
+        }
     }
 
     init_token(lex, token, TOKEN_NUMBER, start_lex);
@@ -163,76 +167,89 @@ static TokenType identifier_type(const char* s, size_t s_len) {
 
     switch (s[0]) {
         case 'a':
-            if (str_eq("nd", 2, s + 1, s_len - 1))
+            if (str_eq("nd", 2, s + 1, s_len - 1)) {
                 return TOKEN_AND;
-            else
+            } else {
                 break;
+            }
         case 'c':
-            if (str_eq("lass", 4, s + 1, s_len - 1))
+            if (str_eq("lass", 4, s + 1, s_len - 1)) {
                 return TOKEN_CLASS;
-            else
+            } else {
                 break;
+            }
         case 'e':
-            if (str_eq("lse", 3, s + 1, s_len - 1))
+            if (str_eq("lse", 3, s + 1, s_len - 1)) {
                 return TOKEN_ELSE;
-            else
+            } else {
                 break;
+            }
         case 'f':
-            if (str_eq("alse", 4, s + 1, s_len - 1))
+            if (str_eq("alse", 4, s + 1, s_len - 1)) {
                 return TOKEN_FALSE;
-            else if (str_eq("or", 2, s + 1, s_len - 1))
+            } else if (str_eq("or", 2, s + 1, s_len - 1)) {
                 return TOKEN_FOR;
-            else if (str_eq("un", 2, s + 1, s_len - 1))
+            } else if (str_eq("un", 2, s + 1, s_len - 1)) {
                 return TOKEN_FUN;
-            else
+            } else {
                 break;
+            }
         case 'i':
-            if (str_eq("f", 1, s + 1, s_len - 1))
+            if (str_eq("f", 1, s + 1, s_len - 1)) {
                 return TOKEN_IF;
-            else
+            } else {
                 break;
+            }
         case 'n':
-            if (str_eq("il", 2, s + 1, s_len - 1))
+            if (str_eq("il", 2, s + 1, s_len - 1)) {
                 return TOKEN_NIL;
-            else
+            } else {
                 break;
+            }
         case 'o':
-            if (str_eq("r", 1, s + 1, s_len - 1))
+            if (str_eq("r", 1, s + 1, s_len - 1)) {
                 return TOKEN_OR;
-            else
+            } else {
                 break;
+            }
         case 'p':
-            if (str_eq("rint", 4, s + 1, s_len - 1))
+            if (str_eq("rint", 4, s + 1, s_len - 1)) {
                 return TOKEN_PRINT;
-            else
+            } else {
                 break;
+            }
         case 'r':
-            if (str_eq("eturn", 5, s + 1, s_len - 1))
+            if (str_eq("eturn", 5, s + 1, s_len - 1)) {
                 return TOKEN_RETURN;
-            else
+            } else {
                 break;
+            }
         case 's':
-            if (str_eq("uper", 4, s + 1, s_len - 1))
+            if (str_eq("uper", 4, s + 1, s_len - 1)) {
                 return TOKEN_SUPER;
-            else
+            } else {
                 break;
+            }
         case 't':
-            if (str_eq("his", 3, s + 1, s_len - 1))
+            if (str_eq("his", 3, s + 1, s_len - 1)) {
                 return TOKEN_THIS;
-            else if (str_eq("rue", 3, s + 1, s_len - 1))
+            } else if (str_eq("rue", 3, s + 1, s_len - 1)) {
                 return TOKEN_TRUE;
-            else
+            } else {
                 break;
+            }
         case 'v':
-            if (str_eq("ar", 2, s + 1, s_len - 1))
+            if (str_eq("ar", 2, s + 1, s_len - 1)) {
                 return TOKEN_VAR;
-            else
+            } else {
                 break;
+            }
         case 'w':
-            if (str_eq("hile", 4, s + 1, s_len - 1))
+            if (str_eq("hile", 4, s + 1, s_len - 1)) {
                 return TOKEN_WHILE;
-            else
+            } else {
                 break;
+            }
         default:
             break;
     }
@@ -241,7 +258,9 @@ static TokenType identifier_type(const char* s, size_t s_len) {
 }
 
 static void identifier(Lex* lex, Token* token, const Lex* start_lex) {
-    while (!is_at_end(lex) && isalnum(peek(lex))) advance(lex);
+    while (!is_at_end(lex) && isalnum(peek(lex))) {
+        advance(lex);
+    }
 
     const char* s = &start_lex->source[start_lex->pos];
     const size_t s_len = lex->pos - start_lex->pos;
@@ -263,7 +282,8 @@ void lex_scan_token(Lex* lex, Token* token) {
     if (isdigit(c)) {
         number(lex, token, &start_lex);
         return;
-    } else if (isalnum(c)) {
+    }
+    if (isalnum(c)) {
         identifier(lex, token, &start_lex);
         return;
     }
