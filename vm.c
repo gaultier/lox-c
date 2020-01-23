@@ -165,7 +165,7 @@ static Result read_u16(Vm* vm, uint16_t* u16) {
     uint8_t b2 = 0;
     RETURN_IF_ERR(read_u8(vm, &b2));
 
-    *u16 = (uint16_t)(b1 << 8) | b2;
+    *u16 = (uint16_t)(b1 << (uint8_t)8) | b2;
     return RES_OK;
 }
 

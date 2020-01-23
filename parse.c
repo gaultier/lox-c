@@ -158,7 +158,9 @@ static void advance(Parser* parser) {
 
     while (true) {
         lex_scan_token(&parser->lex, &parser->current);
-        if (parser->current.type != TOKEN_ERROR) return;
+        if (parser->current.type != TOKEN_ERROR) {
+            return;
+        }
 
         error(parser, &parser->current, parser->current.source,
               parser->current.source_len);
@@ -170,7 +172,9 @@ static bool peek(Parser* parser, TokenType type) {
 }
 
 static bool match(Parser* parser, TokenType type) {
-    if (!peek(parser, type)) return false;
+    if (!peek(parser, type)) {
+        return false;
+    }
 
     advance(parser);
     return true;
@@ -298,7 +302,9 @@ static void named_variable(Parser* parser, Vm* vm, bool canAssign) {
     LOG("arg=%d is_local=%d name=`%.*s`\n", arg, is_local,
         (int)name->source_len, name->source);
 
-    if (!is_local) arg = make_identifier_constant(parser, vm);
+    if (!is_local) {
+        arg = make_identifier_constant(parser, vm);
+    }
 
     if (canAssign && match(parser, TOKEN_EQUAL)) {
         expression(parser, vm);
@@ -459,9 +465,10 @@ static void jump_patch(Parser* parser, intmax_t offset) {
         (intmax_t)buf_size(parser->compiler->fn->chunk.opcodes) - offset - 2;
     assert(jump >= 0);
 
-    if (jump > UINT16_MAX)
+    if (jump > UINT16_MAX) {
         error_str_nul(parser, &parser->previous,
                       "Reached jump limit for the `if` body");
+    }
 
     const uint16_t u16_jump = (uint16_t)jump;
     LOG("patch jump=%hu\n", u16_jump);
@@ -486,7 +493,9 @@ static void if_stmt(Parser* parser, Vm* vm) {
     jump_patch(parser, then_jump);
 
     emit_byte(parser, OP_POP);
-    if (match(parser, TOKEN_ELSE)) statement(parser, vm);
+    if (match(parser, TOKEN_ELSE)) {
+        statement(parser, vm);
+    }
 
     jump_patch(parser, else_jump);
 }
@@ -517,15 +526,18 @@ static void or (Parser * parser, Vm* vm, bool canAssign) {
 
 static uint8_t fn_argument_list(Parser* parser, Vm* vm) {
     uint8_t arg_count = 0;
-    if (match(parser, TOKEN_RIGHT_PAREN)) return arg_count;
+    if (match(parser, TOKEN_RIGHT_PAREN)) {
+        return arg_count;
+    }
 
     do {
         expression(parser, vm);
 
-        if (arg_count == UINT8_MAX)
+        if (arg_count == UINT8_MAX) {
             error_str_nul(parser, &parser->previous,
                           "Reached maximum number of arguments for a function "
                           "call: UINT8_MAX");
+        }
 
         arg_count += 1;
     } while (match(parser, TOKEN_COMMA));
@@ -548,9 +560,10 @@ static void emit_loop(Parser* parser, size_t loop_start) {
         buf_size(parser->compiler->fn->chunk.opcodes) - loop_start + 2);
     assert(jump >= 0);
 
-    if (jump > UINT16_MAX)
+    if (jump > UINT16_MAX) {
         error_str_nul(parser, &parser->previous,
                       "Reached jump limit for the for-loop body");
+    }
 
     const uint16_t u16_jump = (uint16_t)jump;
     const uint8_t b1 = (u16_jump >> 8);
@@ -582,11 +595,12 @@ static void for_stmt(Parser* parser, Vm* vm) {
     begin_scope(parser);
     expect(parser, TOKEN_LEFT_PAREN, "Expect `(` after `for`");
 
-    if (match(parser, TOKEN_VAR))
+    if (match(parser, TOKEN_VAR)) {
         var_declaration(parser, vm);
-    else if (match(parser, TOKEN_SEMICOLON)) {
-    } else
+    } else if (match(parser, TOKEN_SEMICOLON)) {
+    } else {
         expr_stmt(parser, vm);
+    }
 
     size_t loop_start = buf_size(parser->compiler->fn->chunk.opcodes);
 
@@ -630,9 +644,10 @@ static void for_stmt(Parser* parser, Vm* vm) {
 }
 
 static void return_stmt(Parser* parser, Vm* vm) {
-    if (parser->compiler->fn_type == TYPE_SCRIPT)
+    if (parser->compiler->fn_type == TYPE_SCRIPT) {
         error_str_nul(parser, &parser->current,
                       "Cannot return from top-level code");
+    }
 
     if (match(parser, TOKEN_SEMICOLON)) {
         emit_byte(parser, OP_NIL);
@@ -667,7 +682,9 @@ static void sync(Parser* parser) {
     parser->state = PARSER_STATE_SYNCED;
 
     while (parser->current.type != TOKEN_EOF) {
-        if (parser->previous.type == TOKEN_SEMICOLON) return;
+        if (parser->previous.type == TOKEN_SEMICOLON) {
+            return;
+        }
 
         switch (parser->current.type) {
             case TOKEN_CLASS:
@@ -689,7 +706,9 @@ static void sync(Parser* parser) {
 }
 
 static void compiler_local_mark_initialized(Parser* parser) {
-    if (parser->compiler->scope_depth == 0) return;
+    if (parser->compiler->scope_depth == 0) {
+        return;
+    }
     parser->compiler->locals[parser->compiler->locals_len - 1].depth =
         parser->compiler->scope_depth;
 }
@@ -712,7 +731,9 @@ static void compiler_add_local(Parser* parser, const Token* name) {
 }
 
 static void declare_variable(Parser* parser) {
-    if (parser->compiler->scope_depth == 0) return;
+    if (parser->compiler->scope_depth == 0) {
+        return;
+    }
 
     const Token* const name = &parser->previous;
     LOG("declaring var=%.*s\n", (int)name->source_len, name->source);
@@ -724,8 +745,10 @@ static void declare_variable(Parser* parser) {
             parser->compiler->scope_depth, (int)name->source_len, name->source,
             i);
 
-        if (local->depth != -1 && local->depth < parser->compiler->scope_depth)
+        if (local->depth != -1 &&
+            local->depth < parser->compiler->scope_depth) {
             break;
+        }
 
         if (str_eq(local->name.source, local->name.source_len, name->source,
                    name->source_len)) {

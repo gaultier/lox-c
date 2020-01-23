@@ -13,7 +13,9 @@ bool value_is_falsy(const Value v) {
 }
 
 bool value_eq(Value lhs, Value rhs) {
-    if (lhs.type != rhs.type) return false;
+    if (lhs.type != rhs.type) {
+        return false;
+    }
 
     switch (lhs.type) {
         case VAL_BOOL:
@@ -23,7 +25,9 @@ bool value_eq(Value lhs, Value rhs) {
         case VAL_NUMBER:
             return fabs(AS_NUMBER(lhs) - AS_NUMBER(rhs)) < DBL_EPSILON;
         case VAL_OBJ:
-            if (AS_STRING(lhs)->len != AS_STRING(rhs)->len) return false;
+            if (AS_STRING(lhs)->len != AS_STRING(rhs)->len) {
+                return false;
+            }
             return memcmp(AS_STRING(lhs)->s, AS_STRING(rhs)->s,
                           AS_STRING(lhs)->len) == 0;
         default:
