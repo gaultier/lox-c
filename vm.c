@@ -272,10 +272,11 @@ Result vm_dump(Vm* vm) {
 }
 
 static Result fn_call(Vm* vm, ObjFunction* fn, uint8_t arg_count) {
-    if (fn->arity != arg_count)
+    if (fn->arity != arg_count) {
         VM_ERROR(vm, get_location(vm),
                  "Wrong arity in function call: expected %d, got: %d",
                  fn->arity, arg_count);
+    }
 
     if ((vm->frame_len + 1) == FRAMES_MAX) {
         VM_ERROR(vm, get_location(vm), "Reached maximum number of frames: %d",
@@ -298,9 +299,10 @@ static Result fn_call(Vm* vm, ObjFunction* fn, uint8_t arg_count) {
 
 static Result value_call(Vm* vm, Value callee, uint8_t arg_count) {
     const Location* const loc = get_location(vm);
-    if (!IS_OBJ(callee))
+    if (!IS_OBJ(callee)) {
         VM_ERROR(vm, loc, "Can only call functions and classes, got: %s",
                  value_to_str_debug(callee));
+    }
 
     switch (AS_OBJ(callee)->type) {
         case OBJ_FUNCTION:
@@ -350,9 +352,10 @@ Result vm_run_bytecode(Vm* vm) {
                 Value value = {0};
                 RETURN_IF_ERR(stack_pop(vm, &value));
 
-                if (!IS_NUMBER(value))
+                if (!IS_NUMBER(value)) {
                     VM_ERROR(vm, loc, "Negation: expected a number, got: %s",
                              value_to_str_debug(value));
+                }
 
                 RETURN_IF_ERR(stack_push(vm, NUMBER_VAL(-AS_NUMBER(value))));
                 break;
@@ -733,6 +736,8 @@ void vm_repl(void) {
         vm_run_bytecode(&vm);
 
     cleanup:
-        if (fn) free(fn);
+        if (fn) {
+            free(fn);
+        }
     }
 }
