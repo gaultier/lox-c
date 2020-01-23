@@ -682,7 +682,7 @@ void vm_repl(void) {
 
         char* source = NULL;
         ssize_t source_len = 0;
-        size_t line_cap = 255;
+        size_t line_cap = UINT8_MAX;
 
         printf("> ");
         if ((source_len = getline(&source, &line_cap, stdin)) <= 0) {

@@ -523,9 +523,9 @@ static uint8_t fn_argument_list(Parser* parser, Vm* vm) {
         expression(parser, vm);
 
         if (arg_count == UINT8_MAX)
-            error_str_nul(
-                parser, &parser->previous,
-                "Reached maximum number of arguments for a function call: 255");
+            error_str_nul(parser, &parser->previous,
+                          "Reached maximum number of arguments for a function "
+                          "call: UINT8_MAX");
 
         arg_count += 1;
     } while (match(parser, TOKEN_COMMA));
@@ -781,9 +781,9 @@ static void function_args(Parser* parser, Vm* vm) {
         define_variable(parser, var_i);
 
         if (parser->compiler->fn->arity == UINT8_MAX)
-            error_str_nul(
-                parser, &parser->previous,
-                "Reached maximum number of arguments for a function: 255");
+            error_str_nul(parser, &parser->previous,
+                          "Reached maximum number of arguments for a function: "
+                          "UINT8_MAX");
 
         parser->compiler->fn->arity += 1;
     } while (match(parser, TOKEN_COMMA));
