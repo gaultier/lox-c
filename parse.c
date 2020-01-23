@@ -407,6 +407,11 @@ static void expression(Parser* parser, Vm* vm) {
 }
 
 static void print_stmt(Parser* parser, Vm* vm) {
+    LOG("scope_depth=%zu locals_len=%d enclosing_depth=%zu "
+        "enclosing_locals_len=%d\n",
+        parser->compiler->scope_depth, parser->compiler->locals_len,
+        parser->compiler->enclosing->scope_depth,
+        parser->compiler->enclosing->locals_len);
     expression(parser, vm);
     expect(parser, TOKEN_SEMICOLON,
            "Expected terminating semicolon after print value");
@@ -701,9 +706,9 @@ static void compiler_add_local(Parser* parser, const Token* name) {
     Local* const local = &compiler->locals[compiler->locals_len++];
     local->name = *name;
     local->depth = -1;
-    LOG("added local name=`%.*s` i=%d scope_depth=%jd\n",
+    LOG("added local name=`%.*s` i=%d scope_depth=%jd locals_len=%d\n",
         (int)local->name.source_len, local->name.source,
-        compiler->locals_len - 1, compiler->scope_depth);
+        compiler->locals_len - 1, compiler->scope_depth, compiler->locals_len);
 }
 
 static void declare_variable(Parser* parser) {
@@ -786,11 +791,11 @@ static void function_args(Parser* parser, Vm* vm) {
     expect(parser, TOKEN_RIGHT_PAREN, "Missing `)` after function parameters");
 }
 
-static void function(Parser* parser, Vm* vm, uint8_t fn_name_i) {
+static void function(Parser* parser, Vm* vm, FunctionType type) {
     Compiler compiler;
     memset(&compiler, 0, sizeof(compiler));
 
-    compiler_init(&compiler, TYPE_FUNCTION, parser);
+    compiler_init(&compiler, type, parser);
     begin_scope(parser);
 
     expect(parser, TOKEN_LEFT_PAREN, "Missing `(` after function name");
@@ -807,8 +812,9 @@ static void fn_declaration(Parser* parser, Vm* vm) {
     const uint8_t global_i =
         variable_name(parser, vm, "Expected function name");
     compiler_local_mark_initialized(parser);
+    LOG("localCount=%d\n", parser->compiler->locals_len);
 
-    function(parser, vm, global_i);
+    function(parser, vm, TYPE_FUNCTION);
     define_variable(parser, global_i);
 }
 
@@ -826,9 +832,6 @@ static void declaration(Parser* parser, Vm* vm) {
 Result parser_compile(const char* source, size_t source_len, ObjFunction** fn,
                       Vm* vm) {
     LOG("source_len=%zu source=`%.*s`\n", source_len, (int)source_len, source);
-
-    const char top_fn_name[] = "<script>";
-    const size_t top_fn_name_len = sizeof(top_fn_name);
 
     Parser parser = {.lex = {
                          .source = source,
