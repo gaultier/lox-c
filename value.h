@@ -104,3 +104,4 @@ bool value_eq(Value lhs, Value rhs);
 bool value_is_falsy(const Value v);
 const char* value_to_str(Value v);
 const char* value_to_str_debug(Value v);
+ObjNative* obj_function_native_new(NativeFn fn);

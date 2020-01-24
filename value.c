@@ -73,6 +73,15 @@ ObjFunction* obj_function_new(const char* name, size_t name_len) {
     return fn;
 }
 
+ObjNative* obj_function_native_new(NativeFn fn) {
+    ObjNative* n = NULL;
+    REALLOC_SAFE(&n, sizeof(ObjNative));
+    n->obj.type = OBJ_NATIVE;
+    n->fn = fn;
+
+    return n;
+}
+
 const char* value_to_str(Value v) {
     static char str[UINT8_MAX + 1] = "";
     memset(str, 0, UINT8_MAX + 1);

@@ -304,7 +304,7 @@ static Result fn_define_native(Vm* vm, char name[], NativeFn fn) {
     memcpy(os->s, name, name_len);
     RETURN_IF_ERR(stack_push(vm, OBJ_VAL(os)));
 
-    RETURN_IF_ERR(stack_push(vm, OBJ_VAL(fn)));
+    RETURN_IF_ERR(stack_push(vm, OBJ_VAL(obj_function_native_new(fn))));
     Value* v = &vm->stack[vm->stack_len - 1];
 
     ht_insert(vm->globals, name, name_len, v, sizeof(*v));
@@ -312,7 +312,10 @@ static Result fn_define_native(Vm* vm, char name[], NativeFn fn) {
     return RES_OK;
 }
 
-static Value fn_native_clock(Value* args, size_t arg_len) {
+static Value fn_native_clock(Value* args, size_t args_len) {
+    (void)args;
+    (void)args_len;
+
     struct timeval tp = {0};
     gettimeofday(&tp, NULL);
 
@@ -700,6 +703,8 @@ static void value_obj_free(Vm* vm) {
 Result vm_interpret(char* source, size_t source_len,
                     Result (*bytecode_fn)(Vm*)) {
     Vm vm = {.globals = ht_init(UINT8_MAX, NULL)};
+    fn_define_native(&vm, "clock", fn_native_clock);
+
     Result result = RES_OK;
 
     ObjFunction* fn = NULL;
@@ -730,6 +735,8 @@ void vm_repl(void) {
     signal(SIGINT, repl_sig_quit);
 
     Vm vm = {.globals = ht_init(UINT8_MAX, NULL)};
+    fn_define_native(&vm, "clock", fn_native_clock);
+
     setvbuf(stdout, (char*)NULL, _IONBF, 0);
 
     while (true) {
