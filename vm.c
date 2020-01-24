@@ -155,8 +155,10 @@ static Result read_constant(Vm* vm, Value* v) {
 
     uint8_t value_index = 0;
     RETURN_IF_ERR(read_u8(vm, &value_index));
+    LOG("constant index=%d constants size=%zu\n", value_index,
+        buf_size(frame->fn->chunk.constants));
+    assert(value_index < buf_size(frame->fn->chunk.constants));
     *v = frame->fn->chunk.constants[value_index];
-    LOG("constant index=%d\n", value_index);
 
     return RES_OK;
 }
