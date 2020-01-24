@@ -127,18 +127,6 @@ static Result stack_peek_from_top_at(const Vm* vm, Value* v,
     return RES_OK;
 }
 
-static Result stack_peek_from_bottom_at(const Vm* vm, Value* v,
-                                        intmax_t distance) {
-    assert(stack_len(vm) < STACK_MAX - 1);
-    assert((size_t)distance < stack_len(vm));
-
-    *v = vm->stack[distance];
-
-    LOG("peek stack distance=%jd v=%s\n", distance, value_to_str_debug(*v));
-
-    return RES_OK;
-}
-
 static Result stack_pop(Vm* vm, Value* v) {
     assert(stack_len(vm) > 0);
 
