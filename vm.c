@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/time.h>
 
 #include "buf.h"
 #include "parse.h"
@@ -309,6 +310,13 @@ static Result fn_define_native(Vm* vm, char name[], NativeFn fn) {
     ht_insert(vm->globals, name, name_len, v, sizeof(*v));
 
     return RES_OK;
+}
+
+static Value fn_native_clock(Value* args, size_t arg_len) {
+    struct timeval tp = {0};
+    gettimeofday(&tp, NULL);
+
+    return NUMBER_VAL(tp.tv_sec * 1000 + tp.tv_usec / 1000);
 }
 
 static Result value_call(Vm* vm, Value callee, uint8_t arg_count) {
