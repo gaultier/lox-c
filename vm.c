@@ -140,11 +140,11 @@ static Result stack_pop(Vm* vm, Value* v) {
 static Result read_u8(Vm* vm, uint8_t* byte) {
     assert(vm->frame_len > 0);
     CallFrame* const frame = &vm->frames[vm->frame_len - 1];
-    assert((size_t)(frame->ip - frame->fn->chunk.opcodes) <
-           buf_size(frame->fn->chunk.opcodes));
+    assert(frame->ip <
+           frame->fn->chunk.opcodes + buf_size(frame->fn->chunk.opcodes));
 
-    frame->ip += 1;
-    *byte = frame->fn->chunk.opcodes[frame->ip - frame->fn->chunk.opcodes];
+    // |0|1|2|
+    *byte = *frame->ip++;
 
     return RES_OK;
 }
@@ -176,13 +176,13 @@ Result vm_dump(Vm* vm) {
     assert(vm->frame_len > 0);
     CallFrame* const frame = &vm->frames[vm->frame_len - 1];
 
-    while ((size_t)(frame->ip - frame->fn->chunk.opcodes) <
-           buf_size(frame->fn->chunk.opcodes)) {
+    while (frame->ip <
+           frame->fn->chunk.opcodes + buf_size(frame->fn->chunk.opcodes)) {
         LOG("frame ip=%zu opcodes_len=%zu vm opcode[0]=%s frame opcode=%s\n",
             frame->ip - frame->fn->chunk.opcodes,
             buf_size(frame->fn->chunk.opcodes),
-            opcode_str[frame->fn->chunk.opcodes[0]], opcode_str[*(frame->ip)]);
-        const uint8_t opcode = *(frame->ip);
+            opcode_str[frame->fn->chunk.opcodes[0]], opcode_str[*frame->ip]);
+        const uint8_t opcode = *frame->ip;
         const Location* const loc = get_location(vm);
 
         switch (opcode) {
@@ -242,14 +242,11 @@ Result vm_dump(Vm* vm) {
                 uint16_t offset = 0;
                 RETURN_IF_ERR(read_u16(vm, &offset));
                 // TODO: bound check
-                const uint8_t opcode_target =
-                    frame->fn->chunk
-                        .opcodes[frame->ip - frame->fn->chunk.opcodes + offset +
-                                 1];
+                frame->ip += offset;
 
                 printf("%zu:%zu:%s offset=%hu target=%s\n", loc->line,
                        loc->column, opcode_str[opcode], offset,
-                       opcode_str[opcode_target]);
+                       opcode_str[*frame->ip]);
                 break;
             }
             case OP_LOOP: {
@@ -698,7 +695,7 @@ Result vm_run_bytecode(Vm* vm) {
             default:
                 assert(false);
         }
-        frame->ip += 1;
+        frame->ip++;
     }
     return RES_OK;
 }
