@@ -267,7 +267,6 @@ Result vm_dump(Vm* vm) {
             default:
                 assert(false);
         }
-        frame->ip += 1;
     }
     return RES_OK;
 }
@@ -696,7 +695,6 @@ Result vm_run_bytecode(Vm* vm) {
             default:
                 UNREACHABLE();
         }
-        frame->ip++;
     }
     return RES_OK;
 }
