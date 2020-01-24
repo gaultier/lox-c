@@ -94,42 +94,56 @@ static void stack_trace_print(const Vm* vm) {
         return RES_RUN_ERR;                                          \
     } while (0)
 
-static void stack_log(Vm* vm) {
-    for (size_t i = 0; i < vm->stack_len; i++) {
+static size_t stack_len(const Vm* vm) {
+    return (size_t)(vm->stack_top - vm->stack);
+}
+
+static void stack_log(const Vm* vm) {
+    for (size_t i = 0; i < stack_len(vm); i++) {
         LOG("stack[%jd]=%s\n", i, value_to_str_debug(vm->stack[i]));
     }
 }
 
 static Result stack_push(Vm* vm, Value v) {
-    assert(vm->stack_len < STACK_MAX - 1);
+    assert(stack_len(vm) < STACK_MAX - 1);
 
-    vm->stack[vm->stack_len] = v;
-    vm->stack_len += 1;
+    *vm->stack_top = v;
+    vm->stack_top++;
 
     LOG("push stack=%s\n", value_to_str_debug(v));
 
     return RES_OK;
 }
 
-static Result stack_peek_from_bottom_at(const Vm* vm, Value* v, intmax_t i) {
-    assert(vm->stack_len > 0);
-    assert((size_t)i < vm->stack_len);
+static Result stack_peek_from_top_at(const Vm* vm, Value* v,
+                                     intmax_t distance) {
+    assert(stack_len(vm) < STACK_MAX - 1);
+    assert((size_t)distance < stack_len(vm));
 
-    *v = vm->stack[i];
+    *v = vm->stack_top[-1 - distance];
 
-    LOG("peek stack[%jd]=%s\n", i, value_to_str_debug(*v));
+    LOG("peek stack distance=%jd v=%s\n", distance, value_to_str_debug(*v));
 
     return RES_OK;
 }
 
-static Result stack_peek_from_top_at(const Vm* vm, Value* v, intmax_t i) {
-    return stack_peek_from_bottom_at(vm, v, (intmax_t)vm->stack_len - i - 1);
+static Result stack_peek_from_bottom_at(const Vm* vm, Value* v,
+                                        intmax_t distance) {
+    assert(stack_len(vm) < STACK_MAX - 1);
+    assert((size_t)distance < stack_len(vm));
+
+    *v = vm->stack[distance];
+
+    LOG("peek stack distance=%jd v=%s\n", distance, value_to_str_debug(*v));
+
+    return RES_OK;
 }
 
 static Result stack_pop(Vm* vm, Value* v) {
-    assert(vm->stack_len > 0);
+    assert(stack_len(vm) > 0);
 
-    *v = vm->stack[--vm->stack_len];
+    vm->stack_top--;
+    *v = *vm->stack_top;
     LOG("popped %s%s\n", "", value_to_str_debug(*v));
 
     return RES_OK;
@@ -290,10 +304,12 @@ static Result fn_call(Vm* vm, ObjFunction* fn, uint8_t arg_count) {
     frame->fn = fn;
 
     frame->ip = fn->chunk.opcodes;
-    frame->slots = &vm->stack[vm->stack_len - 1 - arg_count];
-    LOG("call f=%.*s slots[0]=%s\n", (int)frame->fn->name_len, frame->fn->name,
-        value_to_str_debug(frame->slots[0]));
-    LOG("stack top=%s\n", value_to_str_debug(vm->stack[vm->stack_len - 1]));
+    frame->slots = vm->stack_top - arg_count - 1;
+    //    LOG("call f=%.*s slots[0]=%s\n", (int)frame->fn->name_len,
+    //    frame->fn->name,
+    //        value_to_str_debug(frame->slots[0]));
+    //    LOG("stack top=%s\n", value_to_str_debug(vm->stack[vm->stack_len -
+    //    1]));
 
     return RES_OK;
 }
@@ -305,7 +321,7 @@ static Result fn_define_native(Vm* vm, char name[], NativeFn fn) {
     RETURN_IF_ERR(stack_push(vm, OBJ_VAL(os)));
 
     RETURN_IF_ERR(stack_push(vm, OBJ_VAL(obj_function_native_new(fn))));
-    Value* v = &vm->stack[vm->stack_len - 1];
+    Value* v = vm->stack_top - 1;
 
     ht_insert(vm->globals, name, name_len, v, sizeof(*v));
 
@@ -339,9 +355,8 @@ static Result value_call(Vm* vm, Value callee, uint8_t arg_count) {
             return fn_call(vm, AS_FN(callee), arg_count);
         case OBJ_NATIVE: {
             const NativeFn fn = AS_NATIVE(callee)->fn;
-            const Value ret =
-                fn(&vm->stack[vm->stack_len - 1 - arg_count], arg_count);
-            vm->stack_len -= arg_count + 1;
+            const Value ret = fn(vm->stack_top - arg_count, arg_count);
+            vm->stack_top -= arg_count + 1;
 
             RETURN_IF_ERR(stack_push(vm, ret));
             return RES_OK;
@@ -367,23 +382,24 @@ Result vm_run_bytecode(Vm* vm) {
 
         switch (opcode) {
             case OP_RETURN: {
-                Value value = {0};
-                RETURN_IF_ERR(stack_pop(vm, &value));
-
-                const uint8_t frame_slots_i =
-                    (uint8_t)(vm->frames[vm->frame_len - 1].slots - vm->stack);
+                stack_log(vm);
+                Value return_value = {0};
+                RETURN_IF_ERR(stack_pop(vm, &return_value));
 
                 vm->frame_len--;
+                stack_log(vm);
 
                 if (vm->frame_len == 0) {  // End of script
-                    RETURN_IF_ERR(stack_pop(vm, &value));
+                    LOG("final pop%s\n", "");
+                    RETURN_IF_ERR(stack_pop(vm, &return_value));
                     return RES_OK;
                 }
 
-                LOG("vm_stack_len=%zu frame_slots_i=%d\n", vm->stack_len,
-                    frame_slots_i);
-                vm->stack_len = frame_slots_i;
-                RETURN_IF_ERR(stack_push(vm, value));
+                const size_t stack_len_before = stack_len(vm);
+                vm->stack_top = frame->slots;
+                LOG("vm_stack_len before=%zu vm_stack_len after=%zu\n",
+                    stack_len_before, stack_len(vm));
+                RETURN_IF_ERR(stack_push(vm, return_value));
 
                 frame = &vm->frames[vm->frame_len - 1];
 
@@ -595,7 +611,7 @@ Result vm_run_bytecode(Vm* vm) {
                     (int)AS_STRING(name)->len, AS_CSTRING(name),
                     value_to_str_debug(value));
 
-                LOG("stack size: %zu\n", vm->stack_len);
+                LOG("stack size: %zu\n", stack_len(vm));
                 break;
             }
             case OP_GET_GLOBAL: {
@@ -682,7 +698,7 @@ Result vm_run_bytecode(Vm* vm) {
                 RETURN_IF_ERR(stack_peek_from_top_at(vm, &callee, arg_count));
                 RETURN_IF_ERR(value_call(vm, callee, arg_count));
                 LOG("stack top after call=%s\n",
-                    value_to_str_debug(vm->stack[vm->stack_len - 1]));
+                    value_to_str_debug(*(vm->stack_top - 1)));
 
                 frame = &vm->frames[vm->frame_len - 1];
 
@@ -711,6 +727,8 @@ static void value_obj_free(Vm* vm) {
 Result vm_interpret(char* source, size_t source_len,
                     Result (*bytecode_fn)(Vm*)) {
     Vm vm = {.globals = ht_init(UINT8_MAX, NULL)};
+    vm.stack_top = vm.stack;
+
     fn_define_native(&vm, "clock", fn_native_clock);
 
     Result result = RES_OK;
@@ -748,7 +766,7 @@ void vm_repl(void) {
     setvbuf(stdout, (char*)NULL, _IONBF, 0);
 
     while (true) {
-        vm.stack_len = 0;
+        vm.stack_top = vm.stack;
         vm.frame_len = 0;
 
         char* source = NULL;

@@ -52,7 +52,7 @@ typedef struct {
 
 typedef struct {
     Value stack[STACK_MAX];
-    size_t stack_len;
+    Value* stack_top;  // Points to one element past the end
     Obj* objects;
     hashtab_t* globals;
 
