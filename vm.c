@@ -53,7 +53,8 @@ static const Location* get_location(const Vm* vm) {
     assert(vm->frame_len > 0);
     const CallFrame* const frame = &vm->frames[vm->frame_len - 1];
 
-    return &frame->fn->chunk.locations[frame->ip - frame->fn->chunk.opcodes];
+    return &frame->fn->chunk
+                .locations[frame->ip - frame->fn->chunk.opcodes - 1];
 }
 
 static void str_cat(Vm* vm, Value lhs, Value rhs, Value* res) {
@@ -140,7 +141,7 @@ static Result stack_pop(Vm* vm, Value* v) {
 static Result read_u8(Vm* vm, uint8_t* byte) {
     assert(vm->frame_len > 0);
     CallFrame* const frame = &vm->frames[vm->frame_len - 1];
-    assert(frame->ip <
+    assert(frame->ip <=
            frame->fn->chunk.opcodes + buf_size(frame->fn->chunk.opcodes));
 
     *byte = *frame->ip++;
@@ -365,7 +366,7 @@ Result vm_run_bytecode(Vm* vm) {
         read_u8(vm, &opcode);
         const Location* const loc = get_location(vm);
 
-        LOG("opcode=%s\n", opcode_str[opcode]);
+        LOG("opcode=%d %s\n", opcode, opcode_str[opcode]);
 
         switch (opcode) {
             case OP_RETURN: {
@@ -695,7 +696,7 @@ Result vm_run_bytecode(Vm* vm) {
                 break;
             }
             default:
-                assert(false);
+                UNREACHABLE();
         }
         frame->ip++;
     }
