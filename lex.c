@@ -80,7 +80,7 @@ static char peek(const Lex* lex) { return lex->source[lex->pos]; }
 static bool is_at_end(const Lex* lex) { return lex->pos == lex->source_len; }
 
 static char peek_next(const Lex* lex) {
-    return is_at_end(lex) ? '\0' : lex->source[lex->pos + 1];
+    return (char)(is_at_end(lex) ? '\0' : lex->source[lex->pos + 1]);
 }
 
 static void skip_until_char(Lex* lex, char c) {
