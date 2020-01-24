@@ -415,11 +415,8 @@ static void expression(Parser* parser, Vm* vm) {
 }
 
 static void print_stmt(Parser* parser, Vm* vm) {
-    LOG("scope_depth=%zu locals_len=%d enclosing_depth=%zu "
-        "enclosing_locals_len=%d\n",
-        parser->compiler->scope_depth, parser->compiler->locals_len,
-        parser->compiler->enclosing->scope_depth,
-        parser->compiler->enclosing->locals_len);
+    LOG("scope_depth=%zu locals_len=%d\n", parser->compiler->scope_depth,
+        parser->compiler->locals_len);
     expression(parser, vm);
     expect(parser, TOKEN_SEMICOLON,
            "Expected terminating semicolon after print value");

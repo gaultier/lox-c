@@ -145,6 +145,9 @@ const char* value_to_str_debug(Value v) {
                     snprintf(str, UINT8_MAX, "function (fn@%.*s)",
                              (int)AS_FN(v)->name_len, AS_FN(v)->name);
                     break;
+                case OBJ_NATIVE:
+                    snprintf(str, UINT8_MAX, "fn@<native>");
+                    break;
                 default:
                     UNREACHABLE();
             }
