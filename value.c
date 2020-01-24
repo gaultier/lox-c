@@ -25,6 +25,10 @@ bool value_eq(Value lhs, Value rhs) {
         case VAL_NUMBER:
             return fabs(AS_NUMBER(lhs) - AS_NUMBER(rhs)) < DBL_EPSILON;
         case VAL_OBJ:
+            if (!IS_STRING(lhs) || !IS_STRING(rhs)) {
+                return false;
+            }
+
             if (AS_STRING(lhs)->len != AS_STRING(rhs)->len) {
                 return false;
             }
@@ -92,6 +96,9 @@ const char* value_to_str(Value v) {
                 case OBJ_FUNCTION:
                     snprintf(str, UINT8_MAX, "fn@%.*s", (int)AS_FN(v)->name_len,
                              AS_FN(v)->name);
+                    break;
+                case OBJ_NATIVE:
+                    snprintf(str, UINT8_MAX, "fn@<native>");
                     break;
                 default:
                     UNREACHABLE();

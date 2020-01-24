@@ -1,0 +1,6 @@
+fun f(){} 
+print f==f; // expect: false
+
+fun g(){} 
+
+print f==g; // expect: false
