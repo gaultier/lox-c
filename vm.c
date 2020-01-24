@@ -81,7 +81,8 @@ static void stack_trace_print(const Vm* vm) {
         const CallFrame* const frame = &vm->frames[i];
 
         const Location* const loc =
-            &frame->fn->chunk.locations[frame->ip - frame->fn->chunk.opcodes];
+            &frame->fn->chunk
+                 .locations[frame->ip - frame->fn->chunk.opcodes - 1];
         fprintf(stderr, "%zu:%zu: in %.*s()\n", loc->line, loc->column,
                 (int)frame->fn->name_len, frame->fn->name);
     }
@@ -180,7 +181,7 @@ Result vm_dump(Vm* vm) {
 
     while (true) {
         LOG("frame ip=%zu opcodes_len=%zu vm opcode[0]=%s frame opcode=%s\n",
-            frame->ip - frame->fn->chunk.opcodes,
+            frame->ip - frame->fn->chunk.opcodes - 1,
             buf_size(frame->fn->chunk.opcodes),
             opcode_str[frame->fn->chunk.opcodes[0]], opcode_str[*frame->ip]);
         uint8_t opcode = 0;
@@ -255,14 +256,11 @@ Result vm_dump(Vm* vm) {
             case OP_LOOP: {
                 uint16_t offset = 0;
                 RETURN_IF_ERR(read_u16(vm, &offset));
-                const uint8_t opcode_target =
-                    frame->fn->chunk
-                        .opcodes[frame->ip - frame->fn->chunk.opcodes - offset +
-                                 1];
+                frame->ip -= offset;
 
                 printf("%zu:%zu:%s offset=%d target=%s\n", loc->line,
                        loc->column, opcode_str[opcode], offset,
-                       opcode_str[opcode_target]);
+                       opcode_str[*frame->ip]);
                 break;
             }
 
