@@ -143,7 +143,6 @@ static Result read_u8(Vm* vm, uint8_t* byte) {
     assert(frame->ip <
            frame->fn->chunk.opcodes + buf_size(frame->fn->chunk.opcodes));
 
-    // |0|1|2|
     *byte = *frame->ip++;
 
     return RES_OK;
@@ -178,13 +177,14 @@ Result vm_dump(Vm* vm) {
     assert(vm->frame_len > 0);
     CallFrame* const frame = &vm->frames[vm->frame_len - 1];
 
-    while (frame->ip <
-           frame->fn->chunk.opcodes + buf_size(frame->fn->chunk.opcodes)) {
+    while (true) {
         LOG("frame ip=%zu opcodes_len=%zu vm opcode[0]=%s frame opcode=%s\n",
             frame->ip - frame->fn->chunk.opcodes,
             buf_size(frame->fn->chunk.opcodes),
             opcode_str[frame->fn->chunk.opcodes[0]], opcode_str[*frame->ip]);
-        const uint8_t opcode = *frame->ip;
+        uint8_t opcode = 0;
+        read_u8(vm, &opcode);
+
         const Location* const loc = get_location(vm);
 
         switch (opcode) {
@@ -360,9 +360,9 @@ Result vm_run_bytecode(Vm* vm) {
     assert(vm->frame_len > 0);
     CallFrame* frame = &vm->frames[vm->frame_len - 1];
 
-    while ((size_t)(frame->ip - frame->fn->chunk.opcodes) <
-           buf_size(frame->fn->chunk.opcodes)) {
-        const uint8_t opcode = *(frame->ip);
+    while (true) {
+        uint8_t opcode = 0;
+        read_u8(vm, &opcode);
         const Location* const loc = get_location(vm);
 
         LOG("opcode=%s\n", opcode_str[opcode]);
