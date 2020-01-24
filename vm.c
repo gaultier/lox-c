@@ -309,6 +309,10 @@ static Result fn_define_native(Vm* vm, char name[], NativeFn fn) {
 
     ht_insert(vm->globals, name, name_len, v, sizeof(*v));
 
+    Value dummy;
+    RETURN_IF_ERR(stack_pop(vm, &dummy));
+    RETURN_IF_ERR(stack_pop(vm, &dummy));
+
     return RES_OK;
 }
 
