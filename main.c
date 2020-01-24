@@ -16,8 +16,9 @@ int main(int argc, const char* argv[]) {
         size_t source_len = 0;
         if (strcmp(argv[2], "-") == 0) {
             read_stdin(&source, &source_len);
-        } else
+        } else {
             read_file(argv[2], &source, &source_len);
+        }
 
         if (strcmp(argv[1], "dump") == 0) {
             return (int)vm_interpret(source, source_len, vm_dump);
