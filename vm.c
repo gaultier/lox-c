@@ -297,6 +297,20 @@ static Result fn_call(Vm* vm, ObjFunction* fn, uint8_t arg_count) {
     return RES_OK;
 }
 
+static Result fn_define_native(Vm* vm, char name[], NativeFn fn) {
+    const size_t name_len = strlen(name);
+    ObjString* const os = value_make_string(&vm->objects, name_len);
+    memcpy(os->s, name, name_len);
+    RETURN_IF_ERR(stack_push(vm, OBJ_VAL(os)));
+
+    RETURN_IF_ERR(stack_push(vm, OBJ_VAL(fn)));
+    Value* v = &vm->stack[vm->stack_len - 1];
+
+    ht_insert(vm->globals, name, name_len, v, sizeof(*v));
+
+    return RES_OK;
+}
+
 static Result value_call(Vm* vm, Value callee, uint8_t arg_count) {
     const Location* const loc = get_location(vm);
     if (!IS_OBJ(callee)) {
