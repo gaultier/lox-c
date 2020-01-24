@@ -688,7 +688,6 @@ Result vm_run_bytecode(Vm* vm) {
 
                 LOG("called f=%.*s slots[0]=%s\n", (int)frame->fn->name_len,
                     frame->fn->name, value_to_str_debug(frame->slots[0]));
-                frame->ip--;  // FIXME
 
                 break;
             }
