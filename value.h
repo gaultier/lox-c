@@ -54,7 +54,7 @@ typedef struct {
     Value* constants;
 } Chunk;
 
-typedef Value (*NativeFn)(Value* args);
+typedef Value (*NativeFn)(Value* args, size_t arg_len);
 
 typedef struct {
     Obj obj;

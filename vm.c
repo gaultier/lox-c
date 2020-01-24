@@ -307,6 +307,15 @@ static Result value_call(Vm* vm, Value callee, uint8_t arg_count) {
     switch (AS_OBJ(callee)->type) {
         case OBJ_FUNCTION:
             return fn_call(vm, AS_FN(callee), arg_count);
+        case OBJ_NATIVE: {
+            const NativeFn fn = AS_NATIVE(callee)->fn;
+            const Value ret =
+                fn(&vm->stack[vm->stack_len - 1 - arg_count], arg_count);
+            vm->stack_len -= arg_count + 1;
+
+            RETURN_IF_ERR(stack_push(vm, ret));
+            return RES_OK;
+        }
         case OBJ_STRING:
             VM_ERROR(vm, loc, "Can only call functions and classes, got: %s",
                      value_to_str_debug(callee));
