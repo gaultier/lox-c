@@ -27,6 +27,7 @@ typedef enum {
 typedef enum {
     OBJ_STRING,
     OBJ_FUNCTION,
+    OBJ_NATIVE,
 } ObjType;
 
 struct Obj {
@@ -52,6 +53,13 @@ typedef struct {
     Location* locations;
     Value* constants;
 } Chunk;
+
+typedef Value (*NativeFn)(Value* args);
+
+typedef struct {
+    Obj obj;
+    NativeFn fn;
+} ObjNative;
 
 typedef struct {
     Obj obj;
@@ -79,6 +87,7 @@ ObjFunction* obj_function_new(const char* name, size_t name_len);
 #define AS_STRING(value) ((ObjString*)AS_OBJ(value))
 #define AS_CSTRING(value) (((ObjString*)AS_OBJ(value))->s)
 #define AS_FN(value) ((ObjFunction*)AS_OBJ(value))
+#define AS_NATIVE(value) ((ObjNative*)AS_OBJ(value))
 
 #define IS_BOOL(value) ((value).type == VAL_BOOL)
 #define IS_NIL(value) ((value).type == VAL_NIL)
@@ -86,6 +95,7 @@ ObjFunction* obj_function_new(const char* name, size_t name_len);
 #define IS_OBJ(value) ((value).type == VAL_OBJ)
 #define IS_STRING(value) value_obj_is_type(value, OBJ_STRING)
 #define IS_FN(value) value_obj_is_type(value, OBJ_FUNCTION)
+#define IS_NATIVE(value) value_obj_is_type(value, OBJ_NATIVE)
 
 ObjString* value_make_string(Obj** objects, size_t s_len);
 bool value_obj_is_type(Value v, ObjType type);
