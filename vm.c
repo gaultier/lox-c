@@ -332,6 +332,7 @@ static Result value_call(Vm* vm, Value callee, uint8_t arg_count) {
         VM_ERROR(vm, loc, "Can only call functions and classes, got: %s",
                  value_to_str_debug(callee));
     }
+    LOG("calling fn=%s arg_count=%d\n", value_to_str_debug(callee), arg_count);
 
     switch (AS_OBJ(callee)->type) {
         case OBJ_FUNCTION:
@@ -361,6 +362,8 @@ Result vm_run_bytecode(Vm* vm) {
            buf_size(frame->fn->chunk.opcodes)) {
         const uint8_t opcode = *(frame->ip);
         const Location* const loc = get_location(vm);
+
+        LOG("opcode=%s\n", opcode_str[opcode]);
 
         switch (opcode) {
             case OP_RETURN: {
@@ -678,10 +681,12 @@ Result vm_run_bytecode(Vm* vm) {
                 Value callee = {0};
                 RETURN_IF_ERR(stack_peek_from_top_at(vm, &callee, arg_count));
                 RETURN_IF_ERR(value_call(vm, callee, arg_count));
+                LOG("stack top after call=%s\n",
+                    value_to_str_debug(vm->stack[vm->stack_len - 1]));
 
                 frame = &vm->frames[vm->frame_len - 1];
 
-                LOG("calling f=%.*s slots[0]=%s\n", (int)frame->fn->name_len,
+                LOG("called f=%.*s slots[0]=%s\n", (int)frame->fn->name_len,
                     frame->fn->name, value_to_str_debug(frame->slots[0]));
                 frame->ip--;  // FIXME
 
