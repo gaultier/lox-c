@@ -5,6 +5,7 @@
 #include <stdint.h>
 
 #include "config.h"
+#include "result.h"
 
 typedef struct {
     size_t line;
@@ -53,7 +54,9 @@ typedef struct {
     Value* constants;
 } Chunk;
 
-typedef Value (*NativeFn)(Value* args, size_t arg_len);
+struct Vm;
+typedef Result (*NativeFn)(const struct Vm* vm, Value* args, uint8_t arg_len,
+                           Value* ret);
 
 typedef struct {
     Obj obj;

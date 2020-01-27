@@ -50,7 +50,7 @@ typedef struct {
     Value* slots;
 } CallFrame;
 
-typedef struct {
+struct Vm {
     Value stack[STACK_MAX];
     Value* stack_top;  // Points to one element past the end
     Obj* objects;
@@ -58,7 +58,8 @@ typedef struct {
 
     CallFrame frames[FRAMES_MAX];
     int8_t frame_len;
-} Vm;
+};
+typedef struct Vm Vm;
 
 void vm_repl(void);
 Result vm_dump(Vm* vm);

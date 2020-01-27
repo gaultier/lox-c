@@ -312,14 +312,20 @@ static Result fn_define_native(Vm* vm, char name[], NativeFn fn) {
     return RES_OK;
 }
 
-static Value fn_native_clock(Value* args, size_t args_len) {
+static Result fn_native_clock(const Vm* vm, Value* args, uint8_t args_len,
+                              Value* ret) {
     (void)args;
-    (void)args_len;
+    if (args_len > 0) {
+        VM_ERROR(vm, get_location(vm),
+                 "Wrong arity in function call: expected 0, got: %d", args_len);
+    }
 
     struct timeval tp = {0};
     gettimeofday(&tp, NULL);
 
-    return NUMBER_VAL(tp.tv_sec * 1000 + tp.tv_usec / 1000);
+    *ret = NUMBER_VAL(tp.tv_sec * 1000 + tp.tv_usec / 1000);
+
+    return RES_OK;
 }
 
 static Result value_call(Vm* vm, Value callee, uint8_t arg_count) {
@@ -335,7 +341,8 @@ static Result value_call(Vm* vm, Value callee, uint8_t arg_count) {
             return fn_call(vm, AS_FN(callee), arg_count);
         case OBJ_NATIVE: {
             const NativeFn fn = AS_NATIVE(callee)->fn;
-            const Value ret = fn(vm->stack_top - arg_count, arg_count);
+            Value ret = {0};
+            RETURN_IF_ERR(fn(vm, vm->stack_top - arg_count, arg_count, &ret));
             vm->stack_top -= arg_count + 1;
 
             RETURN_IF_ERR(stack_push(vm, ret));
