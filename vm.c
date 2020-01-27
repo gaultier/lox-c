@@ -290,11 +290,6 @@ static Result fn_call(Vm* vm, ObjFunction* fn, uint8_t arg_count) {
 
     frame->ip = fn->chunk.opcodes;
     frame->slots = vm->stack_top - arg_count - 1;
-    //    LOG("call f=%.*s slots[0]=%s\n", (int)frame->fn->name_len,
-    //    frame->fn->name,
-    //        value_to_str_debug(frame->slots[0]));
-    //    LOG("stack top=%s\n", value_to_str_debug(vm->stack[vm->stack_len -
-    //    1]));
 
     return RES_OK;
 }
