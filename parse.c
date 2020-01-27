@@ -84,7 +84,7 @@ static void compiler_init(Compiler* c, FunctionType type, Parser* p) {
     c->fn_type = type;
     c->locals_len = 0;
     c->scope_depth = 0;
-    c->fn = obj_function_new(fn_name, fn_name_len);
+    c->fn = value_make_fn(fn_name, fn_name_len);
 
     p->compiler = c;
 

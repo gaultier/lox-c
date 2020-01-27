@@ -75,7 +75,6 @@ typedef struct {
     char name[];
 } ObjFunction;
 
-ObjFunction* obj_function_new(const char* name, size_t name_len);
 #define BOOL_VAL(value) ((Value){.type = VAL_BOOL, {.boolean = value}})
 #define NIL_VAL ((Value){.type = VAL_NIL, {.number = 0}})
 #define NUMBER_VAL(value) ((Value){.type = VAL_NUMBER, {.number = value}})
@@ -99,9 +98,9 @@ ObjFunction* obj_function_new(const char* name, size_t name_len);
 
 ObjString* value_make_string(Obj** objects, size_t s_len);
 bool value_obj_is_type(Value v, ObjType type);
-ObjString* value_obj_str_allocate(Obj** objects, size_t size);
 bool value_eq(Value lhs, Value rhs);
 bool value_is_falsy(const Value v);
 const char* value_to_str(Value v);
 const char* value_to_str_debug(Value v);
 ObjNative* obj_function_native_new(NativeFn fn);
+ObjFunction* value_make_fn(const char* name, size_t name_len);
