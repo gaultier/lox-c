@@ -71,7 +71,7 @@ ObjFunction* value_make_fn(const char* name, size_t name_len) {
     return fn;
 }
 
-ObjNative* obj_function_native_new(NativeFn fn) {
+ObjNative* value_make_fn_native(NativeFn fn) {
     ObjNative* n = NULL;
     REALLOC_SAFE(&n, sizeof(ObjNative));
     n->obj.type = OBJ_NATIVE;

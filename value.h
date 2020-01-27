@@ -102,5 +102,5 @@ bool value_eq(Value lhs, Value rhs);
 bool value_is_falsy(const Value v);
 const char* value_to_str(Value v);
 const char* value_to_str_debug(Value v);
-ObjNative* obj_function_native_new(NativeFn fn);
+ObjNative* value_make_fn_native(NativeFn fn);
 ObjFunction* value_make_fn(const char* name, size_t name_len);

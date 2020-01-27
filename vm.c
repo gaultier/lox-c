@@ -300,7 +300,7 @@ static Result fn_define_native(Vm* vm, char name[], NativeFn fn) {
     memcpy(os->s, name, name_len);
     RETURN_IF_ERR(stack_push(vm, OBJ_VAL(os)));
 
-    RETURN_IF_ERR(stack_push(vm, OBJ_VAL(obj_function_native_new(fn))));
+    RETURN_IF_ERR(stack_push(vm, OBJ_VAL(value_make_fn_native(fn))));
     Value* v = vm->stack_top - 1;
 
     ht_insert(vm->globals, name, name_len, v, sizeof(*v));
