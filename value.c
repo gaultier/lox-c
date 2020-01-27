@@ -34,8 +34,6 @@ bool value_eq(Value lhs, Value rhs) {
             }
             return memcmp(AS_STRING(lhs)->s, AS_STRING(rhs)->s,
                           AS_STRING(lhs)->len) == 0;
-        default:
-            UNREACHABLE();
     }
 }
 
@@ -109,12 +107,8 @@ const char* value_to_str(Value v) {
                 case OBJ_NATIVE:
                     snprintf(str, UINT8_MAX, "fn@<native>");
                     break;
-                default:
-                    UNREACHABLE();
             }
             break;
-        default:
-            UNREACHABLE();
     }
     str[UINT8_MAX] = '\0';
     return str;
@@ -148,13 +142,8 @@ const char* value_to_str_debug(Value v) {
                 case OBJ_NATIVE:
                     snprintf(str, UINT8_MAX, "fn@<native>");
                     break;
-                default:
-                    UNREACHABLE();
             }
             break;
-        default:
-            UNREACHABLE();
     }
-    str[UINT8_MAX] = '\0';
     return str;
 }

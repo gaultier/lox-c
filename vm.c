@@ -344,8 +344,6 @@ static Result value_call(Vm* vm, Value callee, uint8_t arg_count) {
         case OBJ_STRING:
             VM_ERROR(vm, loc, "Can only call functions and classes, got: %s",
                      value_to_str_debug(callee));
-        default:
-            UNREACHABLE();
     }
 }
 
@@ -684,11 +682,8 @@ Result vm_run_bytecode(Vm* vm) {
 
                 break;
             }
-            default:
-                UNREACHABLE();
         }
     }
-    return RES_OK;
 }
 
 static void value_obj_free(Vm* vm) {

@@ -126,8 +126,6 @@ static void error(Parser* parser, const Token* token, const char* err,
             LOG("new parser error in panic mode, skipping err=`%.*s`\n",
                 (int)err_len, err);
             return;
-        default:
-            UNREACHABLE();
     }
 }
 
