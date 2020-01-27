@@ -880,11 +880,11 @@ Result parser_compile(char* source, size_t source_len, ObjFunction** fn,
         declaration(&parser, vm);
     }
 
-    if (parser.state != PARSER_STATE_OK) {
-        return RES_PARSE_ERR;
+    if (parser.state == PARSER_STATE_OK) {
+        *fn = compiler_end(&parser);
     }
 
-    *fn = compiler_end(&parser);
+    free(source);
 
-    return RES_OK;
+    return parser.state == PARSER_STATE_OK ? RES_OK : RES_PARSE_ERR;
 }
