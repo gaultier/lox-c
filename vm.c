@@ -730,6 +730,8 @@ void vm_repl(void) {
     Vm vm = {.globals = ht_init(UINT8_MAX, NULL)};
     fn_define_native(&vm, "clock", fn_native_clock);
 
+    // Make sure stdout in unbuffered, otherwise the repl experience is
+    // suboptimal
     setvbuf(stdout, (char*)NULL, _IONBF, 0);
 
     while (true) {
