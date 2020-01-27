@@ -354,9 +354,10 @@ void lex_scan_token(Lex* lex, Token* token) {
             string(lex, token);
             return;
         default: {
-            char* err = NULL;
-            REALLOC_SAFE(&err, 19);
-            snprintf(err, 19, "Unknown token `%c`", c);
+            static char err[256] = "";
+            memset(&err, 0, sizeof(err));
+
+            snprintf(err, sizeof(err) - 1, "Unknown token `%c`", c);
             init_token_err(lex, token, err);
         }
     }
