@@ -718,7 +718,6 @@ Result vm_interpret(char* source, size_t source_len,
 
 cleanup:
     value_obj_free(&vm);
-    free(source);
 
     return result;
 }

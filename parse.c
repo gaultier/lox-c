@@ -858,7 +858,7 @@ static void declaration(Parser* parser, Vm* vm) {
     }
 }
 
-Result parser_compile(const char* source, size_t source_len, ObjFunction** fn,
+Result parser_compile(char* source, size_t source_len, ObjFunction** fn,
                       Vm* vm) {
     LOG("source_len=%zu source=`%.*s`\n", source_len, (int)source_len, source);
 
