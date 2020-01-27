@@ -110,7 +110,6 @@ const char* value_to_str(Value v) {
             }
             break;
     }
-    str[UINT8_MAX] = '\0';
     return str;
 }
 
