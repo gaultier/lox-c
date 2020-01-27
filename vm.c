@@ -706,7 +706,7 @@ Result vm_interpret(char* source, size_t source_len,
 
     ObjFunction* fn = NULL;
     if ((result = parser_compile(source, source_len, &fn, &vm)) != RES_OK) {
-        goto cleanup;
+        return result;
     }
 
     LOG("parsing successful%s\n", "");
@@ -715,9 +715,6 @@ Result vm_interpret(char* source, size_t source_len,
 
     fn_call(&vm, fn, 0);
     result = bytecode_fn(&vm);
-
-cleanup:
-    value_obj_free(&vm);
 
     return result;
 }
