@@ -380,10 +380,7 @@ Result vm_run_bytecode(Vm* vm) {
                     return RES_OK;
                 }
 
-                const size_t stack_len_before = stack_len(vm);
                 vm->stack_top = frame->slots;
-                LOG("vm_stack_len before=%zu vm_stack_len after=%zu\n",
-                    stack_len_before, stack_len(vm));
                 RETURN_IF_ERR(stack_push(vm, return_value));
 
                 frame = &vm->frames[vm->frame_len - 1];

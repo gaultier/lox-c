@@ -26,9 +26,6 @@ int main(int argc, const char* argv[]) {
         if (strcmp(argv[1], "run") == 0) {
             return (int)vm_interpret(source, source_len, vm_run_bytecode);
         }
-        if (strcmp(argv[1], "fmt") == 0) {
-            return (int)fmt(source, source_len);
-        }
     } else {
         cli_help(argv);
     }
