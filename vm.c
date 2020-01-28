@@ -2,6 +2,7 @@
 
 #include <assert.h>
 #include <errno.h>
+#include <limits.h>
 #include <signal.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -346,7 +347,42 @@ static Result fn_native_read_line(Vm* vm, Value* args, uint8_t args_len,
                  strerror(errno), errno);
     }
 
-    *ret = OBJ_VAL(value_make_string(&vm->objects, (size_t)source_len));
+    ObjString* const os =
+        value_make_string(&vm->objects, (size_t)source_len - 1);
+    memcpy(os->s, source, (size_t)(source_len - 1));  // Trim trailing newline
+    *ret = OBJ_VAL(os);
+
+    return RES_OK;
+}
+
+static Result fn_native_parse_number(Vm* vm, Value* args, uint8_t args_len,
+                                     Value* ret) {
+    if (args_len != 1) {
+        VM_ERROR(vm, get_location(vm),
+                 "Wrong arity in function call: expected 1, got: %d", args_len);
+    }
+
+    const Value* const v = &args[0];
+
+    if (!IS_STRING(*v)) {
+        VM_ERROR(vm, get_location(vm), "Expected a string, got: %s",
+                 value_to_str_debug(*v));
+    }
+
+    char* s_nul = NULL;
+    const size_t s_len = AS_STRING(*v)->len;
+    REALLOC_SAFE(&s_nul, s_len + 1);
+    memcpy(s_nul, AS_CSTRING(*v), s_len);
+    s_nul[s_len] = '\0';
+
+    char* err = NULL;
+    const intmax_t num = strtoll(s_nul, &err, 10);
+
+    if (s_len > 0 && *err != '\0') {
+        VM_ERROR(vm, get_location(vm), "Cannot convert %s to number: %s",
+                 value_to_str_debug(*v), strerror(errno));
+    }
+    *ret = NUMBER_VAL(num);
 
     return RES_OK;
 }
@@ -732,6 +768,7 @@ Result vm_interpret(char* source, size_t source_len,
 
     fn_define_native(&vm, "clock", fn_native_clock);
     fn_define_native(&vm, "readLine", fn_native_read_line);
+    fn_define_native(&vm, "parseNumber", fn_native_parse_number);
 
     Result result = RES_OK;
 
@@ -760,6 +797,8 @@ void vm_repl(void) {
 
     Vm vm = {.globals = ht_init(UINT8_MAX, NULL)};
     fn_define_native(&vm, "clock", fn_native_clock);
+    fn_define_native(&vm, "readLine", fn_native_read_line);
+    fn_define_native(&vm, "parseNumber", fn_native_parse_number);
 
     // Make sure stdout in unbuffered, otherwise the repl experience is
     // suboptimal
