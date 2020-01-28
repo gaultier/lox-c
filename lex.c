@@ -128,6 +128,13 @@ static void skip_whitespace(Lex* lex) {
                     return;
                 }
                 break;
+            case '#':
+                if (peek_next(lex) == '!') {
+                    skip_until_char(lex, '\n');
+                } else {
+                    return;
+                }
+                break;
             default:
                 return;
         }
