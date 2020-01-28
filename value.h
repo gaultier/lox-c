@@ -55,7 +55,7 @@ typedef struct {
 } Chunk;
 
 struct Vm;
-typedef Result (*NativeFn)(const struct Vm* vm, Value* args, uint8_t arg_len,
+typedef Result (*NativeFn)(struct Vm* vm, Value* args, uint8_t arg_len,
                            Value* ret);
 
 typedef struct {

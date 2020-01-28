@@ -312,7 +312,7 @@ static Result fn_define_native(Vm* vm, char name[], NativeFn fn) {
     return RES_OK;
 }
 
-static Result fn_native_clock(const Vm* vm, Value* args, uint8_t args_len,
+static Result fn_native_clock(Vm* vm, Value* args, uint8_t args_len,
                               Value* ret) {
     (void)args;
     if (args_len > 0) {
@@ -324,6 +324,29 @@ static Result fn_native_clock(const Vm* vm, Value* args, uint8_t args_len,
     gettimeofday(&tp, NULL);
 
     *ret = NUMBER_VAL(tp.tv_sec * 1000 + tp.tv_usec / 1000);
+
+    return RES_OK;
+}
+
+static Result fn_native_read_line(Vm* vm, Value* args, uint8_t args_len,
+                                  Value* ret) {
+    (void)args;
+    if (args_len > 0) {
+        VM_ERROR(vm, get_location(vm),
+                 "Wrong arity in function call: expected 0, got: %d", args_len);
+    }
+
+    char* source = NULL;
+    ssize_t source_len = 0;
+    size_t line_cap = UINT32_MAX;
+
+    if ((source_len = getline(&source, &line_cap, stdin)) <= 0) {
+        VM_ERROR(vm, get_location(vm),
+                 "Could not read from stdin: errno=%s error=%d\n",
+                 strerror(errno), errno);
+    }
+
+    *ret = OBJ_VAL(value_make_string(&vm->objects, (size_t)source_len));
 
     return RES_OK;
 }
@@ -708,6 +731,7 @@ Result vm_interpret(char* source, size_t source_len,
     vm.stack_top = vm.stack;
 
     fn_define_native(&vm, "clock", fn_native_clock);
+    fn_define_native(&vm, "readLine", fn_native_read_line);
 
     Result result = RES_OK;
 
