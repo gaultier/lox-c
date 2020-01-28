@@ -376,7 +376,7 @@ static Result fn_native_parse_number(Vm* vm, Value* args, uint8_t args_len,
     s_nul[s_len] = '\0';
 
     char* err = NULL;
-    const intmax_t num = strtoll(s_nul, &err, 10);
+    const double num = strtod(s_nul, &err);
 
     if (s_len > 0 && *err != '\0') {
         VM_ERROR(vm, get_location(vm), "Cannot convert %s to number: %s",

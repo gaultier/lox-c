@@ -1,0 +1,1 @@
+print parseNumber("123.4"); // expect: 123.4
